@@ -16,21 +16,27 @@ import androidx.camera.view.PreviewView
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -47,12 +53,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
@@ -61,6 +70,8 @@ import androidx.core.content.ContextCompat
 import com.sherifradwan.ancnative.R
 import com.sherifradwan.ancnative.storage.BoundedBitmap
 import com.sherifradwan.ancnative.storage.CameraCaptureHelper
+import com.sherifradwan.ancnative.ui.components.RecordShapes
+import com.sherifradwan.ancnative.ui.components.RecordType
 import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -191,106 +202,206 @@ fun InAppCameraDialog(
         properties = DialogProperties(usePlatformDefaultWidth = false, dismissOnClickOutside = false),
     ) {
         Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
-            val shot = captureFile
-            when {
-                !granted -> Column(
-                    modifier = Modifier.fillMaxSize().padding(24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center,
-                ) {
-                    if (permissionAsked) {
-                        Text(
-                            text = stringResource(R.string.camera_permission_needed),
-                            color = Color.White,
-                            style = MaterialTheme.typography.bodyLarge,
-                        )
-                    }
-                    CloseButton(onDismiss)
-                }
-
-                shot != null -> {
-                    val still by produceState<Bitmap?>(null, shot) {
-                        value = withContext(Dispatchers.Default) { BoundedBitmap.decodeFile(shot.absolutePath, STILL_MAX_SIDE) }
-                    }
-                    Column(
-                        modifier = Modifier.fillMaxSize().padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp),
+            Box(modifier = Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing)) {
+                val shot = captureFile
+                when {
+                    !granted -> Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .verticalScroll(rememberScrollState())
+                            .padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center,
                     ) {
-                        Box(
-                            modifier = Modifier.weight(1f).fillMaxWidth().clip(RoundedCornerShape(20.dp)),
-                            contentAlignment = Alignment.Center,
+                        if (permissionAsked) {
+                            Surface(
+                                shape = RecordShapes.Large,
+                                color = Color(0xFF1A202E),
+                                border = BorderStroke(1.dp, Color(0xFF3A4459)),
+                                modifier = Modifier.fillMaxWidth().testTag("cameraPermissionCard"),
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(20.dp),
+                                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                                ) {
+                                    Text(
+                                        text = stringResource(R.string.camera_permission_title),
+                                        style = RecordType.SectionTitle,
+                                        color = Color(0xFFE2E2EA),
+                                        modifier = Modifier.semantics { heading() },
+                                    )
+                                    Text(
+                                        text = stringResource(R.string.camera_permission_needed),
+                                        style = RecordType.FieldValue,
+                                        color = Color(0xFFCDC3C6),
+                                    )
+                                    Button(
+                                        onClick = onDismiss,
+                                        shape = RecordShapes.Small,
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = Color.White,
+                                            contentColor = ClinicalNavy,
+                                        ),
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .minimumTouchTarget()
+                                            .testTag("camera_close"),
+                                    ) {
+                                        Text(stringResource(R.string.camera_close), style = RecordType.Action)
+                                    }
+                                }
+                            }
+                        } else {
+                            CloseButton(onDismiss)
+                        }
+                    }
+
+                    shot != null -> {
+                        val still by produceState<Bitmap?>(null, shot) {
+                            value = withContext(Dispatchers.Default) { BoundedBitmap.decodeFile(shot.absolutePath, STILL_MAX_SIDE) }
+                        }
+                        val stackActions = LocalDensity.current.fontScale > 1.3f
+                        Column(
+                            modifier = Modifier.fillMaxSize().padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp),
                         ) {
-                            val ready = still
-                            if (ready != null) {
-                                Image(
-                                    bitmap = ready.asImageBitmap(),
-                                    contentDescription = null,
-                                    modifier = Modifier.fillMaxSize(),
-                                    contentScale = ContentScale.Fit,
-                                )
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.End,
+                            ) {
+                                CloseButton(onDismiss)
+                            }
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .fillMaxWidth()
+                                    .clip(RecordShapes.Large)
+                                    .border(1.dp, Color(0xFF3A4459), RecordShapes.Large),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                val ready = still
+                                if (ready != null) {
+                                    Image(
+                                        bitmap = ready.asImageBitmap(),
+                                        contentDescription = null,
+                                        modifier = Modifier.fillMaxSize(),
+                                        contentScale = ContentScale.Fit,
+                                    )
+                                } else {
+                                    CircularProgressIndicator(color = Color.White)
+                                }
+                            }
+                            val reviewButtons: @Composable (Modifier) -> Unit = { itemModifier ->
+                                OutlinedButton(
+                                    onClick = { discardCapture() },
+                                    shape = RecordShapes.Small,
+                                    border = BorderStroke(1.dp, Color(0xFF8E95A5)),
+                                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White),
+                                    modifier = itemModifier.minimumTouchTarget().testTag("camera_retake"),
+                                ) {
+                                    Text(
+                                        stringResource(R.string.camera_retake),
+                                        style = RecordType.Action,
+                                        color = Color.White,
+                                        maxLines = 2,
+                                        textAlign = TextAlign.Center,
+                                    )
+                                }
+                                Button(
+                                    onClick = {
+                                        committed = true
+                                        onCaptured(CameraCaptureHelper.uriFor(context, shot))
+                                    },
+                                    shape = RecordShapes.Small,
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = Color.White,
+                                        contentColor = ClinicalNavy,
+                                    ),
+                                    modifier = itemModifier.minimumTouchTarget().testTag("camera_use"),
+                                ) {
+                                    Text(
+                                        stringResource(R.string.camera_use),
+                                        style = RecordType.Action,
+                                        maxLines = 2,
+                                        textAlign = TextAlign.Center,
+                                    )
+                                }
+                            }
+                            if (stackActions) {
+                                Column(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                                ) {
+                                    reviewButtons(Modifier.fillMaxWidth())
+                                }
                             } else {
-                                CircularProgressIndicator(color = Color.White)
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                ) {
+                                    reviewButtons(Modifier.weight(1f))
+                                }
                             }
                         }
+                    }
+
+                    else -> Column(
+                        modifier = Modifier.fillMaxSize().padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            horizontalArrangement = Arrangement.End,
                         ) {
-                            OutlinedButton(
-                                onClick = { discardCapture() },
-                                modifier = Modifier.weight(1f).minimumTouchTarget().testTag("camera_retake"),
-                            ) { Text(stringResource(R.string.camera_retake), color = Color.White) }
-                            Button(
-                                onClick = {
-                                    committed = true
-                                    onCaptured(CameraCaptureHelper.uriFor(context, shot))
-                                },
-                                modifier = Modifier.weight(1f).minimumTouchTarget().testTag("camera_use"),
-                            ) { Text(stringResource(R.string.camera_use)) }
+                            CloseButton(onDismiss)
                         }
-                        CloseButton(onDismiss)
-                    }
-                }
-
-                else -> Column(
-                    modifier = Modifier.fillMaxSize().padding(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
-                ) {
-                    AndroidView(
-                        factory = { ctx -> PreviewView(ctx).also { session.previewView = it } },
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(20.dp))
-                            .testTag("camera_preview"),
-                    )
-                    if (failed) {
-                        Text(
-                            text = stringResource(R.string.camera_capture_failed),
-                            color = Color.White,
-                            style = MaterialTheme.typography.bodyMedium,
-                        )
-                    }
-                    if (bindFailed) {
-                        Text(
-                            text = stringResource(R.string.camera_bind_failed),
-                            color = Color.White,
-                            style = MaterialTheme.typography.bodyMedium,
-                        )
-                    } else {
-                        val captureLabel = stringResource(R.string.camera_capture)
-                        Box(
+                        AndroidView(
+                            factory = { ctx -> PreviewView(ctx).also { session.previewView = it } },
                             modifier = Modifier
-                                .size(72.dp)
-                                .clip(CircleShape)
-                                .background(if (capturing) Color.Gray else Color.White)
-                                .clickable(enabled = !capturing, onClickLabel = captureLabel) { takePhoto() }
-                                .semantics { contentDescription = captureLabel }
-                                .testTag("camera_capture"),
+                                .weight(1f)
+                                .fillMaxWidth()
+                                .clip(RecordShapes.Large)
+                                .border(1.dp, Color(0xFF3A4459), RecordShapes.Large)
+                                .testTag("camera_preview"),
                         )
+                        if (failed || bindFailed) {
+                            Surface(
+                                shape = RecordShapes.Small,
+                                color = StatusHighDarkBg,
+                                border = BorderStroke(1.dp, StatusHighDarkBorder),
+                                modifier = Modifier.fillMaxWidth().testTag("cameraErrorBanner"),
+                            ) {
+                                Text(
+                                    text = stringResource(if (bindFailed) R.string.camera_bind_failed else R.string.camera_capture_failed),
+                                    style = RecordType.Secondary,
+                                    color = StatusHighDarkText,
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                                )
+                            }
+                        }
+                        if (!bindFailed) {
+                            val captureLabel = stringResource(R.string.camera_capture)
+                            val shutterColor = if (capturing) Color(0xFF8E95A5) else Color.White
+                            Box(
+                                modifier = Modifier
+                                    .size(72.dp)
+                                    .clip(CircleShape)
+                                    .border(2.dp, shutterColor, CircleShape)
+                                    .clickable(enabled = !capturing, onClickLabel = captureLabel) { takePhoto() }
+                                    .semantics { contentDescription = captureLabel }
+                                    .testTag("camera_capture")
+                                    .padding(6.dp),
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .clip(CircleShape)
+                                        .background(shutterColor),
+                                )
+                            }
+                        }
                     }
-                    CloseButton(onDismiss)
                 }
             }
         }
@@ -301,7 +412,17 @@ fun InAppCameraDialog(
 private fun CloseButton(onDismiss: () -> Unit) {
     OutlinedButton(
         onClick = onDismiss,
-        border = BorderStroke(1.dp, Color.White),
+        shape = RecordShapes.Small,
+        border = BorderStroke(1.dp, Color(0xFF8E95A5)),
+        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White),
         modifier = Modifier.minimumTouchTarget().testTag("camera_close"),
-    ) { Text(stringResource(R.string.camera_close), color = Color.White) }
+    ) {
+        Text(
+            stringResource(R.string.camera_close),
+            style = RecordType.Action,
+            color = Color.White,
+            maxLines = 2,
+            textAlign = TextAlign.Center,
+        )
+    }
 }

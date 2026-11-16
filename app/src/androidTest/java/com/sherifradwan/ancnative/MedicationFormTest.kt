@@ -44,6 +44,7 @@ import androidx.compose.ui.test.pressKey
 import androidx.compose.ui.test.swipeDown
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import java.time.LocalDate
 import com.sherifradwan.ancnative.model.ClinicalVocabulary
 import com.sherifradwan.ancnative.state.AncEvent
 import com.sherifradwan.ancnative.state.ClinicalValidationError
@@ -232,16 +233,18 @@ class MedicationFormTest {
     fun togglingToStoppedSwapsDateLabelAndTypingWritesEndDate() {
         mount(existing = true, values = activeValues.copy(name = "X", dosage = "1", frequency = "Once daily"))
         compose.onNodeWithText(str(R.string.start_date)).performScrollTo().assertIsDisplayed()
-        compose.onNodeWithTag("medDate").performTextInput("1")
+        compose.onNodeWithTag("medDateTodayButton").performScrollTo().performClick()
         assertEquals(1, changes(MedicationDraftField.START_DATE).size)
+        assertEquals(LocalDate.now().toString(), changes(MedicationDraftField.START_DATE).single().value)
         assertTrue(changes(MedicationDraftField.END_DATE).isEmpty())
 
         compose.onNodeWithTag("medStatusChoice-1").performScrollTo().performClick()
         compose.waitForIdle()
         assertEquals("Discontinued", changes(MedicationDraftField.STATUS).single().value)
         compose.onNodeWithText(str(R.string.medication_stop_date)).performScrollTo().assertIsDisplayed()
-        compose.onNodeWithTag("medDate").performTextInput("2")
+        compose.onNodeWithTag("medDateTodayButton").performScrollTo().performClick()
         assertEquals(1, changes(MedicationDraftField.END_DATE).size)
+        assertEquals(LocalDate.now().toString(), changes(MedicationDraftField.END_DATE).single().value)
         assertEquals(1, changes(MedicationDraftField.START_DATE).size)
     }
 
@@ -423,8 +426,9 @@ class MedicationFormTest {
         compose.waitForIdle()
         assertEquals("Active", changes(MedicationDraftField.STATUS).single().value)
         compose.onNodeWithText(str(R.string.start_date)).performScrollTo().assertIsDisplayed()
-        compose.onNodeWithTag("medDate").performTextInput("1")
+        compose.onNodeWithTag("medDateTodayButton").performScrollTo().performClick()
         assertEquals(1, changes(MedicationDraftField.START_DATE).size)
+        assertEquals(LocalDate.now().toString(), changes(MedicationDraftField.START_DATE).single().value)
         assertTrue(changes(MedicationDraftField.END_DATE).isEmpty())
     }
 

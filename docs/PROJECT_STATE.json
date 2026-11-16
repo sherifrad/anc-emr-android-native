@@ -1746,20 +1746,20 @@
   "rd19": {
    "phase": "pRD",
    "order": 20,
-   "status": "next",
+   "status": "done",
    "title": "Slice 19: Shell and shared dialogs",
-   "ref": "",
-   "detail": "One mock sheet first (shared dialogs, date picker, camera).",
+   "ref": "slice 19",
+   "detail": "Shared dialogs restyled; every date field picker-only (read-only field, no pencil toggle, delivery outcome date on ClinicalDateField with Clear). 35 new tests green; DeliveryPlanSheet, MedicationForm, AncWorkflow tests updated to the picker flow.",
    "owner": "Lane models",
    "updated": "2026-11-16"
   },
   "rd20": {
    "phase": "pRD",
    "order": 21,
-   "status": "todo",
+   "status": "next",
    "title": "Slice 20: Report dialog",
    "ref": "",
-   "detail": "Level 3. The print HTML generator is protected and out of scope.",
+   "detail": "Report dialog (level 3). Mock first.",
    "owner": "Lane models",
    "updated": "2026-11-16"
   },
@@ -1875,6 +1875,10 @@
   }
  },
  "log": [
+  {
+   "date": "2026-11-16",
+   "text": "Slice 19 shared dialogs done: all date fields picker-only, 35 new emulator tests, frontier review and alphacode clean after fixes."
+  },
   {
    "date": "2026-11-16",
    "text": "Slice 18 security, lock and vault done: 36 new emulator tests, SecurityWorkflow and catalog tests green."

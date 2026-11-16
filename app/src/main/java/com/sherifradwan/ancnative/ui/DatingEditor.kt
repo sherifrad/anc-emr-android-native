@@ -118,6 +118,7 @@ fun DatingEditor(
                     showTodayButton = true,
                     externalLabel = true,
                     useRecordStyle = true,
+                    allowClear = true,
                 )
             }
 
@@ -132,6 +133,7 @@ fun DatingEditor(
                     showTodayButton = false,
                     externalLabel = true,
                     useRecordStyle = true,
+                    allowClear = true,
                 )
             }
 
@@ -146,6 +148,7 @@ fun DatingEditor(
                     showTodayButton = false,
                     externalLabel = true,
                     useRecordStyle = true,
+                    allowClear = true,
                 )
 
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -190,6 +193,7 @@ fun DatingEditor(
                 showTodayButton = false,
                 externalLabel = true,
                 useRecordStyle = true,
+                allowClear = true,
             )
         }
 

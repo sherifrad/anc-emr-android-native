@@ -1,6 +1,7 @@
 package com.sherifradwan.ancnative.ui
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -46,6 +47,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
@@ -62,10 +64,13 @@ import com.sherifradwan.ancnative.state.medicationSheetDraft
 import com.sherifradwan.ancnative.state.FlowEvent
 import com.sherifradwan.ancnative.state.SystemBack
 import com.sherifradwan.ancnative.state.systemBackKind
+import com.sherifradwan.ancnative.ui.components.RecordShapes
+import com.sherifradwan.ancnative.ui.components.RecordType
 import com.sherifradwan.ancnative.ui.components.RegistrationFlowScaffold
 import com.sherifradwan.ancnative.ui.components.flowMoveEvent
 import com.sherifradwan.ancnative.storage.VaultState
 import com.sherifradwan.ancnative.ui.patienthub.PatientHubScreen
+import com.sherifradwan.ancnative.ui.patienthub.components.DiscardChangesDialog
 
 @Composable
 fun AncApp(
@@ -288,14 +293,31 @@ fun AncApp(
 
     if (unlocked && !isAppLocked && securitySettings?.needsPinSetup != true && state.showNewPatientInfo) {
         AlertDialog(
+            modifier = Modifier.testTag("newPatientInfoDialog"),
             onDismissRequest = { onEvent(AncEvent.HideNewPatientInfo) },
+            shape = RecordShapes.Large,
+            containerColor = MaterialTheme.colorScheme.surface,
             title = {
-                Text(stringResource(R.string.new_patient_title))
+                Text(
+                    stringResource(R.string.new_patient_title),
+                    style = RecordType.SectionTitle,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
             },
-            text = { Text(stringResource(R.string.new_patient_body)) },
+            text = {
+                Text(
+                    stringResource(R.string.new_patient_body),
+                    style = RecordType.FieldValue,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            },
             confirmButton = {
-                Button(onClick = { onEvent(AncEvent.HideNewPatientInfo) }) {
-                    Text(stringResource(R.string.close))
+                Button(
+                    onClick = { onEvent(AncEvent.HideNewPatientInfo) },
+                    shape = RecordShapes.Small,
+                    modifier = Modifier.minimumTouchTarget().testTag("newPatientInfoClose"),
+                ) {
+                    Text(stringResource(R.string.close), style = RecordType.Action)
                 }
             },
         )
@@ -306,28 +328,12 @@ fun AncApp(
     }
 
     if (unlocked && !isAppLocked && securitySettings?.needsPinSetup != true && state.showDiscardDialog) {
-        AlertDialog(
-            onDismissRequest = { onEvent(AncEvent.KeepEditing) },
-            title = {
-                Text(stringResource(R.string.discard_changes))
-            },
-            text = { Text(stringResource(R.string.discard_body)) },
-            confirmButton = {
-                Button(
-                    onClick = { onEvent(AncEvent.ConfirmDiscard) },
-                    modifier = Modifier.testTag("discardDialog"),
-                ) {
-                    Text(stringResource(R.string.discard))
-                }
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = { onEvent(AncEvent.KeepEditing) },
-                    modifier = Modifier.testTag("keepEditingDialog"),
-                ) {
-                    Text(stringResource(R.string.keep_editing))
-                }
-            },
+        DiscardChangesDialog(
+            onDiscard = { onEvent(AncEvent.ConfirmDiscard) },
+            onKeep = { onEvent(AncEvent.KeepEditing) },
+            dialogTag = "shellDiscardDialog",
+            confirmTag = "discardDialog",
+            keepTag = "keepEditingDialog",
         )
     }
 
@@ -351,37 +357,77 @@ fun AncApp(
             is DraftAge.Hours -> pluralStringResource(R.plurals.draft_age_hours, age.n.toInt(), age.n)
             is DraftAge.Days -> pluralStringResource(R.plurals.draft_age_days, age.n.toInt(), age.n)
         }
+        val dark = isDarkTheme()
         AlertDialog(
+            modifier = Modifier.testTag("draftRecoveryDialog"),
             onDismissRequest = {},
             properties = DialogProperties(
                 dismissOnBackPress = false,
                 dismissOnClickOutside = false,
             ),
+            shape = RecordShapes.Large,
+            containerColor = MaterialTheme.colorScheme.surface,
             title = {
-                Text(stringResource(R.string.draft_recovery_title))
+                Text(
+                    stringResource(R.string.draft_recovery_title),
+                    style = RecordType.SectionTitle,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
             },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(stringResource(R.string.draft_recovery_body, screenName, ageText))
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text(
+                        stringResource(R.string.draft_recovery_body, screenName, ageText),
+                        style = RecordType.FieldValue,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                     if (recoveryPrompt.isStale) {
-                        Text(stringResource(R.string.draft_recovery_stale))
+                        Surface(
+                            shape = RecordShapes.Small,
+                            color = if (dark) StatusModerateDarkBg else StatusModerateBg,
+                            border = BorderStroke(
+                                1.dp,
+                                if (dark) StatusModerateDarkBorder else StatusModerateBorder,
+                            ),
+                            modifier = Modifier.fillMaxWidth().testTag("draftRecoveryStaleBanner"),
+                        ) {
+                            Text(
+                                text = stringResource(R.string.draft_recovery_stale),
+                                style = RecordType.Secondary,
+                                color = if (dark) StatusModerateDarkText else StatusModerateText,
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                            )
+                        }
                     }
                 }
             },
             confirmButton = {
                 Button(
                     onClick = { onEvent(AncEvent.AcceptDraftRecovery) },
-                    modifier = Modifier.testTag("draftContinue"),
+                    shape = RecordShapes.Small,
+                    modifier = Modifier.minimumTouchTarget().testTag("draftContinue"),
                 ) {
-                    Text(stringResource(R.string.draft_recovery_continue))
+                    Text(
+                        stringResource(R.string.draft_recovery_continue),
+                        style = RecordType.Action,
+                        maxLines = 2,
+                        textAlign = TextAlign.Center,
+                    )
                 }
             },
             dismissButton = {
                 TextButton(
                     onClick = { onEvent(AncEvent.DiscardDraftRecovery) },
-                    modifier = Modifier.testTag("draftDiscard"),
+                    shape = RecordShapes.Small,
+                    modifier = Modifier.minimumTouchTarget().testTag("draftDiscard"),
                 ) {
-                    Text(stringResource(R.string.draft_recovery_discard))
+                    Text(
+                        stringResource(R.string.draft_recovery_discard),
+                        style = RecordType.Action,
+                        color = MaterialTheme.colorScheme.error,
+                        maxLines = 2,
+                        textAlign = TextAlign.Center,
+                    )
                 }
             },
         )

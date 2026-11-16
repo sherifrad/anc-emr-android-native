@@ -67,6 +67,7 @@ fun PreviousPregnancyEditor(
                 showTodayButton = false,
                 externalLabel = true,
                 useRecordStyle = true,
+                allowClear = true,
             )
 
             ChoiceGroup(

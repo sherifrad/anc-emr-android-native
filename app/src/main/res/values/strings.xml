@@ -1024,4 +1024,8 @@
     <string name="vault_status_opening">Opening</string>
     <string name="vault_status_unlocked">Unlocked</string>
     <string name="vault_status_closing">Closing</string>
+    <string name="camera_permission_title">Camera access needed</string>
+    <string name="clear_date">Clear</string>
+    <string name="date_picker_open_cd">Select %1$s</string>
+    <string name="date_field_value_cd">%1$s, %2$s</string>
 </resources>

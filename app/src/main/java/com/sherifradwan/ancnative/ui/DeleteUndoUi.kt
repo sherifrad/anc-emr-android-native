@@ -9,11 +9,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -26,6 +24,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
@@ -46,6 +45,9 @@ import com.sherifradwan.ancnative.state.UndoPhase
 import com.sherifradwan.ancnative.storage.DeletableRecord
 import com.sherifradwan.ancnative.storage.DeletableRegistry
 import com.sherifradwan.ancnative.storage.DeletableType
+import com.sherifradwan.ancnative.ui.components.FieldFamilies
+import com.sherifradwan.ancnative.ui.components.RecordShapes
+import com.sherifradwan.ancnative.ui.components.RecordType
 
 /** The one place that names a deletable kind to the user; every delete/Undo string takes this as its argument. */
 @StringRes
@@ -113,22 +115,46 @@ fun DeleteConfirmDialog(state: AncState, onEvent: (AncEvent) -> Unit) {
     AlertDialog(
         modifier = Modifier.testTag("deleteConfirmDialog"),
         onDismissRequest = { onEvent(AncEvent.CancelDelete) },
-        title = { Text(stringResource(R.string.delete_confirm_title, typeLabel)) },
-        text = { Text(stringResource(R.string.delete_confirm_body, label)) },
+        shape = RecordShapes.Large,
+        containerColor = MaterialTheme.colorScheme.surface,
+        title = {
+            Text(
+                stringResource(R.string.delete_confirm_title, typeLabel),
+                style = RecordType.SectionTitle,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+        },
+        text = {
+            Text(
+                stringResource(R.string.delete_confirm_body, label),
+                style = RecordType.FieldValue,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        },
         confirmButton = {
-            Button(
+            TextButton(
                 onClick = { onEvent(AncEvent.ConfirmDelete) },
+                shape = RecordShapes.Small,
                 modifier = Modifier.minimumTouchTarget().testTag("deleteConfirm"),
             ) {
-                Text(stringResource(R.string.delete))
+                Text(
+                    stringResource(R.string.delete),
+                    style = RecordType.Action,
+                    color = MaterialTheme.colorScheme.error,
+                )
             }
         },
         dismissButton = {
             TextButton(
                 onClick = { onEvent(AncEvent.CancelDelete) },
+                shape = RecordShapes.Small,
                 modifier = Modifier.minimumTouchTarget().testTag("deleteCancel"),
             ) {
-                Text(stringResource(R.string.cancel))
+                Text(
+                    stringResource(R.string.cancel),
+                    style = RecordType.Action,
+                    color = MaterialTheme.colorScheme.primary,
+                )
             }
         },
     )
@@ -164,7 +190,9 @@ private fun DeleteMessageBar(message: DeleteMessage, onEvent: (AncEvent) -> Unit
     Surface(
         color = MaterialTheme.colorScheme.errorContainer,
         contentColor = MaterialTheme.colorScheme.onErrorContainer,
-        shape = RoundedCornerShape(12.dp),
+        shape = RecordShapes.Small,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.error),
+        shadowElevation = 0.dp,
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 12.dp, vertical = 6.dp)
@@ -172,16 +200,26 @@ private fun DeleteMessageBar(message: DeleteMessage, onEvent: (AncEvent) -> Unit
             .semantics { liveRegion = LiveRegionMode.Assertive },
     ) {
         Row(
-            modifier = Modifier.padding(start = 16.dp, end = 8.dp, top = 4.dp, bottom = 4.dp),
+            modifier = Modifier.padding(start = 14.dp, end = 8.dp, top = 6.dp, bottom = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Text(text = text, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+            Text(
+                text = text,
+                style = RecordType.Secondary,
+                color = MaterialTheme.colorScheme.onErrorContainer,
+                modifier = Modifier.weight(1f),
+            )
             TextButton(
                 onClick = { onEvent(AncEvent.DismissDeleteMessage) },
+                shape = RecordShapes.Small,
                 modifier = Modifier.minimumTouchTarget().testTag("deleteMessageDismiss"),
             ) {
-                Text(stringResource(R.string.close))
+                Text(
+                    stringResource(R.string.close),
+                    style = RecordType.Action,
+                    color = MaterialTheme.colorScheme.onErrorContainer,
+                )
             }
         }
     }
@@ -202,12 +240,14 @@ private fun UndoOfferBar(offer: UndoOffer, deleteRunning: Boolean, onEvent: (Anc
     }
     val tail = if (patientName.isEmpty()) "" else stringResource(R.string.undo_message_patient_tail, patientName)
     val progressDescription = stringResource(R.string.undo_in_progress)
+    val patientBg = FieldFamilies.patient().container
+    val wrapLines = LocalDensity.current.fontScale > 1.3f
     Surface(
-        color = MaterialTheme.colorScheme.surfaceContainerHighest,
+        color = patientBg,
         contentColor = MaterialTheme.colorScheme.onSurface,
-        shape = RoundedCornerShape(12.dp),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-        shadowElevation = 2.dp,
+        shape = RecordShapes.Small,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+        shadowElevation = 0.dp,
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 12.dp, vertical = 6.dp)
@@ -215,43 +255,57 @@ private fun UndoOfferBar(offer: UndoOffer, deleteRunning: Boolean, onEvent: (Anc
             .semantics { liveRegion = LiveRegionMode.Polite },
     ) {
         Row(
-            modifier = Modifier.padding(start = 16.dp, end = 8.dp, top = 4.dp, bottom = 4.dp),
+            modifier = Modifier.padding(start = 14.dp, end = 8.dp, top = 4.dp, bottom = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Row(
-                modifier = Modifier.weight(1f).semantics { contentDescription = spoken },
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
+            if (wrapLines) {
                 Text(
-                    text = head,
-                    style = MaterialTheme.typography.bodyMedium,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f, fill = false),
+                    text = spoken,
+                    style = RecordType.Secondary,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 3,
+                    modifier = Modifier.weight(1f).semantics { contentDescription = spoken },
                 )
-                if (tail.isNotEmpty()) {
+            } else {
+                Row(
+                    modifier = Modifier.weight(1f).semantics { contentDescription = spoken },
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
                     Text(
-                        text = tail,
-                        style = MaterialTheme.typography.bodyMedium,
+                        text = head,
+                        style = RecordType.Secondary,
+                        color = MaterialTheme.colorScheme.onSurface,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.widthIn(max = 130.dp),
+                        modifier = Modifier.weight(1f, fill = false),
                     )
+                    if (tail.isNotEmpty()) {
+                        Text(
+                            text = tail,
+                            style = RecordType.Secondary,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.widthIn(max = 130.dp),
+                        )
+                    }
                 }
             }
             if (running) {
                 CircularProgressIndicator(
                     modifier = Modifier.size(20.dp).semantics { contentDescription = progressDescription },
                     strokeWidth = 2.dp,
+                    color = MaterialTheme.colorScheme.primary,
                 )
             }
             TextButton(
                 onClick = { onEvent(AncEvent.UndoRequested(offer.token)) },
                 enabled = !running && !deleteRunning,
+                shape = RecordShapes.Small,
                 modifier = Modifier.minimumTouchTarget().testTag("undoButton"),
             ) {
-                Text(stringResource(R.string.undo))
+                Text(stringResource(R.string.undo), style = RecordType.Action)
             }
         }
     }

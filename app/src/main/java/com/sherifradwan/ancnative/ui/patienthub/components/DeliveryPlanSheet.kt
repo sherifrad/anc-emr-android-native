@@ -45,6 +45,7 @@ import com.sherifradwan.ancnative.state.DeliveryPlanField
 import com.sherifradwan.ancnative.state.PatientDraft
 import com.sherifradwan.ancnative.state.SavePhase
 import com.sherifradwan.ancnative.state.SaveUiError
+import com.sherifradwan.ancnative.ui.ClinicalDateField
 import com.sherifradwan.ancnative.ui.components.FieldFamilies
 import com.sherifradwan.ancnative.ui.components.FormFieldLabel
 import com.sherifradwan.ancnative.ui.components.LocalFieldFamily
@@ -245,27 +246,27 @@ private fun DeliveryOutcomeSection(
                 PatientValidationError.DELIVERY_DATE_IN_FUTURE,
                 PatientValidationError.DELIVERY_DATE_BEFORE_DATING,
             ) }
-            OutlinedTextField(
+            val dateErrorMessage = when (dateError) {
+                PatientValidationError.DELIVERY_DATE_INVALID -> stringResource(R.string.delivery_error_date_invalid)
+                PatientValidationError.DELIVERY_DATE_IN_FUTURE -> stringResource(R.string.delivery_error_date_future)
+                PatientValidationError.DELIVERY_DATE_BEFORE_DATING -> stringResource(R.string.delivery_error_date_before_dating)
+                else -> null
+            }
+            ClinicalDateField(
                 value = draft.values.deliveryDate,
                 onValueChange = { onEvent(AncEvent.DeliveryOutcomeFieldChanged(DeliveryOutcomeField.DATE, it)) },
+                label = stringResource(R.string.delivery_outcome_date_label),
+                tag = "deliveryOutcomeDateField",
                 enabled = enabled,
-                singleLine = true,
-                label = { Text(stringResource(R.string.delivery_outcome_date_label)) },
-                isError = dateError != null,
-                supportingText = {
-                    when (dateError) {
-                        PatientValidationError.DELIVERY_DATE_INVALID -> Text(stringResource(R.string.delivery_error_date_invalid), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
-                        PatientValidationError.DELIVERY_DATE_IN_FUTURE -> Text(stringResource(R.string.delivery_error_date_future), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
-                        PatientValidationError.DELIVERY_DATE_BEFORE_DATING -> Text(stringResource(R.string.delivery_error_date_before_dating), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
-                        else -> Text(stringResource(R.string.delivery_outcome_date_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .revealOnFocus()
-                    .revealWhen(justDelivered || dateError != null)
-                    .testTag("deliveryOutcomeDateField"),
-                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.None),
+                error = dateError != null,
+                errorMessage = dateErrorMessage,
+                helperText = stringResource(R.string.delivery_outcome_date_hint),
+                showTodayButton = true,
+                allowClear = true,
+                externalLabel = true,
+                useRecordStyle = true,
+                modifier = Modifier.revealWhen(justDelivered || dateError != null),
+                fieldModifier = Modifier.revealOnFocus(),
             )
             Column(
                 verticalArrangement = Arrangement.spacedBy(8.dp),

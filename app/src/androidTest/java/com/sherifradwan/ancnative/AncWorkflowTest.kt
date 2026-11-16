@@ -196,7 +196,7 @@ class AncWorkflowTest {
             compose.onNodeWithTag("patientSearch").assertDoesNotExist()
             compose.onNodeWithTag("visitEditor").assertDoesNotExist()
             compose.onNodeWithTag("visitDate").assertDoesNotExist()
-            compose.onNodeWithText(TEST_PATIENT_IDENTITY).assertDoesNotExist()
+            compose.onNodeWithText(TEST_PATIENT_NAME).assertDoesNotExist()
             compose.onNodeWithText(TEST_DRAFT.notes).assertDoesNotExist()
         }
     }
@@ -239,8 +239,14 @@ class AncWorkflowTest {
                 "${fixture.layout.name} editor heading",
                 density,
             )
+            val editorTitle = localizedString(fixture.layout, R.string.add_visit)
             assertFullyWithinHost(
-                compose.onNodeWithText(TEST_PATIENT_IDENTITY).performScrollTo().assertIsDisplayed(),
+                compose.onNodeWithText(editorTitle).performScrollTo().assertIsDisplayed(),
+                "${fixture.layout.name} editor title",
+                density,
+            )
+            assertFullyWithinHost(
+                compose.onNodeWithText(TEST_PATIENT_NAME).performScrollTo().assertIsDisplayed(),
                 "${fixture.layout.name} patient identity",
                 density,
             )
@@ -1003,7 +1009,8 @@ class AncWorkflowTest {
         const val DEMO_BANNER = "Dr. Sherif Radwan Clinic"
         const val FIXTURE_HOST_TAG = "layoutFixtureHost"
         const val TEST_PATIENT_ID = "10000000-0000-4000-8000-000000000001"
-        const val TEST_PATIENT_IDENTITY = "Maya Example · Routine Antenatal Visit & Vitals"
+        const val TEST_PATIENT_NAME = "Maya Example"
+        const val TEST_PATIENT_IDENTITY = TEST_PATIENT_NAME
         const val P3_PATIENT_ID = "00000000-0000-4000-8000-000000000501"
         const val P3_PREGNANCY_ID = "00000000-0000-4000-8000-000000000502"
         const val P3_CREATE_OPERATION = "00000000-0000-4000-8000-000000000503"

@@ -41,6 +41,8 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.time.Instant
+import java.time.LocalDate
 import java.util.UUID
 
 /**
@@ -71,7 +73,7 @@ class DeliveryPlanSheetTest {
 
     private fun save() {
         val draft = state.patientDraft ?: return
-        val prepared = SavePatientProfileCommand.prepare(state, UUID.randomUUID().toString(), "2026-11-11T08:00:00Z")
+        val prepared = SavePatientProfileCommand.prepare(state, UUID.randomUUID().toString(), Instant.now().toString())
         if (prepared is PatientCommandPreparation.Rejected) {
             state = AncReducer.reduce(state, AncEvent.PatientValidationFailed(PatientEditorKind.PROFILE, prepared.errors))
             return
@@ -297,14 +299,20 @@ class DeliveryPlanSheetTest {
         clickInBody("deliveryOutcomeSwitch")
         node("deliveryOutcomeDateField").assertIsDisplayed()
         node("saveDeliveryPlan").assertIsEnabled()
-        type("deliveryOutcomeDateField", "2026-11-05")
+        node("deliveryOutcomeDateField").performScrollTo()
+        node("deliveryOutcomeDateFieldCalendarButton").performClick()
+        compose.waitForIdle()
+        node("ancDatePickerDialog").assertIsDisplayed()
+        node("datePickerConfirm").performClick()
+        compose.waitForIdle()
+        val expectedDate = LocalDate.now().toString()
         clickInBody("deliveryModeChip-caesarean")
         clickInBody("deliveryOutcomeChip-live_birth")
         click("saveDeliveryPlan")
         assertTrue(!exists("deliveryPlanSheet"))
         val command = commands.single()
         assertTrue(command.delivered)
-        assertEquals("2026-11-05", command.deliveryDate)
+        assertEquals(expectedDate, command.deliveryDate)
         assertEquals("caesarean", command.deliveryMode)
         assertEquals("live_birth", command.deliveryOutcome)
         assertEquals(planTab, state.route)
@@ -335,7 +343,22 @@ class DeliveryPlanSheetTest {
         host()
         openSheet()
         clickInBody("deliveryOutcomeSwitch")
-        type("deliveryOutcomeDateField", "not-a-date")
+        node("deliveryOutcomeDateField").performScrollTo().assertIsDisplayed()
+
+        // Field is read-only: clicking it opens the date picker dialog instead of accepting typed text
+        node("deliveryOutcomeDateField").performClick()
+        compose.waitForIdle()
+        node("ancDatePickerDialog").assertIsDisplayed()
+        node("datePickerDismiss").performClick()
+        compose.waitForIdle()
+
+        // When a malformed date is present in a restored draft, saving is rejected and shows the validation message
+        state = state.copy(
+            patientDraft = state.patientDraft?.copy(
+                values = state.patientDraft!!.values.copy(deliveryDate = "not-a-date"),
+            ),
+        )
+        compose.waitForIdle()
         click("saveDeliveryPlan")
         node("deliveryPlanSheet").assertIsDisplayed()
         compose.onNode(
@@ -350,7 +373,9 @@ class DeliveryPlanSheetTest {
         host()
         openSheet()
         clickInBody("deliveryOutcomeSwitch")
-        type("deliveryOutcomeDateField", "2026-11-05")
+        node("deliveryOutcomeDateField").performScrollTo().assertIsDisplayed()
+        node("deliveryOutcomeDateFieldTodayButton").performClick()
+        compose.waitForIdle()
         clickInBody("deliveryModeChip-vaginal")
         clickInBody("deliveryOutcomeSwitch")
         assertTrue(!exists("deliveryOutcomeDateField"))
