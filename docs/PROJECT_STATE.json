@@ -1706,20 +1706,20 @@
   "rd15": {
    "phase": "pRD",
    "order": 16,
-   "status": "active",
+   "status": "done",
    "title": "Slice 15: Ultrasound editor",
-   "ref": "",
-   "detail": "Mock approved. Building.",
+   "ref": "937be9f",
+   "detail": "Built by Hydrogen, tested by Flash (27 tests), alphacode and Sonnet-medium reviews passed, emulator green. Photo viewer dots are no longer tappable (approved design: prev/next buttons).",
    "owner": "Lane models",
    "updated": "2026-11-16"
   },
   "rd16": {
    "phase": "pRD",
    "order": 17,
-   "status": "todo",
+   "status": "active",
    "title": "Slice 16: Lab editor and lab batch",
    "ref": "",
-   "detail": "Mock first, owner approves.",
+   "detail": "Mock approved. Building.",
    "owner": "Lane models",
    "updated": "2026-11-16"
   },
@@ -1875,6 +1875,10 @@
   }
  },
  "log": [
+  {
+   "date": "2026-11-16",
+   "text": "Slice 15 (ultrasound editor and photo viewer) built, reviewed, tested, committed locally."
+  },
   {
    "date": "2026-11-16",
    "text": "Slice 14 (visit editor) built, reviewed, tested, committed locally."

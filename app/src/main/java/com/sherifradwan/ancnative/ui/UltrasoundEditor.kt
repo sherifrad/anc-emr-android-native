@@ -9,27 +9,25 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AddPhotoAlternate
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.PhotoCamera
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Button
-import androidx.compose.material3.FilterChip
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -37,11 +35,15 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.sherifradwan.ancnative.R
 import com.sherifradwan.ancnative.model.ClinicalVocabulary
@@ -58,6 +60,16 @@ import com.sherifradwan.ancnative.state.AncState
 import com.sherifradwan.ancnative.state.ClinicalValidationError
 import com.sherifradwan.ancnative.state.SavePhase
 import com.sherifradwan.ancnative.state.UltrasoundDraftField
+import com.sherifradwan.ancnative.ui.components.FieldFamilies
+import com.sherifradwan.ancnative.ui.components.LocalFieldFamily
+import com.sherifradwan.ancnative.ui.components.RecordFilterChip
+import com.sherifradwan.ancnative.ui.components.RecordSectionCard
+import com.sherifradwan.ancnative.ui.components.RecordShapes
+import com.sherifradwan.ancnative.ui.components.RecordSpacing
+import com.sherifradwan.ancnative.ui.components.RecordType
+import com.sherifradwan.ancnative.ui.components.SectionTextAction
+import com.sherifradwan.ancnative.ui.components.ltrIsolate
+import com.sherifradwan.ancnative.ui.patienthub.components.SheetCancelSaveRow
 import kotlin.math.abs
 
 private val GUIDED_FINDING_KEYS = listOf("fetalNumber", "presentation", "placenta", "liquor")
@@ -108,7 +120,8 @@ fun UltrasoundEditor(
     val patient = state.patient(route.patientId) ?: return
     val draft = state.ultrasoundDraft?.takeIf { it.patientId == route.patientId && it.scanId == route.scanId } ?: return
     val enabled = state.savePhase == SavePhase.IDLE || state.savePhase == SavePhase.ERROR
-    val context = LocalContext.current
+    val obstetricFamily = FieldFamilies.obstetric()
+    val narrowStacked = LocalDensity.current.fontScale > 1.3f
 
     var showCamera by remember { mutableStateOf(false) }
 
@@ -146,12 +159,12 @@ fun UltrasoundEditor(
 
     EditorPage(
         title = stringResource(R.string.ultrasound_editor),
-        subtitle = "${patient.displayName} · Ultrasound Examination & Fetal Biometry",
+        subtitle = patient.displayName,
         tag = "ultrasoundEditor",
+        useRecordStyle = true,
     ) {
-        GenericEditorErrorCard(draft.errors.isNotEmpty(), state)
+        GenericEditorErrorCard(draft.errors.isNotEmpty(), state, useRecordStyle = true)
 
-        // CARD 0: REPORT SO FAR / LIVE SUMMARY
         val liveReport = ultrasoundImpressionFromChoices(
             draft.values.fetalNumber,
             draft.values.presentation,
@@ -160,65 +173,94 @@ fun UltrasoundEditor(
         )
         val reportDisplayText = liveReport.ifBlank { stringResource(R.string.ultrasound_nothing_chosen_yet) }
 
-        SectionCard(
-            title = stringResource(R.string.ultrasound_report_so_far),
-            tag = "ultrasoundLiveSummary",
+        OutlinedCard(
+            modifier = Modifier.fillMaxWidth().testTag("ultrasoundLiveSummary"),
+            shape = RecordShapes.Large,
+            colors = CardDefaults.outlinedCardColors(containerColor = obstetricFamily.container),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
         ) {
-            Text(
-                text = reportDisplayText,
-                style = MaterialTheme.typography.bodyMedium,
-                color = if (liveReport.isBlank()) {
-                    MaterialTheme.colorScheme.onSurfaceVariant
-                } else {
-                    MaterialTheme.colorScheme.onSurface
-                },
-            )
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                OutlinedButton(
-                    onClick = {
-                        val newFn = draft.values.fetalNumber.ifBlank { NORMAL_FETAL_NUMBER }
-                        val newPr = draft.values.presentation.ifBlank { NORMAL_PRESENTATION }
-                        val newLq = draft.values.amnioticFluid.ifBlank { NORMAL_AMNIOTIC_FLUID }
-                        if (draft.values.fetalNumber.isBlank()) {
-                            onEvent(AncEvent.UltrasoundDraftChanged(UltrasoundDraftField.FETAL_NUMBER, NORMAL_FETAL_NUMBER))
-                        }
-                        if (draft.values.presentation.isBlank()) {
-                            onEvent(AncEvent.UltrasoundDraftChanged(UltrasoundDraftField.PRESENTATION, NORMAL_PRESENTATION))
-                        }
-                        if (draft.values.amnioticFluid.isBlank()) {
-                            onEvent(AncEvent.UltrasoundDraftChanged(UltrasoundDraftField.AMNIOTIC_FLUID, NORMAL_AMNIOTIC_FLUID))
-                        }
-                        openFindingKey = nextBlankFinding(newFn, newPr, draft.values.placentalSite, newLq)
+                Text(
+                    text = stringResource(R.string.ultrasound_report_so_far),
+                    style = RecordType.CardName,
+                    color = obstetricFamily.label,
+                    modifier = Modifier.semantics { heading() },
+                )
+                Text(
+                    text = reportDisplayText,
+                    style = if (liveReport.isBlank()) RecordType.Missing else RecordType.FieldValue,
+                    color = if (liveReport.isBlank()) {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    } else {
+                        MaterialTheme.colorScheme.onSurface
                     },
-                    enabled = enabled,
-                    modifier = Modifier.minimumTouchTarget().testTag("fillNormalScan"),
+                )
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    Text(stringResource(R.string.fill_normal_scan))
-                }
-                OutlinedButton(
-                    onClick = {
-                        onEvent(AncEvent.UltrasoundDraftChanged(UltrasoundDraftField.FETAL_NUMBER, ""))
-                        onEvent(AncEvent.UltrasoundDraftChanged(UltrasoundDraftField.PRESENTATION, ""))
-                        onEvent(AncEvent.UltrasoundDraftChanged(UltrasoundDraftField.PLACENTAL_SITE, ""))
-                        onEvent(AncEvent.UltrasoundDraftChanged(UltrasoundDraftField.AMNIOTIC_FLUID, ""))
-                        openFindingKey = nextBlankFinding("", "", "", "")
-                    },
-                    enabled = enabled,
-                    modifier = Modifier.minimumTouchTarget().testTag("clearFindings"),
-                ) {
-                    Text(stringResource(R.string.clear_findings))
+                    OutlinedButton(
+                        onClick = {
+                            val newFn = draft.values.fetalNumber.ifBlank { NORMAL_FETAL_NUMBER }
+                            val newPr = draft.values.presentation.ifBlank { NORMAL_PRESENTATION }
+                            val newLq = draft.values.amnioticFluid.ifBlank { NORMAL_AMNIOTIC_FLUID }
+                            if (draft.values.fetalNumber.isBlank()) {
+                                onEvent(AncEvent.UltrasoundDraftChanged(UltrasoundDraftField.FETAL_NUMBER, NORMAL_FETAL_NUMBER))
+                            }
+                            if (draft.values.presentation.isBlank()) {
+                                onEvent(AncEvent.UltrasoundDraftChanged(UltrasoundDraftField.PRESENTATION, NORMAL_PRESENTATION))
+                            }
+                            if (draft.values.amnioticFluid.isBlank()) {
+                                onEvent(AncEvent.UltrasoundDraftChanged(UltrasoundDraftField.AMNIOTIC_FLUID, NORMAL_AMNIOTIC_FLUID))
+                            }
+                            openFindingKey = nextBlankFinding(newFn, newPr, draft.values.placentalSite, newLq)
+                        },
+                        enabled = enabled,
+                        shape = RecordShapes.Small,
+                        border = BorderStroke(
+                            1.dp,
+                            if (enabled) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.outlineVariant,
+                        ),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            containerColor = MaterialTheme.colorScheme.surface,
+                            contentColor = MaterialTheme.colorScheme.primary,
+                        ),
+                        modifier = Modifier.minimumTouchTarget().testTag("fillNormalScan"),
+                    ) {
+                        Text(
+                            text = stringResource(R.string.fill_normal_scan),
+                            style = RecordType.Action,
+                        )
+                    }
+                    TextButton(
+                        onClick = {
+                            onEvent(AncEvent.UltrasoundDraftChanged(UltrasoundDraftField.FETAL_NUMBER, ""))
+                            onEvent(AncEvent.UltrasoundDraftChanged(UltrasoundDraftField.PRESENTATION, ""))
+                            onEvent(AncEvent.UltrasoundDraftChanged(UltrasoundDraftField.PLACENTAL_SITE, ""))
+                            onEvent(AncEvent.UltrasoundDraftChanged(UltrasoundDraftField.AMNIOTIC_FLUID, ""))
+                            openFindingKey = nextBlankFinding("", "", "", "")
+                        },
+                        enabled = enabled,
+                        shape = RecordShapes.Small,
+                        modifier = Modifier.minimumTouchTarget().testTag("clearFindings"),
+                    ) {
+                        Text(
+                            text = stringResource(R.string.clear_findings),
+                            style = RecordType.Action,
+                            color = if (enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                 }
             }
         }
 
-        // CARD 1: SCAN TIMING & GESTATIONAL AGE
-        SectionCard(
-            title = "1. Scan Timing & Gestational Age",
+        RecordSectionCard(
+            title = stringResource(R.string.ultrasound_timing_section),
+            family = obstetricFamily,
         ) {
-            // Date selection
             ClinicalDateField(
                 value = draft.values.date,
                 onValueChange = { onEvent(AncEvent.UltrasoundDraftChanged(UltrasoundDraftField.DATE, it)) },
@@ -228,45 +270,29 @@ fun UltrasoundEditor(
                 error = draft.errors.contains(ClinicalValidationError.REQUIRED_DATE) ||
                     draft.errors.contains(ClinicalValidationError.INVALID_DATE),
                 showTodayButton = true,
+                externalLabel = true,
+                useRecordStyle = true,
             )
 
-            // Automatic Gestational Age calculation suggestion
             val calculatedGa = GestationalAgeEngine.calculateGestationalAgeAt(patient.dating, draft.values.date)
             if (calculatedGa != null && calculatedGa.isPostConception) {
+                val gaShort = ltrIsolate(calculatedGa.shortWeeksText)
+                val isDifferent = draft.values.gaWeeks != calculatedGa.weeks.toString() ||
+                    draft.values.gaDays != calculatedGa.days.toString()
                 Surface(
                     modifier = Modifier.fillMaxWidth().testTag("scanCalculatedGaCard"),
-                    color = MaterialTheme.colorScheme.primaryContainer,
-                    shape = RoundedCornerShape(10.dp),
+                    color = obstetricFamily.container,
+                    shape = RecordShapes.Small,
                 ) {
                     Column(
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp).fillMaxWidth(),
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp).fillMaxWidth(),
                         verticalArrangement = Arrangement.spacedBy(4.dp),
                     ) {
                         Text(
-                            text = stringResource(R.string.calculated_ga_at_visit, calculatedGa.displayText),
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            text = stringResource(R.string.calculated_ga_at_visit, gaShort),
+                            style = RecordType.KeyValue,
+                            color = MaterialTheme.colorScheme.onSurface,
                         )
-                        val weeks = draft.values.gaWeeks.trim().toIntOrNull()
-                        val days = draft.values.gaDays.trim().toIntOrNull()
-                        if (weeks != null && weeks >= 0 && days != null && days in 0..6) {
-                            val advice = redatingAdvice(calculatedGa.totalDays, weeks * 7L + days)
-                            if (advice != null) {
-                                Text(
-                                    text = stringResource(
-                                        R.string.redating_hint,
-                                        abs(advice.differenceDays),
-                                        advice.thresholdDays,
-                                    ),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                    modifier = Modifier.testTag("redatingHint"),
-                                )
-                            }
-                        }
-                        val isDifferent = draft.values.gaWeeks != calculatedGa.weeks.toString() ||
-                            draft.values.gaDays != calculatedGa.days.toString()
                         if (isDifferent) {
                             TextButton(
                                 onClick = {
@@ -274,23 +300,56 @@ fun UltrasoundEditor(
                                     onEvent(AncEvent.UltrasoundDraftChanged(UltrasoundDraftField.GA_DAYS, calculatedGa.days.toString()))
                                 },
                                 enabled = enabled,
+                                shape = RecordShapes.Small,
                                 modifier = Modifier
                                     .align(Alignment.End)
+                                    .minimumTouchTarget()
                                     .testTag("applyScanGa"),
                             ) {
-                                Text(stringResource(R.string.apply_calculated_ga, calculatedGa.displayText))
+                                Text(
+                                    text = stringResource(R.string.apply_calculated_ga, gaShort),
+                                    style = RecordType.Action,
+                                )
                             }
+                        }
+                    }
+                }
+
+                val weeks = draft.values.gaWeeks.trim().toIntOrNull()
+                val days = draft.values.gaDays.trim().toIntOrNull()
+                if (weeks != null && weeks >= 0 && days != null && days in 0..6) {
+                    val advice = redatingAdvice(calculatedGa.totalDays, weeks * 7L + days)
+                    if (advice != null) {
+                        val isDark = isDarkTheme()
+                        Surface(
+                            modifier = Modifier.fillMaxWidth(),
+                            color = if (isDark) StatusModerateDarkBg else StatusModerateBg,
+                            border = BorderStroke(
+                                1.dp,
+                                if (isDark) StatusModerateDarkBorder else StatusModerateBorder,
+                            ),
+                            shape = RecordShapes.Small,
+                        ) {
+                            Text(
+                                text = stringResource(
+                                    R.string.redating_hint,
+                                    abs(advice.differenceDays),
+                                    advice.thresholdDays,
+                                ),
+                                style = RecordType.Secondary,
+                                color = if (isDark) StatusModerateDarkText else StatusModerateText,
+                                modifier = Modifier
+                                    .padding(horizontal = 12.dp, vertical = 10.dp)
+                                    .testTag("redatingHint"),
+                            )
                         }
                     }
                 }
             }
 
-            // Side-by-side Gestational Age inputs (Weeks & Days)
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                Box(modifier = Modifier.weight(1f)) {
+            AdaptiveFieldPair(
+                narrowStacked = narrowStacked,
+                first = {
                     EditorField(
                         value = draft.values.gaWeeks,
                         onValueChange = { onEvent(AncEvent.UltrasoundDraftChanged(UltrasoundDraftField.GA_WEEKS, it)) },
@@ -300,9 +359,13 @@ fun UltrasoundEditor(
                         error = draft.errors.contains(ClinicalValidationError.INVALID_GA_WEEKS),
                         singleLine = true,
                         keyboardType = KeyboardType.Number,
+                        imeAction = ImeAction.Next,
+                        shape = RecordShapes.Small,
+                        textStyle = RecordType.KeyValue,
+                        externalLabel = true,
                     )
-                }
-                Box(modifier = Modifier.weight(1f)) {
+                },
+                second = {
                     EditorField(
                         value = draft.values.gaDays,
                         onValueChange = { onEvent(AncEvent.UltrasoundDraftChanged(UltrasoundDraftField.GA_DAYS, it)) },
@@ -312,54 +375,67 @@ fun UltrasoundEditor(
                         error = draft.errors.contains(ClinicalValidationError.INVALID_GA_DAYS),
                         singleLine = true,
                         keyboardType = KeyboardType.Number,
+                        imeAction = ImeAction.Done,
+                        shape = RecordShapes.Small,
+                        textStyle = RecordType.KeyValue,
+                        externalLabel = true,
                     )
-                }
-            }
+                },
+            )
         }
 
-        // CARD 2: FETUS, PLACENTA & LIQUOR (GUIDED FINDINGS)
-        SectionCard(
-            title = stringResource(R.string.ultrasound_section_fetus_placenta_liquor),
-            tag = "ultrasoundFindingsCard",
-        ) {
-            val findings = listOf(
-                GuidedFinding(
-                    key = "fetalNumber",
-                    label = stringResource(R.string.fetal_number),
-                    value = draft.values.fetalNumber,
-                    choices = ClinicalVocabulary.fetalNumbers.toList(),
-                    tagPrefix = "fetalNumberChoice",
-                    field = UltrasoundDraftField.FETAL_NUMBER,
-                ),
-                GuidedFinding(
-                    key = "presentation",
-                    label = stringResource(R.string.fetal_presentation),
-                    value = draft.values.presentation,
-                    choices = ClinicalVocabulary.fetalPresentations.toList(),
-                    tagPrefix = "presentationChoice",
-                    field = UltrasoundDraftField.PRESENTATION,
-                ),
-                GuidedFinding(
-                    key = "placenta",
-                    label = stringResource(R.string.placental_site),
-                    value = draft.values.placentalSite,
-                    choices = ClinicalVocabulary.placentalSites.toList(),
-                    tagPrefix = "placentaChoice",
-                    field = UltrasoundDraftField.PLACENTAL_SITE,
-                ),
-                GuidedFinding(
-                    key = "liquor",
-                    label = stringResource(R.string.amniotic_fluid),
-                    value = draft.values.amnioticFluid,
-                    choices = ClinicalVocabulary.amnioticFluids.toList(),
-                    tagPrefix = "liquorChoice",
-                    field = UltrasoundDraftField.AMNIOTIC_FLUID,
-                ),
-            )
+        val findings = listOf(
+            GuidedFinding(
+                key = "fetalNumber",
+                label = stringResource(R.string.fetal_number),
+                value = draft.values.fetalNumber,
+                choices = ClinicalVocabulary.fetalNumbers.toList(),
+                tagPrefix = "fetalNumberChoice",
+                field = UltrasoundDraftField.FETAL_NUMBER,
+            ),
+            GuidedFinding(
+                key = "presentation",
+                label = stringResource(R.string.fetal_presentation),
+                value = draft.values.presentation,
+                choices = ClinicalVocabulary.fetalPresentations.toList(),
+                tagPrefix = "presentationChoice",
+                field = UltrasoundDraftField.PRESENTATION,
+            ),
+            GuidedFinding(
+                key = "placenta",
+                label = stringResource(R.string.placental_site),
+                value = draft.values.placentalSite,
+                choices = ClinicalVocabulary.placentalSites.toList(),
+                tagPrefix = "placentaChoice",
+                field = UltrasoundDraftField.PLACENTAL_SITE,
+            ),
+            GuidedFinding(
+                key = "liquor",
+                label = stringResource(R.string.amniotic_fluid),
+                value = draft.values.amnioticFluid,
+                choices = ClinicalVocabulary.amnioticFluids.toList(),
+                tagPrefix = "liquorChoice",
+                field = UltrasoundDraftField.AMNIOTIC_FLUID,
+            ),
+        )
+        val filledCount = findings.count { it.value.isNotBlank() }
 
+        RecordSectionCard(
+            title = stringResource(R.string.ultrasound_section_fetus_placenta_liquor),
+            family = obstetricFamily,
+            modifier = Modifier.testTag("ultrasoundFindingsCard"),
+            action = {
+                Text(
+                    text = stringResource(R.string.ultrasound_findings_progress, filledCount, findings.size),
+                    style = RecordType.FieldLabel,
+                    color = obstetricFamily.label,
+                    modifier = Modifier.padding(end = 12.dp),
+                )
+            },
+        ) {
             findings.forEachIndexed { index, finding ->
                 if (index > 0) {
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 }
                 if (openFindingKey == finding.key) {
                     Column(
@@ -385,6 +461,9 @@ fun UltrasoundEditor(
                                 }
                                 openFindingKey = nextKey
                             },
+                            labelStyle = RecordType.FieldLabel,
+                            labelColor = obstetricFamily.label,
+                            useRecordChip = true,
                         )
                     }
                 } else {
@@ -393,12 +472,21 @@ fun UltrasoundEditor(
                         value = finding.value,
                         tag = "findingRow-${finding.key}",
                         onClick = { openFindingKey = finding.key },
+                        useRecordStyle = true,
+                        // Omit the trailing action at > 1.3x scale so long values like "Oligohydramnios" leave label room.
+                        trailingActionText = if (narrowStacked) {
+                            null
+                        } else {
+                            stringResource(
+                                if (finding.value.isBlank()) R.string.ultrasound_finding_choose else R.string.action_edit,
+                            )
+                        },
+                        showDivider = false,
                     )
                 }
             }
         }
 
-        // CARD 3: FETAL BIOMETRY (MEASUREMENTS)
         val hasBiometry = draft.values.fetalHeartRate.isNotBlank() ||
             draft.values.biometryBpd.isNotBlank() ||
             draft.values.biometryHc.isNotBlank() ||
@@ -407,131 +495,147 @@ fun UltrasoundEditor(
             draft.values.estimatedFetalWeight.isNotBlank()
         var biometryExpanded by remember { mutableStateOf(hasBiometry) }
 
-        SectionCard(
-            title = "",
-            tag = "biometryCard",
+        OutlinedCard(
+            modifier = Modifier.fillMaxWidth().testTag("biometryCard"),
+            shape = RecordShapes.Large,
+            colors = CardDefaults.outlinedCardColors(containerColor = MaterialTheme.colorScheme.surface),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Column {
-                    Text(
-                        text = "3. Fetal Biometry",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary,
-                    )
-                    Text(
-                        text = "BPD, HC, AC, FL, FHR & EFW",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-                TextButton(
-                    onClick = { biometryExpanded = !biometryExpanded },
-                    modifier = Modifier.minimumTouchTarget().testTag("toggleBiometry"),
+            CompositionLocalProvider(LocalFieldFamily provides obstetricFamily) {
+                Column(
+                    modifier = Modifier.padding(start = 16.dp, end = 4.dp, top = 4.dp, bottom = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(RecordSpacing.M),
                 ) {
-                    Text(if (biometryExpanded) "▲ Collapse" else "▼ Expand Biometry")
-                }
-            }
-            if (biometryExpanded) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                    Box(modifier = Modifier.weight(1f)) {
-                        EditorField(
-                            value = draft.values.fetalHeartRate,
-                            onValueChange = { onEvent(AncEvent.UltrasoundDraftChanged(UltrasoundDraftField.FETAL_HEART_RATE, it)) },
-                            label = stringResource(R.string.fetal_heart_rate),
-                            tag = "fetalHeartRate",
-                            enabled = enabled,
-                            singleLine = true,
-                            keyboardType = KeyboardType.Number,
+                    Row(
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(modifier = Modifier.weight(1f).padding(vertical = 6.dp)) {
+                            Text(
+                                text = stringResource(R.string.ultrasound_biometry_section),
+                                style = RecordType.SectionTitle,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.semantics { heading() },
+                            )
+                            Text(
+                                text = stringResource(R.string.ultrasound_biometry_summary),
+                                style = RecordType.Secondary,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        val toggleLabel = stringResource(
+                            if (biometryExpanded) R.string.action_collapse else R.string.action_expand,
+                        )
+                        SectionTextAction(
+                            text = toggleLabel,
+                            contentDescription = toggleLabel,
+                            onClick = { biometryExpanded = !biometryExpanded },
+                            modifier = Modifier.testTag("toggleBiometry"),
                         )
                     }
-                    Box(modifier = Modifier.weight(1f)) {
-                        EditorField(
-                            value = draft.values.estimatedFetalWeight,
-                            onValueChange = { onEvent(AncEvent.UltrasoundDraftChanged(UltrasoundDraftField.ESTIMATED_FETAL_WEIGHT, it)) },
-                            label = stringResource(R.string.estimated_fetal_weight),
-                            tag = "efw",
-                            enabled = enabled,
-                            singleLine = true,
-                            keyboardType = KeyboardType.Number,
-                        )
-                    }
-                }
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                    Box(modifier = Modifier.weight(1f)) {
-                        EditorField(
-                            value = draft.values.biometryBpd,
-                            onValueChange = { onEvent(AncEvent.UltrasoundDraftChanged(UltrasoundDraftField.BIOMETRY_BPD, it)) },
-                            label = stringResource(R.string.biometry_bpd),
-                            tag = "biometryBpd",
-                            enabled = enabled,
-                            singleLine = true,
-                            keyboardType = KeyboardType.Decimal,
-                        )
-                    }
-                    Box(modifier = Modifier.weight(1f)) {
-                        EditorField(
-                            value = draft.values.biometryHc,
-                            onValueChange = { onEvent(AncEvent.UltrasoundDraftChanged(UltrasoundDraftField.BIOMETRY_HC, it)) },
-                            label = stringResource(R.string.biometry_hc),
-                            tag = "biometryHc",
-                            enabled = enabled,
-                            singleLine = true,
-                            keyboardType = KeyboardType.Decimal,
-                        )
-                    }
-                }
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                    Box(modifier = Modifier.weight(1f)) {
-                        EditorField(
-                            value = draft.values.biometryAc,
-                            onValueChange = { onEvent(AncEvent.UltrasoundDraftChanged(UltrasoundDraftField.BIOMETRY_AC, it)) },
-                            label = stringResource(R.string.biometry_ac),
-                            tag = "biometryAc",
-                            enabled = enabled,
-                            singleLine = true,
-                            keyboardType = KeyboardType.Decimal,
-                        )
-                    }
-                    Box(modifier = Modifier.weight(1f)) {
-                        EditorField(
-                            value = draft.values.biometryFl,
-                            onValueChange = { onEvent(AncEvent.UltrasoundDraftChanged(UltrasoundDraftField.BIOMETRY_FL, it)) },
-                            label = stringResource(R.string.biometry_fl),
-                            tag = "biometryFl",
-                            enabled = enabled,
-                            singleLine = true,
-                            keyboardType = KeyboardType.Decimal,
-                        )
+                    if (biometryExpanded) {
+                        Column(
+                            modifier = Modifier.fillMaxWidth().padding(end = 12.dp),
+                            verticalArrangement = Arrangement.spacedBy(RecordSpacing.M),
+                        ) {
+                            AdaptiveFieldPair(
+                                narrowStacked = narrowStacked,
+                                first = {
+                                    BiometryNumberField(
+                                        value = draft.values.fetalHeartRate,
+                                        field = UltrasoundDraftField.FETAL_HEART_RATE,
+                                        labelRes = R.string.fetal_heart_rate,
+                                        tag = "fetalHeartRate",
+                                        enabled = enabled,
+                                        keyboardType = KeyboardType.Number,
+                                        onEvent = onEvent,
+                                    )
+                                },
+                                second = {
+                                    BiometryNumberField(
+                                        value = draft.values.estimatedFetalWeight,
+                                        field = UltrasoundDraftField.ESTIMATED_FETAL_WEIGHT,
+                                        labelRes = R.string.estimated_fetal_weight,
+                                        tag = "efw",
+                                        enabled = enabled,
+                                        keyboardType = KeyboardType.Number,
+                                        onEvent = onEvent,
+                                    )
+                                },
+                            )
+                            AdaptiveFieldPair(
+                                narrowStacked = narrowStacked,
+                                first = {
+                                    BiometryNumberField(
+                                        value = draft.values.biometryBpd,
+                                        field = UltrasoundDraftField.BIOMETRY_BPD,
+                                        labelRes = R.string.biometry_bpd,
+                                        tag = "biometryBpd",
+                                        enabled = enabled,
+                                        keyboardType = KeyboardType.Decimal,
+                                        onEvent = onEvent,
+                                    )
+                                },
+                                second = {
+                                    BiometryNumberField(
+                                        value = draft.values.biometryHc,
+                                        field = UltrasoundDraftField.BIOMETRY_HC,
+                                        labelRes = R.string.biometry_hc,
+                                        tag = "biometryHc",
+                                        enabled = enabled,
+                                        keyboardType = KeyboardType.Decimal,
+                                        onEvent = onEvent,
+                                    )
+                                },
+                            )
+                            AdaptiveFieldPair(
+                                narrowStacked = narrowStacked,
+                                first = {
+                                    BiometryNumberField(
+                                        value = draft.values.biometryAc,
+                                        field = UltrasoundDraftField.BIOMETRY_AC,
+                                        labelRes = R.string.biometry_ac,
+                                        tag = "biometryAc",
+                                        enabled = enabled,
+                                        keyboardType = KeyboardType.Decimal,
+                                        onEvent = onEvent,
+                                    )
+                                },
+                                second = {
+                                    BiometryNumberField(
+                                        value = draft.values.biometryFl,
+                                        field = UltrasoundDraftField.BIOMETRY_FL,
+                                        labelRes = R.string.biometry_fl,
+                                        tag = "biometryFl",
+                                        enabled = enabled,
+                                        keyboardType = KeyboardType.Decimal,
+                                        imeAction = ImeAction.Done,
+                                        onEvent = onEvent,
+                                    )
+                                },
+                            )
+                        }
                     }
                 }
             }
         }
 
-        // CARD 4: CLINICAL IMPRESSION
-        SectionCard(
-            title = "4. Clinical Impression",
+        val impressionLabel = stringResource(R.string.scan_impression)
+        RecordSectionCard(
+            title = impressionLabel,
+            family = obstetricFamily,
         ) {
             EditorField(
                 value = draft.values.impression,
                 onValueChange = { onEvent(AncEvent.UltrasoundDraftChanged(UltrasoundDraftField.IMPRESSION, it)) },
-                label = stringResource(R.string.scan_impression),
+                label = "",
                 tag = "impression",
+                modifier = Modifier.semantics { contentDescription = impressionLabel },
                 enabled = enabled,
                 singleLine = false,
+                shape = RecordShapes.Small,
+                textStyle = RecordType.FieldValue,
+                externalLabel = false,
             )
 
             val generatedImpression = ultrasoundImpressionFromChoices(
@@ -547,48 +651,50 @@ fun UltrasoundEditor(
                     onEvent(AncEvent.UltrasoundDraftChanged(UltrasoundDraftField.IMPRESSION, merged))
                 },
                 enabled = enabled && generatedImpression.isNotBlank(),
+                shape = RecordShapes.Small,
+                border = BorderStroke(
+                    1.dp,
+                    if (enabled && generatedImpression.isNotBlank()) {
+                        MaterialTheme.colorScheme.outline
+                    } else {
+                        MaterialTheme.colorScheme.outlineVariant
+                    },
+                ),
                 modifier = Modifier
                     .minimumTouchTarget()
                     .testTag("impressionFromChoices"),
             ) {
-                Text(stringResource(R.string.impression_from_choices))
-            }
-
-            // Security Vault Indicator
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Icon(
-                    Icons.Default.Lock,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.tertiary,
-                    modifier = Modifier.size(16.dp),
-                )
-                Spacer(Modifier.width(6.dp))
                 Text(
-                    text = "Ultrasound records and scans encrypted locally (AES-256 GCM) · Hardware Vault Security",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    text = stringResource(R.string.impression_from_choices),
+                    style = RecordType.Action,
                 )
             }
         }
 
-        // CARD 5: MORE (PHOTOS & LINKED VISIT)
-        Surface(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            color = MaterialTheme.colorScheme.surface,
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
-            tonalElevation = 1.dp,
+        OutlinedCard(
+            onClick = { moreExpanded = !moreExpanded },
+            modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp).testTag("ultrasoundMoreToggle"),
+            shape = RecordShapes.Large,
+            colors = CardDefaults.outlinedCardColors(containerColor = MaterialTheme.colorScheme.surface),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
         ) {
-            Box(modifier = Modifier.padding(horizontal = 16.dp, vertical = 2.dp)) {
-                SummaryRow(
-                    label = stringResource(R.string.ultrasound_more),
-                    value = if (moreExpanded) stringResource(R.string.more_close) else stringResource(R.string.more_open),
-                    tag = "ultrasoundMoreToggle",
-                    onClick = { moreExpanded = !moreExpanded },
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 12.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = stringResource(R.string.ultrasound_more),
+                    style = RecordType.CardName,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.weight(1f).padding(end = 8.dp),
+                )
+                Text(
+                    text = stringResource(if (moreExpanded) R.string.more_close else R.string.more_open),
+                    style = RecordType.Action,
+                    color = MaterialTheme.colorScheme.primary,
                 )
             }
         }
@@ -598,64 +704,76 @@ fun UltrasoundEditor(
                 modifier = Modifier.fillMaxWidth().testTag("ultrasoundMoreSection"),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                // Attachments / Scan Photos Card
-                SectionCard(
+                RecordSectionCard(
                     title = stringResource(R.string.scan_attachments),
-                    tag = "scanAttachmentsCard",
+                    family = obstetricFamily,
+                    modifier = Modifier.testTag("scanAttachmentsCard"),
                 ) {
                     if (draft.values.imageUris.isEmpty()) {
                         Text(
                             text = stringResource(R.string.no_photos_attached),
-                            style = MaterialTheme.typography.bodySmall,
+                            style = RecordType.Secondary,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     } else {
-                        FlowRow(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            draft.values.imageUris.forEachIndexed { index, _ ->
-                                Surface(
-                                    color = MaterialTheme.colorScheme.secondaryContainer,
-                                    shape = RoundedCornerShape(8.dp),
-                                    modifier = Modifier.testTag("attachmentItem-$index"),
+                        draft.values.imageUris.forEachIndexed { index, _ ->
+                            Surface(
+                                color = obstetricFamily.container,
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                                shape = RecordShapes.Small,
+                                modifier = Modifier.fillMaxWidth().testTag("attachmentItem-$index"),
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .heightIn(min = 48.dp)
+                                        .padding(start = 12.dp, end = 4.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically,
                                 ) {
-                                    Row(
-                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                    Text(
+                                        text = stringResource(R.string.scan_photo_n, index + 1),
+                                        style = RecordType.KeyValue,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        modifier = Modifier.weight(1f).padding(end = 8.dp),
+                                    )
+                                    IconButton(
+                                        onClick = {
+                                            val updated = draft.values.imageUris.toMutableList().apply { removeAt(index) }
+                                            onEvent(AncEvent.UltrasoundDraftChanged(UltrasoundDraftField.IMAGE_URIS, updated.joinToString(",")))
+                                        },
+                                        enabled = enabled,
+                                        modifier = Modifier.minimumTouchTarget().testTag("removePhoto-$index"),
                                     ) {
-                                        Text(
-                                            text = "Photo ${index + 1}",
-                                            style = MaterialTheme.typography.labelMedium,
+                                        Icon(
+                                            Icons.Default.Close,
+                                            contentDescription = stringResource(R.string.remove_photo),
+                                            tint = MaterialTheme.colorScheme.error,
                                         )
-                                        IconButton(
-                                            onClick = {
-                                                val updated = draft.values.imageUris.toMutableList().apply { removeAt(index) }
-                                                onEvent(AncEvent.UltrasoundDraftChanged(UltrasoundDraftField.IMAGE_URIS, updated.joinToString(",")))
-                                            },
-                                            enabled = enabled,
-                                            modifier = Modifier.minimumTouchTarget().testTag("removePhoto-$index"),
-                                        ) {
-                                            Text("✕", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error)
-                                        }
                                     }
                                 }
                             }
                         }
                     }
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         Button(
                             onClick = { showCamera = true },
                             enabled = enabled,
-                            modifier = Modifier.minimumTouchTarget().testTag("captureScanPhotoCamera"),
+                            shape = RecordShapes.Small,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(min = 48.dp)
+                                .minimumTouchTarget()
+                                .testTag("captureScanPhotoCamera"),
                         ) {
-                            Icon(Icons.Default.PhotoCamera, contentDescription = null, modifier = Modifier.size(16.dp))
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text("Take Photo", maxLines = 1, softWrap = false)
+                            Text(
+                                text = stringResource(R.string.attachment_take_photo),
+                                style = RecordType.Action,
+                                textAlign = TextAlign.Center,
+                            )
                         }
 
                         OutlinedButton(
@@ -665,67 +783,89 @@ fun UltrasoundEditor(
                                 )
                             },
                             enabled = enabled,
-                            modifier = Modifier.minimumTouchTarget().testTag("addScanPhoto"),
+                            shape = RecordShapes.Small,
+                            border = BorderStroke(
+                                1.dp,
+                                if (enabled) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.outlineVariant,
+                            ),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(min = 48.dp)
+                                .minimumTouchTarget()
+                                .testTag("addScanPhoto"),
                         ) {
-                            Icon(Icons.Default.AddPhotoAlternate, contentDescription = null, modifier = Modifier.size(16.dp))
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text("Choose Image", maxLines = 1, softWrap = false)
+                            Text(
+                                text = stringResource(R.string.attachment_gallery),
+                                style = RecordType.Action,
+                                textAlign = TextAlign.Center,
+                            )
                         }
                     }
                 }
 
-                // Link with Visit Card
-                SectionCard(
+                RecordSectionCard(
                     title = stringResource(R.string.link_to_visit),
-                    tag = "linkedVisitCard",
+                    family = obstetricFamily,
+                    modifier = Modifier.testTag("linkedVisitCard"),
                 ) {
                     if (draft.values.linkedVisitId.isNotBlank()) {
                         val linkedVisit = patient.visits.firstOrNull { it.id == draft.values.linkedVisitId }
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
+                        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                            Text(
+                                text = stringResource(
+                                    R.string.ultrasound_linked_visit_title,
+                                    ltrIsolate(linkedVisit?.date ?: draft.values.linkedVisitId),
+                                ),
+                                style = RecordType.KeyValue,
+                                color = MaterialTheme.colorScheme.onSurface,
+                            )
+                            if (linkedVisit?.bloodPressure != null || linkedVisit?.weight != null) {
                                 Text(
-                                    text = stringResource(R.string.link_to_visit) + ": " + (linkedVisit?.date ?: draft.values.linkedVisitId),
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = FontWeight.SemiBold,
+                                    text = stringResource(
+                                        R.string.ultrasound_linked_visit_vitals,
+                                        ltrIsolate(linkedVisit.bloodPressure ?: "-"),
+                                        ltrIsolate(formatWeightKg(linkedVisit.weight) ?: "-"),
+                                    ),
+                                    style = RecordType.Secondary,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
-                                if (linkedVisit?.bloodPressure != null || linkedVisit?.weight != null) {
-                                    Text(
-                                        text = "BP: ${linkedVisit.bloodPressure ?: "-"} · Wt: ${formatWeightKg(linkedVisit.weight) ?: "-"}",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    )
-                                }
                             }
-                            OutlinedButton(
-                                onClick = { onEvent(AncEvent.UltrasoundDraftChanged(UltrasoundDraftField.LINKED_VISIT, "")) },
-                                enabled = enabled,
-                                modifier = Modifier.minimumTouchTarget().testTag("unlinkVisit"),
-                            ) {
-                                Text(stringResource(R.string.unlink_visit))
-                            }
+                        }
+                        OutlinedButton(
+                            onClick = { onEvent(AncEvent.UltrasoundDraftChanged(UltrasoundDraftField.LINKED_VISIT, "")) },
+                            enabled = enabled,
+                            shape = RecordShapes.Small,
+                            border = BorderStroke(
+                                1.dp,
+                                if (enabled) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.outlineVariant,
+                            ),
+                            modifier = Modifier.minimumTouchTarget().testTag("unlinkVisit"),
+                        ) {
+                            Text(
+                                text = stringResource(R.string.unlink_visit),
+                                style = RecordType.Action,
+                            )
                         }
                     } else {
                         Text(
                             text = stringResource(R.string.no_linked_visit),
-                            style = MaterialTheme.typography.bodySmall,
+                            style = RecordType.Secondary,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                         if (patient.visits.isNotEmpty()) {
                             FlowRow(
                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                verticalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalArrangement = Arrangement.spacedBy(4.dp),
                             ) {
                                 patient.visits.forEach { visit ->
-                                    FilterChip(
+                                    RecordFilterChip(
                                         selected = false,
+                                        label = visit.date,
                                         onClick = { onEvent(AncEvent.UltrasoundDraftChanged(UltrasoundDraftField.LINKED_VISIT, visit.id)) },
+                                        tag = "linkVisit-${visit.id}",
                                         enabled = enabled,
-                                        label = { Text(visit.date) },
-                                        modifier = Modifier.minimumTouchTarget().testTag("linkVisit-${visit.id}"),
+                                        wrap = true,
+                                        minTouchTarget = true,
                                     )
                                 }
                             }
@@ -735,11 +875,67 @@ fun UltrasoundEditor(
             }
         }
 
-        EditorActions(
+        SheetCancelSaveRow(
             enabled = enabled,
-            saveTag = "saveUltrasound",
+            saving = state.savePhase == SavePhase.PENDING,
+            saveEnabled = enabled,
+            savingLabel = stringResource(if (state.savePhase == SavePhase.PENDING) R.string.saving_label else R.string.save),
             onCancel = { onEvent(AncEvent.CancelEditor) },
             onSave = { onEvent(AncEvent.SubmitUltrasound) },
+            cancelTag = "cancelUltrasound",
+            saveTag = "saveUltrasound",
+            spinnerTag = "ultrasoundSaveSpinner",
         )
     }
+}
+
+@Composable
+private fun AdaptiveFieldPair(
+    narrowStacked: Boolean,
+    first: @Composable () -> Unit,
+    second: @Composable () -> Unit,
+) {
+    if (narrowStacked) {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(RecordSpacing.M),
+        ) {
+            first()
+            second()
+        }
+    } else {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(RecordSpacing.S),
+        ) {
+            Box(modifier = Modifier.weight(1f)) { first() }
+            Box(modifier = Modifier.weight(1f)) { second() }
+        }
+    }
+}
+
+@Composable
+private fun BiometryNumberField(
+    value: String,
+    field: UltrasoundDraftField,
+    labelRes: Int,
+    tag: String,
+    enabled: Boolean,
+    keyboardType: KeyboardType,
+    imeAction: ImeAction = ImeAction.Next,
+    onEvent: (AncEvent) -> Unit,
+) {
+    EditorField(
+        value = value,
+        onValueChange = { onEvent(AncEvent.UltrasoundDraftChanged(field, it)) },
+        label = stringResource(labelRes),
+        tag = tag,
+        enabled = enabled,
+        singleLine = true,
+        keyboardType = keyboardType,
+        imeAction = imeAction,
+        shape = RecordShapes.Small,
+        textStyle = RecordType.KeyValue,
+        externalLabel = true,
+    )
 }

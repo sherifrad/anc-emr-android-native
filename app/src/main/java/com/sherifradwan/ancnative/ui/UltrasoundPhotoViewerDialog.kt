@@ -1,42 +1,32 @@
 package com.sherifradwan.ancnative.ui
 
-import com.sherifradwan.ancnative.R
-
-import com.sherifradwan.ancnative.storage.BoundedBitmap
-import com.sherifradwan.ancnative.storage.PatientAttachmentVault
-import com.sherifradwan.ancnative.storage.scanPhotoFileName
-import com.sherifradwan.ancnative.ui.components.ZoomableImage
 import android.net.Uri
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -45,19 +35,34 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.sherifradwan.ancnative.R
 import com.sherifradwan.ancnative.model.DemoUltrasoundScan
+import com.sherifradwan.ancnative.storage.BoundedBitmap
+import com.sherifradwan.ancnative.storage.PatientAttachmentVault
+import com.sherifradwan.ancnative.storage.scanPhotoFileName
+import com.sherifradwan.ancnative.ui.components.PlainField
+import com.sherifradwan.ancnative.ui.components.RecordShapes
+import com.sherifradwan.ancnative.ui.components.RecordType
+import com.sherifradwan.ancnative.ui.components.ZoomableImage
+import com.sherifradwan.ancnative.ui.components.ltrIsolate
+
+private data class ViewerBiometryItem(
+    val label: String,
+    val value: String,
+    val isMeasurement: Boolean,
+)
 
 @Composable
 fun UltrasoundPhotoViewerDialog(
@@ -97,100 +102,89 @@ fun UltrasoundPhotoViewerDialog(
     ) {
         Card(
             modifier = Modifier
-                .fillMaxWidth(0.94f)
-                .padding(vertical = 24.dp)
+                .fillMaxWidth(0.95f)
+                .padding(vertical = 16.dp)
+                .heightIn(max = (LocalConfiguration.current.screenHeightDp - 32).dp)
                 .testTag("ultrasoundPhotoViewerDialog"),
-            shape = RoundedCornerShape(20.dp),
+            shape = RecordShapes.Large,
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(20.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp),
+                    .verticalScroll(rememberScrollState())
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                // Header: Scan date, index, and dismiss button
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    ) {
-                        Surface(
-                            shape = CircleShape,
-                            color = MaterialTheme.colorScheme.primaryContainer,
-                            modifier = Modifier.size(38.dp),
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(
-                                    Icons.Default.PhotoCamera,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                    modifier = Modifier.size(20.dp),
-                                )
-                            }
-                        }
-                        Column {
-                            Text(
-                                text = "Ultrasound Scan: ${scan.date}",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface,
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = stringResource(R.string.ultrasound_viewer_title, ltrIsolate(scan.date)),
+                            style = RecordType.CardName,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                        val subtitleText = if (scan.gestationalAgeWeeks != null) {
+                            stringResource(
+                                R.string.ultrasound_viewer_photo_of_ga,
+                                currentIndex + 1,
+                                scan.imageUris.size,
+                                ltrIsolate("${scan.gestationalAgeWeeks}+${scan.gestationalAgeDays ?: 0} wks"),
                             )
-                            val gaText = if (scan.gestationalAgeWeeks != null) {
-                                " · ${scan.gestationalAgeWeeks}+${scan.gestationalAgeDays ?: 0} wks"
-                            } else ""
-                            Text(
-                                text = "Photo ${currentIndex + 1} of ${scan.imageUris.size}$gaText",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        } else {
+                            stringResource(
+                                R.string.ultrasound_viewer_photo_of,
+                                currentIndex + 1,
+                                scan.imageUris.size,
                             )
                         }
+                        Text(
+                            text = subtitleText,
+                            style = RecordType.Secondary,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
                     }
 
                     IconButton(
                         onClick = onDismiss,
-                        modifier = Modifier.testTag("closePhotoViewer"),
+                        modifier = Modifier.minimumTouchTarget().testTag("closePhotoViewer"),
                     ) {
                         Icon(
                             Icons.Default.Close,
-                            contentDescription = "Close photo viewer",
+                            contentDescription = stringResource(R.string.close),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                 }
 
-                // Viewport Box: show the stored image or report that it is unavailable.
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(280.dp)
-                        .clip(RoundedCornerShape(14.dp))
-                        .background(MaterialTheme.colorScheme.surfaceContainerLowest)
-                        .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(14.dp)),
+                        .clip(RecordShapes.Small)
+                        .background(Color.Black)
+                        .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RecordShapes.Small),
                     contentAlignment = Alignment.Center,
                 ) {
                     if (loadedBitmap != null) {
                         ZoomableImage(
                             bitmap = loadedBitmap,
-                            contentDescription = "Ultrasound Scan Photo ${currentIndex + 1}",
+                            contentDescription = stringResource(R.string.ultrasound_viewer_photo_cd, currentIndex + 1),
                             resetKey = currentIndex,
                             modifier = Modifier.fillMaxSize(),
                         )
                     } else {
                         Text(
                             text = stringResource(R.string.image_unavailable),
+                            style = RecordType.FieldValue,
+                            color = Color.LightGray,
                             modifier = Modifier.testTag("image_unavailable"),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                 }
 
-                // Pager Controls: If multiple images exist
                 if (scan.imageUris.size > 1) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -202,17 +196,20 @@ fun UltrasoundPhotoViewerDialog(
                                 if (currentIndex > 0) currentIndex--
                             },
                             enabled = currentIndex > 0,
-                            modifier = Modifier.testTag("prevPhotoButton"),
+                            modifier = Modifier.minimumTouchTarget().testTag("prevPhotoButton"),
                         ) {
                             Icon(
                                 Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Previous Photo",
+                                contentDescription = stringResource(R.string.previous_photo),
                                 tint = if (currentIndex > 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
                             )
                         }
 
-                        // Dot indicators
-                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.clearAndSetSemantics {},
+                        ) {
                             scan.imageUris.indices.forEach { idx ->
                                 Box(
                                     modifier = Modifier
@@ -221,8 +218,7 @@ fun UltrasoundPhotoViewerDialog(
                                         .background(
                                             if (idx == currentIndex) MaterialTheme.colorScheme.primary
                                             else MaterialTheme.colorScheme.outlineVariant,
-                                        )
-                                        .clickable { currentIndex = idx },
+                                        ),
                                 )
                             }
                         }
@@ -232,66 +228,107 @@ fun UltrasoundPhotoViewerDialog(
                                 if (currentIndex < scan.imageUris.lastIndex) currentIndex++
                             },
                             enabled = currentIndex < scan.imageUris.lastIndex,
-                            modifier = Modifier.testTag("nextPhotoButton"),
+                            modifier = Modifier.minimumTouchTarget().testTag("nextPhotoButton"),
                         ) {
                             Icon(
                                 Icons.AutoMirrored.Filled.ArrowForward,
-                                contentDescription = "Next Photo",
+                                contentDescription = stringResource(R.string.next_photo),
                                 tint = if (currentIndex < scan.imageUris.lastIndex) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
                             )
                         }
                     }
                 }
 
-                // Biometrics Summary Pills
-                FlowRow(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(6.dp),
-                ) {
+                val biometrics = buildList {
                     if (!scan.fetalHeartRate.isNullOrBlank()) {
-                        FactBadge("FHR: ${scan.fetalHeartRate} bpm")
+                        add(
+                            ViewerBiometryItem(
+                                label = stringResource(R.string.biometry_fhr),
+                                value = ltrIsolate(stringResource(R.string.unit_bpm, scan.fetalHeartRate)),
+                                isMeasurement = true,
+                            ),
+                        )
                     }
                     if (!scan.estimatedFetalWeight.isNullOrBlank()) {
-                        FactBadge("EFW: ${scan.estimatedFetalWeight} g")
+                        add(
+                            ViewerBiometryItem(
+                                label = stringResource(R.string.biometry_efw),
+                                value = ltrIsolate(stringResource(R.string.unit_g, scan.estimatedFetalWeight)),
+                                isMeasurement = true,
+                            ),
+                        )
                     }
                     if (!scan.biometryBpd.isNullOrBlank()) {
-                        FactBadge("BPD: ${scan.biometryBpd} mm")
+                        add(
+                            ViewerBiometryItem(
+                                label = stringResource(R.string.biometry_bpd),
+                                value = ltrIsolate(stringResource(R.string.unit_mm, scan.biometryBpd)),
+                                isMeasurement = true,
+                            ),
+                        )
                     }
                     if (!scan.biometryFl.isNullOrBlank()) {
-                        FactBadge("FL: ${scan.biometryFl} mm")
+                        add(
+                            ViewerBiometryItem(
+                                label = stringResource(R.string.biometry_fl),
+                                value = ltrIsolate(stringResource(R.string.unit_mm, scan.biometryFl)),
+                                isMeasurement = true,
+                            ),
+                        )
                     }
                     if (!scan.presentation.isNullOrBlank()) {
-                        FactBadge("Presentation: ${scan.presentation}")
+                        add(
+                            ViewerBiometryItem(
+                                label = stringResource(R.string.fetal_presentation),
+                                value = scan.presentation,
+                                isMeasurement = false,
+                            ),
+                        )
                     }
                 }
 
-                // Close Button
+                if (biometrics.isNotEmpty()) {
+                    val columns = if (LocalDensity.current.fontScale > 1.3f) 2 else 3
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                    ) {
+                        biometrics.chunked(columns).forEach { rowItems ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            ) {
+                                rowItems.forEach { item ->
+                                    PlainField(
+                                        label = item.label,
+                                        value = item.value,
+                                        modifier = Modifier.weight(1f),
+                                        emphasis = item.isMeasurement,
+                                    )
+                                }
+                                repeat(columns - rowItems.size) {
+                                    Spacer(Modifier.weight(1f))
+                                }
+                            }
+                        }
+                    }
+                }
+
                 Button(
                     onClick = onDismiss,
+                    shape = RecordShapes.Small,
                     modifier = Modifier
                         .fillMaxWidth()
+                        .heightIn(min = 48.dp)
+                        .minimumTouchTarget()
                         .testTag("dismissPhotoViewer"),
                 ) {
-                    Text("Close Viewer", fontWeight = FontWeight.SemiBold)
+                    Text(
+                        text = stringResource(R.string.close),
+                        style = RecordType.Action,
+                    )
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun FactBadge(text: String) {
-    Surface(
-        shape = RoundedCornerShape(6.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant,
-    ) {
-        Text(
-            text = text,
-            style = MaterialTheme.typography.labelSmall,
-            fontWeight = FontWeight.Medium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-        )
     }
 }

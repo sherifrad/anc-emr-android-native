@@ -215,7 +215,7 @@
     <string name="fill_normal_scan">Fill normal scan</string>
     <string name="clear_findings">Clear findings</string>
     <string name="impression_from_choices">From my choices</string>
-    <string name="ultrasound_section_fetus_placenta_liquor">2. Fetus, Placenta &amp; Amniotic Fluid</string>
+    <string name="ultrasound_section_fetus_placenta_liquor">Fetus, placenta and amniotic fluid</string>
     <string name="active_pregnancy_episode">Active pregnancy episode</string>
     <string name="milestones">Clinical milestones</string>
     <string name="first_trimester">First trimester (&lt; 14w)</string>
@@ -807,4 +807,18 @@
     <string name="visit_recorded_values_section">Recorded values</string>
     <string name="visit_stepper_decrease">Decrease %1$s</string>
     <string name="visit_stepper_increase">Increase %1$s</string>
+    <string name="ultrasound_timing_section">Scan timing and gestational age</string>
+    <string name="ultrasound_biometry_section">Fetal biometry</string>
+    <string name="ultrasound_biometry_summary">BPD, HC, AC, FL, FHR and EFW</string>
+    <string name="ultrasound_findings_progress">%1$d of %2$d set</string>
+    <string name="ultrasound_finding_choose">Choose</string>
+    <string name="ultrasound_linked_visit_title">Linked visit: %1$s</string>
+    <string name="ultrasound_linked_visit_vitals">BP %1$s, weight %2$s</string>
+    <string name="ultrasound_viewer_title">Ultrasound scan, %1$s</string>
+    <string name="ultrasound_viewer_photo_of">Photo %1$d of %2$d</string>
+    <string name="ultrasound_viewer_photo_of_ga">Photo %1$d of %2$d, %3$s</string>
+    <string name="ultrasound_viewer_photo_cd">Ultrasound scan photo %1$d</string>
+    <string name="previous_photo">Previous photo</string>
+    <string name="next_photo">Next photo</string>
+    <string name="unit_g">%1$s g</string>
 </resources>
