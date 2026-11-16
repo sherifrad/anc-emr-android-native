@@ -1866,15 +1866,19 @@
   "rd39": {
    "phase": "pRD",
    "order": 39,
-   "status": "active",
+   "status": "done",
    "title": "Documentation cleanup and single source of truth",
    "ref": "",
-   "detail": "This file (docs/PROJECT_STATE.json) is now the only progress record; handoffs and logs are merged or archived. Plan: docs/cleanup/PLAN.md.",
+   "detail": "Local cleanup committed (246eb27). Remote main still holds the old files until the owner approves a push.",
    "owner": "",
    "updated": "2026-11-16"
   }
  },
  "log": [
+  {
+   "date": "2026-11-16",
+   "text": "Docs cleanup done locally: 74,284 tracked files down to 1,512; progress now only in docs/PROJECT_STATE.json. Not pushed."
+  },
   {
    "date": "2026-11-16",
    "text": "Slices 12 and 13 built, reviewed, tested and committed locally; QA copy installed on the phone."
