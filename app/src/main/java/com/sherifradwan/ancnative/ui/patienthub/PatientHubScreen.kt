@@ -153,7 +153,6 @@ fun PatientHubScreen(
     val medicationDraft = state.medicationSheetDraft()
     val deliveryPlanDraft = state.deliveryPlanSheetDraft(patient.id)
 
-    // Dialog state holders
     var viewingPhotoScan by remember(patient.id) { mutableStateOf<DemoUltrasoundScan?>(null) }
     var viewingPhotoIndex by remember(patient.id) { mutableIntStateOf(0) }
     var viewingAttachment by remember(patient.id) { mutableStateOf<DemoAttachment?>(null) }
@@ -179,7 +178,6 @@ fun PatientHubScreen(
                 .fillMaxSize()
                 .padding(horizontal = horizontalPadding),
         ) {
-            // Collapsible Header (Hero to Sticky Bar)
             PatientHubHeader(
                 patient = patient,
                 headerState = headerState,
@@ -198,7 +196,6 @@ fun PatientHubScreen(
                 onOpenAttentionDialog = { showAttentionDialog = true },
             )
 
-            // Horizontal Pager with 6 modular tabs
             HorizontalPager(
                 state = pagerState,
                 beyondViewportPageCount = 1,
@@ -293,7 +290,6 @@ fun PatientHubScreen(
             )
         }
 
-        // Modal Dialog Hosts
         if (viewingPhotoScan != null) {
             UltrasoundPhotoViewerDialog(
                 patientId = patient.id,

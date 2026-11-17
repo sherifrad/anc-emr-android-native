@@ -186,7 +186,6 @@ fun PatientHubHeader(
                         .padding(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 12.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
-                    // Top Action Bar
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -249,7 +248,6 @@ fun PatientHubHeader(
                         }
                     }
 
-                    // Patient Name
                     Text(
                         text = patient.displayName,
                         style = RecordType.HeaderName,
@@ -259,7 +257,6 @@ fun PatientHubHeader(
                             .testTag("hubPatientName"),
                     )
 
-                    // Clinical badges / tags flow row
                     val isHigh = isHighRisk(patient.riskLevel)
                     val isModerate = !isHigh && parseRiskTier(patient.riskLevel) == PatientRiskTier.MEDIUM
                     val bp = patient.visits.firstOrNull()?.bloodPressure
@@ -309,7 +306,6 @@ fun PatientHubHeader(
                         }
                     }
 
-                    // Facts row
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -389,7 +385,6 @@ fun PatientHubHeader(
                         }
                     }
 
-                    // Compact Clinical Attention Strip (36dp min height)
                     if (hasAttention) {
                         CompactClinicalAttentionStrip(
                             attention = patient.clinicalAttention,
