@@ -52,6 +52,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -105,6 +106,7 @@ fun SecuritySettingsDialog(
     onRestoreBackup: ((ByteArray, CharArray, (BackupInspectionResult) -> Unit) -> Unit)? = null,
 ) {
     val context = LocalContext.current
+    val resources = LocalResources.current
     val activity = context as? Activity
     var settingsState by remember { mutableStateOf(securityRepo.settings.value) }
     var editedClinicName by remember(settingsState.clinicName) { mutableStateOf(settingsState.clinicName) }
@@ -725,10 +727,10 @@ fun SecuritySettingsDialog(
                                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                             }
                             context.startActivity(Intent.createChooser(shareIntent, backupShareTitle))
-                            backupStatusMessage = context.getString(R.string.security_backup_export_ok, backupBytes.size)
+                            backupStatusMessage = resources.getString(R.string.security_backup_export_ok, backupBytes.size)
                             isBackupError = false
                         } catch (e: Exception) {
-                            backupStatusMessage = context.getString(R.string.security_backup_share_error, e.message ?: "")
+                            backupStatusMessage = resources.getString(R.string.security_backup_share_error, e.message ?: "")
                             isBackupError = true
                         }
                     } else {
@@ -828,7 +830,7 @@ fun SecuritySettingsDialog(
                             isBackupError = true
                         }
                         is BackupInspectionResult.Error -> {
-                            backupStatusMessage = context.getString(R.string.security_restore_error, result.reason)
+                            backupStatusMessage = resources.getString(R.string.security_restore_error, result.reason)
                             isBackupError = true
                         }
                     }

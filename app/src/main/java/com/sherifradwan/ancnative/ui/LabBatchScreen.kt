@@ -51,6 +51,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
@@ -95,6 +96,7 @@ fun LabBatchScreen(state: AncState, route: AncRoute.LabBatchEditor, onEvent: (An
     val patient = state.patient(route.patientId) ?: return
     val draft = state.labBatchDraft ?: return
     val context = LocalContext.current
+    val resources = LocalResources.current
     val catalogRepo = remember { ClinicalCatalogRepository.getInstance(context) }
     val catalogItems by catalogRepo.labCatalogItems.collectAsState()
     val catalogGroups by catalogRepo.labCategoryGroups.collectAsState()
@@ -146,7 +148,7 @@ fun LabBatchScreen(state: AncState, route: AncRoute.LabBatchEditor, onEvent: (An
                 val newGroup = LabCategoryGroup(
                     id = "custom_group_" + UUID.randomUUID().toString(),
                     name = name.trim(),
-                    description = context.getString(R.string.lab_batch_elements_count, testNames.size),
+                    description = resources.getString(R.string.lab_batch_elements_count, testNames.size),
                     testNames = testNames,
                     isCustom = true,
                 )

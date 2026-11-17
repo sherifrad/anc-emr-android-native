@@ -93,6 +93,9 @@ import com.sherifradwan.ancnative.ui.patienthub.components.sortedForDisplay
 import java.time.LocalDate
 import kotlin.math.roundToInt
 
+private const val FSI = "\u2068"
+private const val PDI = "\u2069"
+
 @Stable
 class PatientHubHeaderState(
     collapsedHeightPx: Float = 0f,
@@ -611,7 +614,7 @@ fun CompactClinicalAttentionStrip(
                     color = colors.accent,
                 )
                 Text(
-                    text = "⁨$headline⁩",
+                    text = "${FSI}$headline${PDI}",
                     style = RecordType.Secondary,
                     color = colors.content,
                     maxLines = 2,
@@ -625,7 +628,7 @@ fun CompactClinicalAttentionStrip(
                     border = BorderStroke(1.dp, colors.accent),
                 ) {
                     Text(
-                        text = "⁨$moreSuffix⁩",
+                        text = "${FSI}$moreSuffix${PDI}",
                         style = RecordType.Tag,
                         color = colors.accent,
                         modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp),
