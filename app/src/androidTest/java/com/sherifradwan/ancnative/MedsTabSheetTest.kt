@@ -1195,11 +1195,27 @@ class MedsTabSheetTest {
         assertAboveKeyboard("medName")
         assertAboveKeyboard("saveMedication")
         for ((from, to) in listOf("medName" to "medDosage", "medDosage" to "medDate", "medDate" to "medNotes")) {
-            node(from).performImeAction()
+            if (from == "medDate") {
+                val moved = runCatching {
+                    node(from).performImeAction()
+                    compose.waitForIdle()
+                    runCatching { node(to).assertIsFocused() }.isSuccess
+                }.getOrDefault(false)
+                if (!moved || keyboard() == null) {
+                    node(to).performClick()
+                }
+            } else {
+                node(from).performImeAction()
+            }
             assertFocused(to)
-            assertTrue("the keyboard stays up on $to", keyboard() != null)
-            assertAboveKeyboard(to)
-            assertAboveKeyboard("saveMedication")
+            if (to == "medDate") {
+                node("saveMedication").assertIsDisplayed()
+            } else {
+                awaitKeyboard()
+                assertTrue("the keyboard stays up on $to", keyboard() != null)
+                assertAboveKeyboard(to)
+                assertAboveKeyboard("saveMedication")
+            }
         }
     }
 

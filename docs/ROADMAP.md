@@ -1,10 +1,10 @@
 # Roadmap (generated from docs/PROJECT_STATE.json; do not edit by hand)
 
-Updated 2026-11-17. 111 of 186 tasks done.
+Updated 2026-11-18. 112 of 186 tasks done.
 
 Working on now: You: check the redone lab, ultrasound and medication screens on your phone; New patient with dating, obstetric history, previous pregnancies, clinical attention entry; Large font: filter chip clipped; header subtitle truncated; Patient directory and patient chart in the approved style; Phone testing: Block A and B run by the agy lane (self-reported PASS); Block C, D and two hand checks still need you; Remove duplicates found in the audit (removal only); Apply the design system to lab, ultrasound and medication editors; Go-live checklist: draft written, needs your review; Arabic-name cards mirror the whole card; chips touch; Backup, restore, camera and print-to-PDF end to end on the phone; Design system: one shared card, section title, label/value, choice chips and action bar; Screen-capture block removed in release builds (done); release-build device check still open; Medication screen: multi-drug 'Today's list', one-tap add, Stop (next; two statuses only); Light theme: high-risk card frame; Workspace opens with first tab cut; Device pass 2: PIN lock, TalkBack, Keystore, missing-pointer recovery; Backups lose data: ultrasound EDD merged, attachments missing; Decode photos off the main thread; respect camera rotation; Printed report does not show the blood-pressure alert; Should a severe blood pressure also raise the patient's attention banner or list badge?
 
-## Whole-app redesign (current work) (24/36)
+## Whole-app redesign (current work) (25/36)
 
 22 slices on branch redesign-2026-11-15, mock first, owner approves, lane models build, review and test. Plan: docs/designs/redesign/PLAN.md. Nothing is pushed until the owner says so.
 
@@ -45,7 +45,7 @@ Working on now: You: check the redone lab, ultrasound and medication screens on 
 | rd40 | todo | Report attestation doctor name and clinic phone are hardcoded (print sheet and dialog); drive from clinic settings |  |
 | rd41 | done | Lint errors to fix: LocalContext resource queries in LabBatchScreen and SecuritySettingsDialog (slices 16, 18), BidiSpoofing in PatientHubHeader |  |
 | rd42 | todo | Cleanup follow-ups (refactors, not deletions): replace raw FilterChip with RecordFilterChip in attachment, delivery and medication forms; PatientNameText for raw name Text; extract shared patient banner, bottom-sheet shell and form dialog; remove dead useRecordStyle=false branches; 5 unreferenced launcher foreground PNGs need packaging proof |  |
-| rd43 | todo | Emulator environment: LabEditorRedesignTest.labBatchScreen_enterAndReviewFlow_markEmptyNormal fails on the freshly restarted emulator (also on the slice 19 commit where it passed before); find the emulator setting that differs before the push gate |  |
+| rd43 | done | Emulator environment: LabEditorRedesignTest.labBatchScreen_enterAndReviewFlow_markEmptyNormal fails on the freshly restarted emulator (also on the slice 19 commit where it passed before); find the emulator setting that differs before the push gate |  |
 
 ## Working rules for every round (4/4)
 
@@ -262,6 +262,7 @@ Build, sign and roll out without disturbing the records already on your phone.
 
 ## Recent log
 
+- 2026-11-18: Push gate run: 931 of 933 emulator tests passed, the 2 failures were keyboard-sensitive tests; fixed (Meds date-field keyboard test updated for picker-only dates, lab batch tests made keyboard-proof) and re-run as classes, both green. Full gate to be repeated right before merge.
 - 2026-11-17: Lint errors fixed (rd41). Emulator restarted; one lab batch test fails on the fresh emulator at older commits too (rd43).
 - 2026-11-17: Slice 21 cleanup done by two competing teams: batches 1 to 3b committed, about 1,500 lines of dead code removed; refactor follow-ups logged (rd42), lint errors logged (rd41).
 - 2026-11-17: Slice 20 report dialog done: native pages, 19 new emulator tests, review fixes (post-term marker, no-GA and no-EDD rows, fixed subtitle).

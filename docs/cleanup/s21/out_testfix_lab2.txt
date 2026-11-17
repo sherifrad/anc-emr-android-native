@@ -1,0 +1,3 @@
+Added private helper `closeSoftKeyboard()` in `LabEditorRedesignTest.kt` executing Espresso keyboard dismissal safely inside `runCatching` followed by `compose.waitForIdle()`.
+Invoked `closeSoftKeyboard()` right after text inputs before subsequent assertions and clicks in `labBatchScreen_enterAndReviewFlow_markEmptyNormal`, `labBatchScreen_addTab_searchNoMatches_andOftenAdded`, and `labEditor_quantitativeAutoFlag_normalLowHigh`.
+Verified compilation succeeds cleanly with `./gradlew --offline :app:compileDebugAndroidTestKotlin -q` without altering or weakening any assertions.

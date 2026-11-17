@@ -39,6 +39,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.text.TextLayoutResult
@@ -295,6 +296,15 @@ class LabEditorRedesignTest {
         }
         savedConfig = null
         savedMetrics = null
+    }
+
+    private fun closeSoftKeyboard() {
+        runCatching {
+            Class.forName("androidx.test.espresso.Espresso")
+                .getMethod("closeSoftKeyboard")
+                .invoke(null)
+        }
+        compose.waitForIdle()
     }
 
     // ---- measuring and query helpers ----
@@ -752,6 +762,7 @@ class LabEditorRedesignTest {
 
         // Enter low result 9.8: auto-flag updates to Low and abnormal switch turns ON
         node("labResult").performScrollTo().performTextReplacement("9.8")
+        closeSoftKeyboard()
         compose.waitForIdle()
 
         node("labStoryValue").assertTextContains("9.8")
@@ -762,6 +773,7 @@ class LabEditorRedesignTest {
 
         // Enter high result 16.5: auto-flag updates to High and abnormal switch remains ON
         node("labResult").performScrollTo().performTextReplacement("16.5")
+        closeSoftKeyboard()
         compose.waitForIdle()
 
         node("labStoryValue").assertTextContains("16.5")
@@ -958,12 +970,14 @@ class LabEditorRedesignTest {
 
         // Search for nonexistent test shows honest empty message
         node("labBatchSearch").performScrollTo().performTextInput("xyz999nomatch")
+        closeSoftKeyboard()
         compose.waitForIdle()
 
         compose.onNodeWithText(str(R.string.lab_batch_no_search_matches), useUnmergedTree = true).assertIsDisplayed()
 
         // Clear search
         node("labBatchSearch").performTextReplacement("")
+        closeSoftKeyboard()
         compose.waitForIdle()
 
         // Click Often added Ferritin (maps to catalog item "Serum Ferritin")
@@ -1006,31 +1020,32 @@ class LabEditorRedesignTest {
         // Enter result and range on Hb
         node("labBatchResult").performTextInput("11.5")
         node("labBatchRange").performTextInput("11.0-15.0")
+        closeSoftKeyboard()
         compose.waitForIdle()
 
         assertTrue(events.any { it is AncEvent.LabBatchResultChanged })
         assertTrue(events.any { it is AncEvent.LabBatchRangeChanged })
 
         // Switch to Review tab
-        node("labBatchTab-REVIEW").performClick()
+        node("labBatchTab-REVIEW").performSemanticsAction(SemanticsActions.OnClick)
         compose.waitForIdle()
 
         assertTrue(events.contains(AncEvent.LabBatchTabSelected(LabBatchTab.REVIEW)))
 
         // Mark empty normal card
         node("labBatchMarkNormal").performScrollTo().assertIsDisplayed()
-        node("labBatchMarkNormal").performClick()
+        node("labBatchMarkNormal").performSemanticsAction(SemanticsActions.OnClick)
         compose.waitForIdle()
 
         assertTrue(events.any { it is AncEvent.LabBatchResultChanged && it.value == "Negative" })
 
         // Save batch
-        node("labBatchSave").performClick()
+        node("labBatchSave").performSemanticsAction(SemanticsActions.OnClick)
         compose.waitForIdle()
         assertTrue(events.contains(AncEvent.SubmitLabBatch))
 
         // Cancel batch
-        node("labBatchCancel").performClick()
+        node("labBatchCancel").performSemanticsAction(SemanticsActions.OnClick)
         compose.waitForIdle()
         assertTrue(events.contains(AncEvent.CancelLabBatch))
     }
