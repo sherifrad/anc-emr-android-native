@@ -1,27 +1,15 @@
 package com.sherifradwan.ancnative.ui
 
 import androidx.annotation.StringRes
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
@@ -30,49 +18,6 @@ import androidx.compose.ui.unit.dp
 import com.sherifradwan.ancnative.R
 import com.sherifradwan.ancnative.model.BpLevel
 import com.sherifradwan.ancnative.model.bpLevel
-
-/**
- * Dedicated maternal-age badge: a solid indigo "AGE" label segment joined to
- * a soft indigo value segment, so age reads as its own clinical identity.
- */
-@Composable
-fun PatientAgeBadge(ageText: String?, modifier: Modifier = Modifier, large: Boolean = false) {
-    val cleanAge = formatAgeYears(ageText) ?: return
-    val dark = isDarkTheme()
-    val bg = if (dark) TagAgeDarkBg else TagAgeBg
-    val border = if (dark) TagAgeDarkBorder else TagAgeBorder
-    val text = if (dark) TagAgeDarkText else TagAgeText
-    val labelBg = if (dark) TagAgeLabelDarkBg else TagAgeLabelBg
-    val valueStyle = if (large) MaterialTheme.typography.labelLarge else MaterialTheme.typography.labelMedium
-
-    Surface(
-        shape = RoundedCornerShape(6.dp),
-        color = bg,
-        border = BorderStroke(1.dp, border),
-        modifier = modifier
-            .testTag("patientAgeBadge")
-            .clearAndSetSemantics { contentDescription = "Age $cleanAge years" },
-    ) {
-        Row(Modifier.height(IntrinsicSize.Min), verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                text = "AGE",
-                style = MaterialTheme.typography.labelSmall,
-                fontWeight = FontWeight.Bold,
-                color = TagAgeLabelText,
-                modifier = Modifier
-                    .background(labelBg)
-                    .padding(horizontal = 6.dp, vertical = if (large) 5.dp else 3.dp),
-            )
-            Text(
-                text = "$cleanAge yrs",
-                style = valueStyle,
-                fontWeight = FontWeight.Bold,
-                color = text,
-                modifier = Modifier.padding(horizontal = 7.dp, vertical = if (large) 4.dp else 2.dp),
-            )
-        }
-    }
-}
 
 /**
  * Alert badge for abnormal blood pressure (Q87). Renders nothing when bpAlertResource is null.
@@ -113,97 +58,6 @@ internal fun BpAlertChip(@StringRes textRes: Int, isSevere: Boolean, modifier: M
     }
 }
 
-@Composable
-internal fun ClinicalTagBadge(
-    text: String,
-    showWarningIcon: Boolean = false,
-    isError: Boolean = true,
-    isWarning: Boolean = false,
-    isModerate: Boolean = false,
-    modifier: Modifier = Modifier,
-) {
-    val isDark = isDarkTheme()
-    val (bgColor, borderColor, textColor) = if (isModerate) {
-        if (isDark) {
-            Triple(TagModerateRiskDarkBg, TagModerateRiskDarkBorder, TagModerateRiskDarkText)
-        } else {
-            Triple(TagModerateRiskBg, TagModerateRiskBorder, TagModerateRiskText)
-        }
-    } else if (isWarning) {
-        if (isDark) {
-            Triple(ClinicalCardTokens.WarningDarkBg, ClinicalCardTokens.WarningDarkBorder, ClinicalCardTokens.WarningDarkText)
-        } else {
-            Triple(ClinicalCardTokens.WarningBg, ClinicalCardTokens.WarningBorder, ClinicalCardTokens.WarningText)
-        }
-    } else if (isError) {
-        if (isDark) {
-            Triple(TagHighRiskDarkBg, TagHighRiskDarkBorder, TagHighRiskDarkText)
-        } else {
-            Triple(TagHighRiskBg, TagHighRiskBorder, TagHighRiskText)
-        }
-    } else {
-        if (isDark) {
-            Triple(TagNormalRiskDarkBg, TagNormalRiskDarkBorder, TagNormalRiskDarkText)
-        } else {
-            Triple(TagNormalRiskBg, TagNormalRiskBorder, TagNormalRiskText)
-        }
-    }
-    Surface(
-        shape = RoundedCornerShape(6.dp),
-        color = bgColor,
-        border = BorderStroke(1.dp, borderColor),
-        modifier = modifier,
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
-        ) {
-            if (showWarningIcon) {
-                Icon(
-                    Icons.Default.Warning,
-                    contentDescription = null,
-                    tint = textColor,
-                    modifier = Modifier.size(14.dp),
-                )
-            }
-            Text(
-                text = text,
-                color = textColor,
-                style = MaterialTheme.typography.labelSmall,
-                fontWeight = if (isError) FontWeight.Bold else FontWeight.SemiBold,
-            )
-        }
-    }
-}
-
-@Composable
-fun ClinicalRiskBadge(isHighRisk: Boolean, modifier: Modifier = Modifier, isModerate: Boolean = false) {
-    if (isModerate && !isHighRisk) {
-        ClinicalTagBadge(
-            text = stringResource(R.string.moderate_risk),
-            showWarningIcon = false,
-            isError = false,
-            isModerate = true,
-            modifier = modifier,
-        )
-    } else if (isHighRisk) {
-        ClinicalTagBadge(
-            text = stringResource(R.string.high_risk),
-            showWarningIcon = true,
-            isError = true,
-            modifier = modifier,
-        )
-    } else {
-        ClinicalTagBadge(
-            text = stringResource(R.string.normal_risk_filter),
-            showWarningIcon = false,
-            isError = false,
-            modifier = modifier,
-        )
-    }
-}
-
 /**
  * Medication status badge (Q205):
  * Design language: only the risk badge is coloured, so Active, Completed and Discontinued are neutral
@@ -233,85 +87,6 @@ fun MedicationStatusBadge(status: String, modifier: Modifier = Modifier) {
     }
 }
 
-/**
- * Canonical Blood Group Badge.
- * Highlights Rh-negative status prominently with TagBloodNegative tokens as a critical clinical flag.
- * Supports dark mode automatically via isDarkTheme().
- */
-@Composable
-fun BloodGroupBadge(bloodGroup: String?, modifier: Modifier = Modifier) {
-    val formatted = formatBloodGroup(bloodGroup) ?: return
-    val dark = isDarkTheme()
-    val isRhNeg = isRhNegative(bloodGroup)
-    val bg = if (isRhNeg) {
-        if (dark) TagBloodNegativeDarkBg else TagBloodNegativeBg
-    } else {
-        if (dark) TagBloodPositiveDarkBg else TagBloodPositiveBg
-    }
-    val border = if (isRhNeg) {
-        if (dark) TagBloodNegativeDarkBorder else TagBloodNegativeBorder
-    } else {
-        if (dark) TagBloodPositiveDarkBorder else TagBloodPositiveBorder
-    }
-    val text = if (isRhNeg) {
-        if (dark) TagBloodNegativeDarkText else TagBloodNegativeText
-    } else {
-        if (dark) TagBloodPositiveDarkText else TagBloodPositiveText
-    }
-
-    Surface(
-        shape = RoundedCornerShape(6.dp),
-        color = bg,
-        border = BorderStroke(1.dp, border),
-        modifier = modifier.testTag("bloodGroupBadge"),
-    ) {
-        Text(
-            text = formatted,
-            style = MaterialTheme.typography.labelMedium,
-            fontWeight = if (isRhNeg) FontWeight.Bold else FontWeight.SemiBold,
-            color = text,
-            modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp),
-        )
-    }
-}
-
-/**
- * Canonical Gestational Age Badge.
- * Renders gestational age (e.g., "28w 4d") with softWrap = false to prevent 360dp text wrapping.
- * Resolves dark mode automatically via isDarkTheme().
- */
-@Composable
-fun GestationalAgeBadge(gaText: String?, modifier: Modifier = Modifier, discordant: Boolean = false) {
-    if (gaText.isNullOrBlank()) return
-    val dark = isDarkTheme()
-    val bg = if (dark) TagGestationalAgeDarkBg else TagGestationalAgeBg
-    val border = if (dark) TagGestationalAgeDarkBorder else TagGestationalAgeBorder
-    val text = if (dark) TagGestationalAgeDarkText else TagGestationalAgeText
-
-    Surface(
-        shape = RoundedCornerShape(6.dp),
-        color = bg,
-        border = BorderStroke(1.dp, border),
-        modifier = modifier.testTag("gestationalAgeBadge"),
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-            horizontalArrangement = Arrangement.spacedBy(3.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = gaText,
-                style = MaterialTheme.typography.labelSmall,
-                fontWeight = FontWeight.Bold,
-                color = text,
-                maxLines = 1,
-                softWrap = false,
-            )
-            if (discordant) GaDiscordanceMarker()
-        }
-    }
-}
-
 /** Red "??" shown after the current gestational age when the LMP and scan due dates disagree. */
 @Composable
 fun GaDiscordanceMarker(
@@ -330,50 +105,4 @@ fun GaDiscordanceMarker(
             .testTag("gaDiscordanceMarker")
             .semantics { contentDescription = description },
     )
-}
-
-/**
- * Canonical Obstetric Parity (GPA) Badge.
- * Formats Gravida, Parity, Abortion (e.g. "G2 P1 A0" or "G1 P0").
- * Automatically resolves dark mode via isDarkTheme().
- */
-@Composable
-fun ObstetricParityBadge(
-    gravida: Long?,
-    parity: Long?,
-    abortion: Long?,
-    modifier: Modifier = Modifier,
-) {
-    val g = gravida ?: 1L
-    val p = parity ?: 0L
-    val a = abortion ?: 0L
-    val text = "G$g P$p" + if (a > 0) " A$a" else ""
-    ObstetricParityBadge(summaryText = text, modifier = modifier)
-}
-
-@Composable
-fun ObstetricParityBadge(
-    summaryText: String,
-    modifier: Modifier = Modifier,
-) {
-    if (summaryText.isBlank()) return
-    val dark = isDarkTheme()
-    val bg = if (dark) TagObstetricDarkBg else TagObstetricBg
-    val border = if (dark) TagObstetricDarkBorder else TagObstetricBorder
-    val text = if (dark) TagObstetricDarkText else TagObstetricText
-
-    Surface(
-        shape = RoundedCornerShape(6.dp),
-        color = bg,
-        border = BorderStroke(1.dp, border),
-        modifier = modifier.testTag("obstetricParityBadge"),
-    ) {
-        Text(
-            text = summaryText,
-            style = MaterialTheme.typography.labelMedium,
-            fontWeight = FontWeight.SemiBold,
-            color = text,
-            modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp),
-        )
-    }
 }

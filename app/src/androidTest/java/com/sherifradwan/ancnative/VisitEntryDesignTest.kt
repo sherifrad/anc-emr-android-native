@@ -108,7 +108,7 @@ class VisitEntryDesignTest {
         compose.onNodeWithText("Step 4 of 4").assertIsDisplayed()
         compose.onNodeWithTag("saveVisit").assertIsDisplayed()
 
-        // Jump back to step 1 via SegmentedProgressBar
+        // Jump back to step 1 via VisitStepHeader
         compose.onNodeWithTag("stepSegment-0").performClick()
         compose.waitForIdle()
         compose.onNodeWithText("Step 1 of 4").assertIsDisplayed()

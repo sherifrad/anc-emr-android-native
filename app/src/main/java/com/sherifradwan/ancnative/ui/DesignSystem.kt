@@ -6,7 +6,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -16,7 +15,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -34,12 +32,10 @@ import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -52,42 +48,6 @@ import com.sherifradwan.ancnative.R
 import com.sherifradwan.ancnative.ui.components.RecordShapes
 import com.sherifradwan.ancnative.ui.components.RecordType
 import com.sherifradwan.ancnative.ui.components.ltrIsolate
-
-@Composable
-fun SectionCard(
-    title: String,
-    modifier: Modifier = Modifier,
-    tag: String? = null,
-    content: @Composable ColumnScope.() -> Unit,
-) {
-    val cardModifier = Modifier
-        .fillMaxWidth()
-        .then(modifier)
-        .let { if (tag != null) it.testTag(tag) else it }
-
-    Card(
-        modifier = cardModifier,
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            if (title.isNotBlank()) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary,
-                )
-            }
-            content()
-        }
-    }
-}
 
 @Composable
 fun SummaryRow(
@@ -244,94 +204,6 @@ fun BigChoiceButton(
     }
 }
 
-
-/**
- * Shared notice / message card: the message and its Close button sit in ONE aligned row
- * (text takes the free width, Close keeps a 48 dp target on one line, never wrapped).
- */
-@Composable
-fun NoticeCard(
-    message: String,
-    onClose: () -> Unit,
-    modifier: Modifier = Modifier,
-    messageColor: Color = MaterialTheme.colorScheme.onSurface,
-    closeTag: String? = null,
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth().then(modifier),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Text(
-                text = message,
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Medium,
-                color = messageColor,
-                modifier = Modifier.weight(1f),
-            )
-            TextButton(
-                onClick = onClose,
-                modifier = Modifier
-                    .heightIn(min = 48.dp)
-                    .widthIn(min = 48.dp)
-                    .let { if (closeTag != null) it.testTag(closeTag) else it },
-            ) {
-                Text(stringResource(R.string.close), maxLines = 1, softWrap = false)
-            }
-        }
-    }
-}
-
-@Composable
-fun SegmentedProgressBar(
-    totalSteps: Int,
-    currentStep: Int,
-    onStepClick: (Int) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        for (i in 0 until totalSteps) {
-            val isDoneOrCurrent = i <= currentStep
-            val stepLabel = stringResource(R.string.step_n_of_m, i + 1, totalSteps)
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .heightIn(min = 48.dp)
-                    .clickable(
-                        onClick = { onStepClick(i) },
-                        onClickLabel = stepLabel,
-                        role = androidx.compose.ui.semantics.Role.Tab,
-                    )
-                    .testTag("stepSegment-$i"),
-                contentAlignment = Alignment.Center,
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(4.dp)
-                        .clip(RoundedCornerShape(2.dp))
-                        .background(
-                            if (isDoneOrCurrent) MaterialTheme.colorScheme.primary
-                            else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
-                        ),
-                )
-            }
-        }
-    }
-}
-
 @Composable
 fun ValueStepper(
     value: String,
@@ -481,50 +353,6 @@ private fun StepperButton(
             style = RecordType.HeaderName,
             fontWeight = FontWeight.Bold,
         )
-    }
-}
-
-@Composable
-fun SectionHeader(
-    title: String,
-    modifier: Modifier = Modifier,
-    trailingText: String? = null,
-) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.weight(1f, fill = false),
-        ) {
-            Box(
-                modifier = Modifier
-                    .width(4.dp)
-                    .height(14.dp)
-                    .clip(RoundedCornerShape(2.dp))
-                    .background(ActionRose),
-            )
-            Text(
-                text = title.uppercase(),
-                style = MaterialTheme.typography.labelMedium.copy(
-                    fontWeight = FontWeight.ExtraBold,
-                    letterSpacing = androidx.compose.ui.unit.TextUnit(0.08f, androidx.compose.ui.unit.TextUnitType.Em),
-                ),
-                color = ActionRose,
-            )
-        }
-        if (!trailingText.isNullOrBlank()) {
-            Text(
-                text = trailingText,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
     }
 }
 

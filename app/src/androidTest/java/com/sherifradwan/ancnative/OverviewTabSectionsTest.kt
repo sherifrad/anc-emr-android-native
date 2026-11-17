@@ -28,7 +28,6 @@ import com.sherifradwan.ancnative.model.DemoPatientDating
 import com.sherifradwan.ancnative.model.DemoPreviousPregnancy
 import com.sherifradwan.ancnative.model.DemoUltrasoundScan
 import com.sherifradwan.ancnative.ui.AncTheme
-import com.sherifradwan.ancnative.ui.GestationalAgeBadge
 import com.sherifradwan.ancnative.ui.patienthub.components.DeliveryPlanningCard
 import com.sherifradwan.ancnative.ui.patienthub.tabs.OverviewTab
 import java.time.LocalDate
@@ -471,32 +470,6 @@ class OverviewTabSectionsTest {
     }
 
     private fun markerCount() = compose.onAllNodes(hasTestTag(markerTag), useUnmergedTree = true).fetchSemanticsNodes().size
-
-    @Test
-    fun gaBadgeShowsMarkerWithContentDescriptionWhenDiscordant() {
-        showContent { GestationalAgeBadge(gaText = "GA 20w0d", discordant = true) }
-        assertEquals(1, markerCount())
-        compose.onNode(hasText("??") and inTagged(markerTag), useUnmergedTree = true).assertExists()
-        compose.onNode(
-            inTagged(markerTag) and SemanticsMatcher.keyIsDefined(SemanticsProperties.ContentDescription),
-            useUnmergedTree = true,
-        ).assertExists("marker needs a content description")
-        compose.onNode(hasText("GA 20w0d") and inTagged("gestationalAgeBadge"), useUnmergedTree = true).assertExists()
-    }
-
-    @Test
-    fun gaBadgeKeepsTheNumberAndHasNoMarkerWhenNotDiscordant() {
-        showContent { GestationalAgeBadge(gaText = "GA 20w0d", discordant = false) }
-        assertEquals(0, markerCount())
-        compose.onAllNodes(hasText("??", substring = true), useUnmergedTree = true).assertCountEquals(0)
-        compose.onNode(hasText("GA 20w0d") and inTagged("gestationalAgeBadge"), useUnmergedTree = true).assertExists()
-    }
-
-    @Test
-    fun gaBadgeDefaultIsNotDiscordant() {
-        showContent { GestationalAgeBadge(gaText = "GA 20w0d") }
-        assertEquals(0, markerCount())
-    }
 
     // Delivery Plan card: only the four boxes. The facts it used to repeat (blood group, GA, EDD, risk,
     // presentation, placental site) live in the header, the Dating section and the Scans tab.

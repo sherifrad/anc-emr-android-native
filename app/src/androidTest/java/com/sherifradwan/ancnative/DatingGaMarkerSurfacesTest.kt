@@ -24,8 +24,6 @@ import com.sherifradwan.ancnative.model.DemoPatientDating
 import com.sherifradwan.ancnative.model.DemoUltrasoundScan
 import com.sherifradwan.ancnative.model.DemoVisit
 import com.sherifradwan.ancnative.ui.AncTheme
-import com.sherifradwan.ancnative.ui.ClinicalPatientCard
-import com.sherifradwan.ancnative.ui.PatientCardVariant
 import com.sherifradwan.ancnative.ui.patientdirectory.PatientDirectoryCard
 import com.sherifradwan.ancnative.ui.projectDashboardRow
 import com.sherifradwan.ancnative.ui.patienthub.PatientHubHeader
@@ -109,17 +107,6 @@ class DatingGaMarkerSurfacesTest {
 
     private fun badgeCount() =
         compose.onAllNodes(hasTestTag("gestationalAgeBadge"), useUnmergedTree = true).fetchSemanticsNodes().size
-
-    @Test
-    fun headerCardShowsMarkerOnlyWhenDiscordant() {
-        for (variant in listOf(PatientCardVariant.BEDSIDE_TOP_BAR, PatientCardVariant.EDITOR_SUMMARY)) {
-            show { ClinicalPatientCard(patient(midLmp, discordant = true), variant, asOfDate = today) }
-            assertEquals("$variant discordant", 1, markerCount())
-            show { ClinicalPatientCard(patient(midLmp, discordant = false), variant, asOfDate = today) }
-            assertEquals("$variant concordant", 0, markerCount())
-            assertEquals("$variant keeps the GA badge", 1, badgeCount())
-        }
-    }
 
     @Test
     fun visitGaBadgesNeverShowTheMarkerEvenForADiscordantPatient() {
