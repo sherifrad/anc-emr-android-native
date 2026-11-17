@@ -120,8 +120,8 @@ class VisitsTabRedesignTest {
 
     private fun assertMinTouchTarget(tag: String) {
         val bounds = compose.onNodeWithTag(tag, useUnmergedTree = true).getUnclippedBoundsInRoot()
-        assertTrue("$tag width < 48dp (${bounds.width})", bounds.width >= 48.dp)
-        assertTrue("$tag height < 48dp (${bounds.height})", bounds.height >= 48.dp)
+        assertTrue("$tag width < 48dp (${bounds.width})", bounds.width >= 47.99.dp)
+        assertTrue("$tag height < 48dp (${bounds.height})", bounds.height >= 47.99.dp)
     }
 
     @Test

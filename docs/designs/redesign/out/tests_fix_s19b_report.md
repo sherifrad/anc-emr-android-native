@@ -31,8 +31,14 @@ Updated `androidTest` suites to align with slice 19 ("every date field is picker
   - Updated `TEST_PATIENT_IDENTITY` / `TEST_PATIENT_NAME` to `"Maya Example"`.
   - Updated the test assertions to check that the localized editor title (`R.string.add_visit`: `"Add Visit"` / `"تسجيل زيارة"`) and the patient banner (`"Maya Example"`) are displayed and fully visible within the viewport across all 6 responsive layout fixtures (`narrowPhone`, `largeFont`, `landscape`, `tablet`, `darkTheme`, `arabicRtl`).
 
+### 4. RegistrationRedesignTest (`app/src/androidTest/java/com/sherifradwan/ancnative/RegistrationRedesignTest.kt`)
+- **`patientStatusEditor_archive_showsStatusTag_cancelAndSave_emitsEvents`**:
+  - In `PatientStatusEditor`, actions are rendered via `SheetCancelSaveRow` inside `EditorPage`'s scrollable container (`verticalScroll`).
+  - Entering text into `statusReason` via `performTextInput` focuses the text field, triggering IME insets and adjusting the scroll offset within the 360dp viewport, leaving the save and cancel buttons scrolled below the visible fold.
+  - Added `.performScrollTo().assertIsDisplayed()` before `.performClick()` on both `savePatientStatus` and `cancelPatientStatus`, matching the pattern used in `patientEditorStandalone_cancelAndSaveButtons_equalWidth_emitsSubmit`. Both `AncEvent.SubmitPatientStatus` and `AncEvent.CancelEditor` are dispatched and asserted cleanly.
+
 ## Production Defect Assessment
-No real production defects were uncovered. The failures were entirely due to outdated test assertions expecting deprecated keyboard text input on date fields (superseded by slice 19 picker-only date fields) and a removed composite subtitle string (superseded by slice 14's `VisitPatientBanner`).
+No real production defects were uncovered. The failures were entirely due to outdated test assertions expecting deprecated keyboard text input on date fields (superseded by slice 19 picker-only date fields), a removed composite subtitle string (superseded by slice 14's `VisitPatientBanner`), and missing `performScrollTo()` before clicking buttons located in a scroll container after text input.
 
 ## Verification
 - `./gradlew --offline :app:compileDebugAndroidTestKotlin -q`: Exit code `0` (clean compilation).

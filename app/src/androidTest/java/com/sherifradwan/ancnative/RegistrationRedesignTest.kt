@@ -661,11 +661,13 @@ class RegistrationRedesignTest {
         compose.waitForIdle()
         assertEquals("Patient relocated to another district", state.statusDraft!!.reason)
 
-        node("savePatientStatus").performClick()
+        node("savePatientStatus").performScrollTo().assertIsDisplayed().performClick()
+        compose.waitForIdle()
         assertTrue("SubmitPatientStatus emitted", events.contains(AncEvent.SubmitPatientStatus))
 
         events.clear()
-        node("cancelPatientStatus").performClick()
+        node("cancelPatientStatus").performScrollTo().assertIsDisplayed().performClick()
+        compose.waitForIdle()
         assertTrue("CancelEditor emitted", events.contains(AncEvent.CancelEditor))
     }
 
