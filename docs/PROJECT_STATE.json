@@ -1882,6 +1882,16 @@
    "detail": "Owner agreed 2026-11-17 to make attestation doctor name and clinic phone come from clinic settings. Needs print generator change (protected): do with frontier review and independent tests.",
    "owner": "",
    "updated": "2026-11-17"
+  },
+  "rd41": {
+   "phase": "pRD",
+   "order": 41,
+   "status": "todo",
+   "title": "Lint errors to fix: LocalContext resource queries in LabBatchScreen and SecuritySettingsDialog (slices 16, 18), BidiSpoofing in PatientHubHeader",
+   "ref": "",
+   "detail": "Found by lintDebug during cleanup; compile and tests are green, lint errors are not from the cleanup.",
+   "owner": "",
+   "updated": "2026-11-17"
   }
  },
  "log": [
