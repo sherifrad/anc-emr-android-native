@@ -1886,10 +1886,10 @@
   "rd41": {
    "phase": "pRD",
    "order": 41,
-   "status": "todo",
+   "status": "done",
    "title": "Lint errors to fix: LocalContext resource queries in LabBatchScreen and SecuritySettingsDialog (slices 16, 18), BidiSpoofing in PatientHubHeader",
    "ref": "",
-   "detail": "Found by lintDebug during cleanup; compile and tests are green, lint errors are not from the cleanup.",
+   "detail": "Lint errors 6 to 0 (LocalResources, bidi isolate constants). Commit e032f2b.",
    "owner": "",
    "updated": "2026-11-17"
   },
@@ -1902,9 +1902,23 @@
    "detail": "Listed by both teams in docs/cleanup/s21/revised_A.md and revised_B.md; each changes UI so needs its own review and tests.",
    "owner": "",
    "updated": "2026-11-17"
+  },
+  "rd43": {
+   "phase": "pRD",
+   "order": 43,
+   "status": "todo",
+   "title": "Emulator environment: LabEditorRedesignTest.labBatchScreen_enterAndReviewFlow_markEmptyNormal fails on the freshly restarted emulator (also on the slice 19 commit where it passed before); find the emulator setting that differs before the push gate",
+   "ref": "",
+   "detail": "Not a code regression: reproduced at e6f2445. Emulator restarted 2026-11-17, 360dp and zero animations set, soft keyboard shown (hw.keyboard=no).",
+   "owner": "",
+   "updated": "2026-11-17"
   }
  },
  "log": [
+  {
+   "date": "2026-11-17",
+   "text": "Lint errors fixed (rd41). Emulator restarted; one lab batch test fails on the fresh emulator at older commits too (rd43)."
+  },
   {
    "date": "2026-11-17",
    "text": "Slice 21 cleanup done by two competing teams: batches 1 to 3b committed, about 1,500 lines of dead code removed; refactor follow-ups logged (rd42), lint errors logged (rd41)."
