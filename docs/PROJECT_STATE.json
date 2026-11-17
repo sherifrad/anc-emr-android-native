@@ -1906,10 +1906,10 @@
   "rd43": {
    "phase": "pRD",
    "order": 43,
-   "status": "todo",
+   "status": "done",
    "title": "Emulator environment: LabEditorRedesignTest.labBatchScreen_enterAndReviewFlow_markEmptyNormal fails on the freshly restarted emulator (also on the slice 19 commit where it passed before); find the emulator setting that differs before the push gate",
    "ref": "",
-   "detail": "Not a code regression: reproduced at e6f2445. Emulator restarted 2026-11-17, 360dp and zero animations set, soft keyboard shown (hw.keyboard=no).",
+   "detail": "Cause found: freshly booted emulator had font_scale 1.3 and the soft keyboard on. set_emulator_360dp.sh now sets font 1.0, no animations, IME off. Not a code regression.",
    "owner": "",
    "updated": "2026-11-17"
   }
