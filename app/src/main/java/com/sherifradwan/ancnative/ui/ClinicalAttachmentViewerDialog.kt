@@ -44,6 +44,7 @@ import com.sherifradwan.ancnative.storage.AttachmentCategories
 import com.sherifradwan.ancnative.storage.AttachmentSyncManager
 import com.sherifradwan.ancnative.storage.BoundedBitmap
 import com.sherifradwan.ancnative.storage.PatientAttachmentVault
+import com.sherifradwan.ancnative.ui.components.PatientNameText
 import com.sherifradwan.ancnative.ui.components.RecordShapes
 import com.sherifradwan.ancnative.ui.components.RecordType
 import com.sherifradwan.ancnative.ui.components.StatusTone
@@ -107,8 +108,8 @@ fun ClinicalAttachmentViewerDialog(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = patient.displayName,
+                        PatientNameText(
+                            name = patient.displayName,
                             style = RecordType.CardName,
                             color = MaterialTheme.colorScheme.onSurface,
                         )

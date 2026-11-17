@@ -1007,11 +1007,11 @@ class ReportDialogRedesignTest {
     }
 
     // =========================================================================
-    // 17. Visit with no computable GA shows "-" GA chip in visits card
+    // 17. Visit with no computable GA shows Not recorded GA chip in visits card
     // =========================================================================
 
     @Test
-    fun visitsCard_visitWithNoComputableGa_showsDashGaChip() {
+    fun visitsCard_visitWithNoComputableGa_showsNotRecordedGaChip() {
         val noGaVisit = visit(
             id = "visit-no-ga-1",
             date = "2026-03-01",
@@ -1036,7 +1036,7 @@ class ReportDialogRedesignTest {
             .performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("01/03/2026", substring = true, useUnmergedTree = true)
             .performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText("-", useUnmergedTree = true)
+        compose.onNodeWithText(str(R.string.not_recorded), useUnmergedTree = true)
             .performScrollTo().assertIsDisplayed()
     }
 

@@ -28,7 +28,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
@@ -187,8 +186,7 @@ private fun PickerToggle(expanded: Boolean, enabled: Boolean, dimmed: Boolean, o
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            // Both icons are decorative: the row's text, state and click label say it all.
-            Icon(Icons.Default.Add, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+            // The chevron is decorative: the row's text, state and click label say it all.
             Text(
                 text = stringResource(R.string.add_medication),
                 style = RecordType.FieldValue.copy(fontWeight = FontWeight.SemiBold),

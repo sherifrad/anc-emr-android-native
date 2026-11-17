@@ -65,6 +65,7 @@ import com.sherifradwan.ancnative.state.SavePhase
 import com.sherifradwan.ancnative.state.PatientDraft
 import com.sherifradwan.ancnative.ui.components.FieldFamilies
 import com.sherifradwan.ancnative.ui.components.FormFieldLabel
+import com.sherifradwan.ancnative.ui.components.PatientNameText
 import com.sherifradwan.ancnative.ui.components.RecordFilterChip
 import com.sherifradwan.ancnative.ui.components.RecordSectionCard
 import com.sherifradwan.ancnative.ui.components.RecordShapes
@@ -465,7 +466,10 @@ private fun EditorPageHeader(
     tag: String,
     useRecordStyle: Boolean = false,
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
         Text(
             title,
             style = if (useRecordStyle) RecordType.HeaderName else MaterialTheme.typography.headlineMedium,
@@ -474,8 +478,8 @@ private fun EditorPageHeader(
             modifier = Modifier.semantics { heading() }.testTag(tag),
         )
         if (subtitle.isNotBlank()) {
-            Text(
-                subtitle,
+            PatientNameText(
+                name = subtitle,
                 style = if (useRecordStyle) RecordType.Secondary else MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

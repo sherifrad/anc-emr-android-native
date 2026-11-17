@@ -22,7 +22,7 @@
     <string name="medications">Medications</string>
     <string name="delivery">Delivery</string>
     <string name="attachments">Attachments</string>
-    <string name="visit_date">Visit date (YYYY-MM-DD)</string>
+    <string name="visit_date">Visit date</string>
     <string name="blood_pressure">Blood pressure</string>
     <string name="weight">Weight</string>
     <string name="findings">Findings</string>
@@ -165,7 +165,7 @@
     <string name="no_dating_recorded">No dating recorded</string>
     <string name="dating_editor">Dating editor</string>
     <string name="edit_ultrasound">Edit scan</string>
-    <string name="scan_date">Scan date (YYYY-MM-DD)</string>
+    <string name="scan_date">Scan date</string>
     <string name="ga_weeks">GA weeks (0–45)</string>
     <string name="ga_days">GA days (0–6)</string>
     <string name="fetal_number">Fetal number</string>
@@ -445,8 +445,8 @@
     <string name="stop_medication_short">Stop</string>
     <string name="medication_choose_frequency">Choose frequency</string>
     <plurals name="active_prescriptions_title">
-        <item quantity="one">Active Prescription (%1$d)</item>
-        <item quantity="other">Active Prescriptions (%1$d)</item>
+        <item quantity="one">Active prescription (%1$d)</item>
+        <item quantity="other">Active prescriptions (%1$d)</item>
     </plurals>
     <string name="prescribe_medication">Prescribe</string>
     <string name="no_active_medications">No active medications</string>
@@ -467,7 +467,7 @@
     <string name="stop_medication_description">Stop %1$s</string>
     <string name="edit_medication_description">Edit %1$s</string>
     <string name="already_on_todays_list">%1$s is already active</string>
-    <string name="add_other_choice">+ Add other</string>
+    <string name="add_other_choice">Add other</string>
     <string name="custom_drug_blank_error">Name cannot be blank</string>
     <string name="custom_drug_duplicate_error">Medication already exists</string>
     <string name="custom_drug_too_long_error">Name is too long</string>
@@ -516,7 +516,7 @@
     <string name="lab_batch_review_zero_results">Review 0 results</string>
     <string name="lab_batch_add_single_test">Add a single test</string>
     <string name="lab_batch_often_added">Often added</string>
-    <string name="lab_batch_add_other">+ Add other</string>
+    <string name="lab_batch_add_other">Add other</string>
     <string name="lab_batch_choose">Choose</string>
     <string name="lab_batch_add_n">+ Add %1$d</string>
     <string name="lab_batch_search_placeholder">Search a test, e.g. ferritin</string>
@@ -549,7 +549,7 @@
     <!-- Delivery outcome (delivered flag, date, mode, outcome) -->
     <string name="delivery_outcome_section">Delivery outcome</string>
     <string name="delivery_outcome_delivered_switch">Delivered</string>
-    <string name="delivery_outcome_date_label">Delivery date (YYYY-MM-DD)</string>
+    <string name="delivery_outcome_date_label">Delivery date</string>
     <string name="delivery_outcome_date_hint">Leave empty if the date is not known.</string>
     <string name="delivery_outcome_mode_label">Mode of delivery</string>
     <string name="delivery_outcome_result_label">Outcome</string>

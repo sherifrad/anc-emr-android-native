@@ -55,6 +55,7 @@ import com.sherifradwan.ancnative.storage.BoundedBitmap
 import com.sherifradwan.ancnative.storage.CameraCaptureHelper
 import com.sherifradwan.ancnative.storage.PhotoQualityPreset
 import com.sherifradwan.ancnative.ui.components.FormFieldLabel
+import com.sherifradwan.ancnative.ui.components.PatientNameText
 import com.sherifradwan.ancnative.ui.components.RecordShapes
 import com.sherifradwan.ancnative.ui.components.RecordType
 import com.sherifradwan.ancnative.ui.components.SectionTextAction
@@ -138,8 +139,8 @@ fun AddAttachmentDialog(
                             color = MaterialTheme.colorScheme.onSurface,
                             modifier = Modifier.semantics { heading() },
                         )
-                        Text(
-                            text = patient.displayName,
+                        PatientNameText(
+                            name = patient.displayName,
                             style = RecordType.Action,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )

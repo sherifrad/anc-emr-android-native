@@ -729,7 +729,7 @@ private fun ReportVisitsCard(patient: DemoPatient) {
                         )
                     }
                     BandChip(
-                        text = visitGa?.let(::ltrIsolate) ?: "-",
+                        text = visitGa?.let(::ltrIsolate) ?: stringResource(R.string.not_recorded),
                         tone = null,
                         tinted = true,
                         wrap = true,
@@ -825,8 +825,9 @@ private fun ReportScansCard(patient: DemoPatient) {
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
                         verticalArrangement = Arrangement.spacedBy(RecordSpacing.XS),
                     ) {
+                        val scanGa = scanGestationalAge(scan)
                         BandChip(
-                            text = ltrIsolate(scanGestationalAge(scan)),
+                            text = if (scanGa == "-") stringResource(R.string.not_recorded) else ltrIsolate(scanGa),
                             tone = null,
                             tinted = true,
                             wrap = true,
@@ -871,7 +872,8 @@ private fun ReportScansCard(patient: DemoPatient) {
                     second = { fieldModifier ->
                         PlainField(
                             label = stringResource(R.string.report_efw_label),
-                            value = ltrIsolate(efw),
+                            value = if (efw == "-") null else ltrIsolate(efw),
+                            missingText = stringResource(R.string.not_recorded),
                             emphasis = efw != "-",
                             modifier = fieldModifier,
                         )

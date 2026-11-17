@@ -70,6 +70,7 @@ import com.sherifradwan.ancnative.ui.StatusHighText
 import com.sherifradwan.ancnative.ui.classifyAllergy
 import com.sherifradwan.ancnative.ui.components.MetricCell
 import com.sherifradwan.ancnative.ui.components.MetricValue
+import com.sherifradwan.ancnative.ui.components.PatientNameText
 import com.sherifradwan.ancnative.ui.components.RecordShapes
 import com.sherifradwan.ancnative.ui.components.RecordType
 import com.sherifradwan.ancnative.ui.components.StatusKind
@@ -251,13 +252,11 @@ fun PatientHubHeader(
                         }
                     }
 
-                    Text(
-                        text = patient.displayName,
+                    PatientNameText(
+                        name = patient.displayName,
                         style = RecordType.HeaderName,
                         color = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .testTag("hubPatientName"),
+                        modifier = Modifier.testTag("hubPatientName"),
                     )
 
                     val isHigh = isHighRisk(patient.riskLevel)
@@ -427,12 +426,11 @@ fun PatientHubHeader(
                                     contentDescription = stringResource(R.string.action_back),
                                 )
                             }
-                            Text(
-                                text = patient.displayName,
+                            PatientNameText(
+                                name = patient.displayName,
                                 style = RecordType.CardName,
                                 color = MaterialTheme.colorScheme.onSurface,
                                 maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
                                 modifier = Modifier.weight(1f),
                             )
                             if (patient.delivered) {

@@ -1,0 +1,26 @@
+All requested test updates, logic verification, and new tests for the polish batch have been completed.
+
+### Summary of Changes
+
+1. **[ReportDialogRedesignTest.kt](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/androidTest/java/com/sherifradwan/ancnative/ReportDialogRedesignTest.kt#L1013-L1042)**:
+   - Renamed `visitsCard_visitWithNoComputableGa_showsDashGaChip` to `visitsCard_visitWithNoComputableGa_showsNotRecordedGaChip`.
+   - Updated GA chip assertion from literal `"-"` to `str(R.string.not_recorded)` ("Not recorded") without weakening.
+
+2. **[MedsTabSheetTest.kt](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/androidTest/java/com/sherifradwan/ancnative/MedsTabSheetTest.kt#L891-L931) Analysis**:
+   - Analyzed `thePickerStaysOpenWithItsSearchThroughAddStopEditAndTabSwipes` against all polish changes (removed `Add` icon and spacer in `medPickerToggle`, `"Add other"` label without plus, sentence case plural title).
+   - The test interacts with `medPickerToggle` by `testTag` to expand the picker, selects tiles, stops a row, edits a row, and verifies query persistence across tab swipes.
+   - None of its assertions inspect the removed decorative icon, spacer geometry, `"Add other"` string, or section title capitalization. No real defect exists and the assertions remain strictly valid, so they were preserved as-is without weakening.
+
+3. **[PolishBatchRedesignTest.kt](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/androidTest/java/com/sherifradwan/ancnative/PolishBatchRedesignTest.kt)**:
+   - **(a)** `reportDialog_scanWithoutGaAndEfw_showsNotRecorded_andScanWithGaAndEfw_showsValues`: asserts GA chip and EFW show `"Not recorded"` when missing, and formatted values (`"32w + 4d"`, `"1950 g"`) when present.
+   - **(b)** `patientHubHeader_hero_arabicPatientName_drawsRightAligned_within24dpOfRightPadding`, `patientHubHeader_hero_englishPatientName_drawsLeftAligned_nearLeftPadding`, and `patientHubHeader_collapsedTopBar_arabicNameRightAligned_andEnglishNameLeftAligned`: asserts right alignment (`TextAlign.Right`, `TextDirection.Rtl`, within 24dp of right container padding) for Arabic (`"منى رجب"`) and left alignment for English (`"Mona Ragab"`) in both hero and collapsed sticky top bar.
+   - **(c)** `editorPage_subtitle_arabicPatientName_drawsRightAligned`: asserts `EditorPage` subtitle draws Arabic patient name right-aligned.
+   - **(d)** `dateLabels_visitScanDelivery_doNotContainYyyy`: verifies string resources and UI for `visit_date`, `scan_date`, and `delivery_outcome_date_label` do not contain `"YYYY"`.
+   - **(e)** `medsTab_activePrescriptionsTitleIsSentenceCase_andAddCustomMedicationBtnHasNoPlus_andMinTouchTarget` and `medsTab_emptyStatePrescribeButtonHasNoPlus_andMinTouchTarget`: verifies sentence case for active prescriptions title, presence of testTags, absence of `"+"` text, and minimum 48dp touch target for both buttons.
+
+4. **[polish_tests_report.md](file:///Users/sherifgamalradwan/anc-emr-android-native/docs/qa/prepush/polish_tests_report.md)**:
+   - Written with verification summary and findings.
+
+### Compilation Check
+- `./gradlew --offline :app:compileDebugAndroidTestKotlin -q`: **Passed (exit code 0)**
+- `./gradlew --offline :app:testDebugUnitTest -q`: **Passed (exit code 0)**
