@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Mock S20: Report dialog</title>
+<style>
+  /* Tokens: Theme.kt scheme values + Slice 0 record tokens (Patient, Obstetric, Background, Delivery, Status*). */
+  :root{
+    --primary:#0D1B3D; --on:#0D1B3D; --onv:#4C3F43; --onprimary:#FFFFFF;
+    --primc:#D6DFFF; --onprimc:#041334; --sc:#FFD9DE; --onsc:#3B0815;
+    --surface:#FFFFFF; --bg:#FBF8F5; --outv:#CAC4D0; --outline:#79747E;
+    --sv:#F3E9E7; --scl:#F9F5F3; --sch:#EFE9E4; --sche:#E9E2DD;
+    --err:#BA1A1A; --onerr:#FFFFFF; --errc:#FFDAD6; --onerrc:#410002;
+    --pt-bg:#E9EEF8; --pt-lb:#23407A;
+    --ob-bg:#E3F0EE; --ob-lb:#1D5149;
+    --hx-bg:#F1EDE4; --hx-lb:#594A2C;
+    --dl-bg:#EEE9F5; --dl-lb:#4E3A78;
+    --inc-bg:#EEF0F4; --inc-bd:#757E8E; --inc-fg:#333B4A;
+    --mod-bg:#FCEFD6; --mod-bd:#9E6F1E; --mod-fg:#6E4708;
+    --hi-bg:#FBE3E3; --hi-bd:#C26666; --hi-fg:#8E1B1B;
+    --r-s:10px; --r-l:16px;
+  }
+  .dark{
+    --primary:#B4C5FF; --on:#E2E2EA; --onv:#CDC3C6; --onprimary:#002A78;
+    --primc:#183F91; --onprimc:#DCE1FF; --sc:#762E3B; --onsc:#FFD9DE;
+    --surface:#1A202E; --bg:#0E121B; --outv:#3A4459; --outline:#8E95A5;
+    --sv:#262E40; --scl:#141924; --sch:#283248; --sche:#323D56;
+    --err:#FFB4AB; --onerr:#690005; --errc:#5C141D; --onerrc:#FFDAD6;
+    --pt-bg:#22304A; --pt-lb:#AFC6F2;
+    --ob-bg:#1D3836; --ob-lb:#9FD6CC;
+    --hx-bg:#36301F; --hx-lb:#E0CFA6;
+    --dl-bg:#2E2842; --dl-lb:#CDBDF0;
+    --inc-bg:#2A3140; --inc-bd:#7D889E; --inc-fg:#D5DAE3;
+    --mod-bg:#3A2A0E; --mod-bd:#A87A2A; --mod-fg:#F3D18E;
+    --hi-bg:#4A1616; --hi-bd:#B45A5A; --hi-fg:#FFC9C9;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:#FFFFFF;color:#0D1B3D;font-family:Roboto,"Noto Sans","Noto Sans Arabic","Segoe UI",system-ui,-apple-system,Arial,sans-serif;font-size:15px;line-height:1.5;padding:32px 16px 64px}
+  .wrap{max-width:1200px;margin:0 auto}
+  h1{font-size:26px;line-height:1.25;margin:0 0 8px}
+  h2{font-size:20px;line-height:1.3;margin:44px 0 6px}
+  .lede,p,li{max-width:82ch}
+  .lede{color:#4C3F43;margin:0 0 4px}
+  .reason{border:1px solid #CAC4D0;border-radius:16px;padding:18px 20px;margin-top:18px;background:#FDFCFB}
+  .reason h2{margin-top:0}
+  .reason ul{margin:6px 0 0;padding-inline-start:20px}
+  .pair{display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start;margin-top:14px}
+  figure{margin:0;width:360px;max-width:100%;flex:0 0 auto}
+  figcaption{font-size:14px;color:#4C3F43;margin:0 0 8px}
+  figcaption b{color:#0D1B3D}
+  .note{font-size:14px;color:#4C3F43;margin:10px 0 0}
+  bdi{unicode-bidi:isolate}
+
+  .phone{width:100%;background:var(--bg);border:1px solid #B9B4BE;border-radius:16px;overflow:hidden;color:var(--on);display:flex;flex-direction:column}
+  button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
+  button:disabled{cursor:not-allowed}
+  button:hover:not(:disabled){filter:brightness(.97)}
+  button:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+
+  /* AFTER: Dialog header + page switcher */
+  .rhdr{background:var(--surface);border-bottom:1px solid var(--outv);display:flex;flex-direction:column}
+  .rbar{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:4px 8px 4px 4px;min-height:56px}
+  .rbar-acts{display:flex;align-items:center;gap:4px}
+  .ibtn{width:48px;height:48px;border-radius:var(--r-s);display:inline-flex;align-items:center;justify-content:center;color:var(--primary);flex:0 0 48px}
+  .pbtn{min-height:48px;min-width:48px;padding:8px 12px;border-radius:var(--r-s);background:var(--primary);color:var(--onprimary);font-size:14px;line-height:20px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;gap:6px;text-align:center}
+  .rtitle-blk{padding:0 16px 8px;display:flex;flex-direction:column;gap:2px}
+  .rtitle-k{margin:0;font-size:12px;line-height:16px;font-weight:600;color:var(--pt-lb)}
+  .rtitle-name{margin:0;font-size:22px;line-height:28px;font-weight:700;color:var(--on);overflow-wrap:anywhere}
+  .rtitle-name.rtl{direction:rtl;text-align:right;unicode-bidi:plaintext}
+  .rtitle-name.ltr{direction:ltr;text-align:left}
+  .rswitch{padding:4px 16px 10px;display:flex;flex-wrap:wrap;gap:8px}
+  .chipwrap{min-height:48px;display:inline-flex;align-items:center}
+  .chip{min-height:36px;padding:6px 12px;border:1px solid var(--outline);border-radius:var(--r-s);background:var(--surface);color:var(--on);font-size:14px;line-height:20px;font-weight:500;display:inline-flex;align-items:center;text-align:start}
+  .chip.sel{background:var(--primary);border-color:var(--primary);color:var(--onprimary);font-weight:600}
+
+  /* AFTER: Report scroll body & RecordSectionCard */
+  .rbody{padding:16px;display:flex;flex-direction:column;gap:12px}
+  .sec{background:var(--surface);border:1px solid var(--outv);border-radius:var(--r-l);padding:4px 4px 16px 16px}
+  .sec-head{display:flex;align-items:center;min-height:48px;gap:8px;padding-inline-end:12px}
+  .sec-head h3,.sec-head h4{flex:1 1 auto;margin:0;padding:6px 0;font-size:18px;line-height:24px;font-weight:700;color:var(--primary)}
+  .sec-body{display:flex;flex-direction:column;gap:12px;padding-inline-end:12px}
+  .fam-pt{--fbg:var(--pt-bg);--flb:var(--pt-lb)}
+  .fam-ob{--fbg:var(--ob-bg);--flb:var(--ob-lb)}
+  .fam-hx{--fbg:var(--hx-bg);--flb:var(--hx-lb)}
+  .fam-dl{--fbg:var(--dl-bg);--flb:var(--dl-lb)}
+
+  /* AFTER: LabeledValue + PlainField + StatusTag + BandChip + StatusWord */
+  .f{display:flex;flex-direction:column;gap:4px;min-width:0}
+  .flab{font-size:12px;line-height:16px;font-weight:600;color:var(--flb)}
+  .fval{margin:0;min-height:44px;padding:10px 12px;border-radius:var(--r-s);background:var(--fbg);font-size:16px;line-height:22px;color:var(--on);overflow-wrap:anywhere}
+  .fval.key{font-weight:600}
+  .fval.miss{color:var(--onv);font-style:italic}
+  .frow{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .frow > *{min-width:0}
+
+  .pgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 12px}
+  .pgrid > div,.pf{min-width:0;display:flex;flex-direction:column;gap:2px}
+  .pf .l,.pgrid .l{font-size:12px;line-height:16px;font-weight:500;color:var(--onv)}
+  .pf .v,.pgrid .v{font-size:16px;line-height:22px;color:var(--on);overflow-wrap:anywhere}
+  .pf .v.k,.pgrid .v.k{font-weight:600}
+  .pf .v.miss,.pgrid .v.miss{color:var(--onv);font-style:italic}
+  .pf .v.err{color:var(--err);font-weight:700}
+
+  .tags{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+  .tag{display:inline-flex;align-items:center;min-height:24px;padding:3px 8px;border-radius:var(--r-s);font-size:12px;line-height:16px;font-weight:600;border:1px solid;white-space:nowrap}
+  .t-hi{background:var(--hi-bg);border-color:var(--hi-bd);color:var(--hi-fg);font-weight:700}
+  .t-mod{background:var(--mod-bg);border-color:var(--mod-bd);color:var(--mod-fg)}
+  .t-inc{background:var(--inc-bg);border-color:var(--inc-bd);color:var(--inc-fg)}
+  .t-del{background:var(--surface);border-color:var(--primary);color:var(--primary)}
+  .bchip{display:inline-flex;align-items:center;min-height:24px;padding:2px 10px;border-radius:var(--r-s);font-size:12px;line-height:16px;font-weight:700;white-space:nowrap;border:1px solid transparent}
+  .bchip.pt{background:var(--pt-bg);color:var(--pt-lb)}
+  .bchip.ob{background:var(--ob-bg);color:var(--ob-lb)}
+  .bchip.hx{background:var(--hx-bg);color:var(--hx-lb)}
+  .bchip.neu{background:var(--inc-bg);border-color:var(--inc-bd);color:var(--inc-fg)}
+  .sw{font-size:12px;line-height:16px;font-weight:700}
+  .sw-hi{color:var(--err)}
+  .sw-mod{color:var(--mod-fg)}
+  .sw-neu{color:var(--onv);font-weight:600}
+
+  /* AFTER: Banners, hairline rows, clinic meta & attestation */
+  .statban{background:var(--primc);border:1px solid var(--primary);border-radius:var(--r-s);padding:10px 12px;font-size:14px;line-height:20px;font-weight:600;color:var(--onprimc)}
+  .attbox{background:var(--mod-bg);border:1px solid var(--mod-bd);border-radius:var(--r-s);padding:10px 12px;display:flex;flex-direction:column;gap:2px}
+  .attbox .k{font-size:12px;line-height:16px;font-weight:700;color:var(--mod-fg)}
+  .attbox .v{font-size:16px;line-height:22px;color:var(--mod-fg)}
+  .alrbox{background:var(--errc);border:1.5px solid var(--err);border-radius:var(--r-s);padding:10px 12px;display:flex;flex-direction:column;gap:2px}
+  .alrbox .k{font-size:12px;line-height:16px;font-weight:700;color:var(--err)}
+  .alrbox .v{font-size:16px;line-height:22px;color:var(--onerrc);font-weight:600}
+  .discbox{background:var(--mod-bg);border:1px solid var(--mod-bd);border-radius:var(--r-s);padding:8px 12px;font-size:14px;line-height:20px;font-weight:600;color:var(--mod-fg)}
+  .hrow{padding:10px 0;border-top:1px solid var(--outv);display:flex;flex-direction:column;gap:8px}
+  .hrow.first{border-top:0;padding-top:0}
+  .hrow:last-child{padding-bottom:0}
+  .rtop{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+  .rdate{font-size:16px;line-height:22px;font-weight:700;color:var(--on)}
+  .rsub{margin:0;font-size:14px;line-height:20px;color:var(--onv);overflow-wrap:anywhere}
+  .rmeta{margin:0;font-size:12px;line-height:16px;font-weight:600;color:var(--flb)}
+  .hidden-note{padding:8px 10px;border-radius:var(--r-s);background:var(--inc-bg);border:1px solid var(--inc-bd);font-size:12px;line-height:16px;font-weight:600;color:var(--inc-fg)}
+  .emptytxt{margin:0;font-size:16px;line-height:22px;font-style:italic;color:var(--onv)}
+  .cmeta-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;flex-wrap:wrap}
+  .cmeta-title{margin:0;font-size:16px;line-height:22px;font-weight:700;color:var(--on)}
+  .cmeta-sub{margin:2px 0 0;font-size:14px;line-height:20px;color:var(--onv)}
+  .att-ar{margin:2px 0 0;font-size:16px;line-height:24px;font-weight:700;color:var(--on);direction:rtl;text-align:right}
+  .att-ar-sub{margin:0;font-size:14px;line-height:20px;color:var(--onv);direction:rtl;text-align:right}
+
+  /* fontScale 1.3 simulation frame */
+  .fs13 .rtitle-k{font-size:15.6px;line-height:20.8px}
+  .fs13 .rtitle-name{font-size:28.6px;line-height:36.4px}
+  .fs13 .pbtn,.fs13 .chip{font-size:18.2px;line-height:26px}
+  .fs13 .sec-head h4{font-size:23.4px;line-height:31.2px}
+  .fs13 .flab,.fs13 .pf .l,.fs13 .pgrid .l,.fs13 .bchip,.fs13 .tag,.fs13 .sw,.fs13 .rmeta{font-size:15.6px;line-height:20.8px}
+  .fs13 .fval,.fs13 .pf .v,.fs13 .pgrid .v,.fs13 .rdate,.fs13 .cmeta-title,.fs13 .emptytxt{font-size:20.8px;line-height:28.6px}
+  .fs13 .rsub,.fs13 .cmeta-sub{font-size:18.2px;line-height:26px}
+
+  /* BEFORE fidelity styles (exact current PatientTwoPageReportDialog.kt + PatientPrintHtmlGenerator.kt WebView) */
+  .old-bar{background:#0D1B3D;color:#FFFFFF;padding:8px 12px;display:flex;align-items:center;justify-content:space-between;gap:8px;box-shadow:0 4px 8px rgba(0,0,0,.22)}
+  .old-bar-l{display:flex;align-items:center;gap:8px;min-width:0;flex:1 1 auto}
+  .old-x{width:40px;height:40px;display:inline-flex;align-items:center;justify-content:center;font-size:18px;flex:0 0 auto}
+  .old-t15{margin:0;font-size:15px;line-height:20px;font-weight:700;color:#FFFFFF}
+  .old-n11{margin:0;font-size:11px;line-height:14px;color:rgba(255,255,255,.85);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .old-bar-r{display:flex;align-items:center;gap:6px;flex:0 0 auto}
+  .old-print{min-height:40px;padding:6px 12px;border-radius:999px;background:#934F5B;color:#FFFFFF;font-size:13px;font-weight:700;white-space:nowrap;display:inline-flex;align-items:center;gap:4px}
+  .old-print.dk{background:#FFB2BC;color:#5A1826}
+  .old-web{background:#E2E8F0;padding:10px 8px;display:flex;flex-direction:column;gap:12px}
+  .old-sheet{background:#FFFFFF;border-radius:6px;padding:12px 14px;box-shadow:0 4px 14px rgba(13,27,61,.12);color:#0F172A;display:flex;flex-direction:column;gap:9px;font-size:11px;line-height:1.35}
+  .old-chdr{border-bottom:2px solid #0D1B3D;padding-bottom:6px;display:flex;flex-direction:column;gap:6px}
+  .old-chdr h5{margin:0;font-size:14px;font-weight:800;color:#0D1B3D}
+  .old-chdr p{margin:0;font-size:9px;font-weight:700;color:#B34A60}
+  .old-badge-caps{background:#0D1B3D;color:#FFFFFF;font-size:9px;font-weight:700;padding:2px 8px;border-radius:4px;text-align:center}
+  .old-badge-caps.rose{background:#B34A60}
+  .old-ptcard{background:#F8FAFC;border:1.5px solid #CBD5E1;border-radius:6px;padding:8px 10px;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .old-sbox{border:1px solid #E2E8F0;border-radius:5px;padding:8px 10px;background:#FFFFFF}
+  .old-stitle{font-size:10px;font-weight:800;color:#0D1B3D;border-bottom:1.5px solid #F1F5F9;padding-bottom:3px;margin:0 0 6px}
+  .old-dmat{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-bottom:5px}
+  .old-dm{background:#F8FAFC;padding:4px;border-radius:4px;text-align:center}
+  .old-dm span{display:block;font-size:8px;color:#475569}
+  .old-dm b{font-size:10px;color:#0D1B3D}
+  .old-tbl-clip{overflow:hidden;border:1px solid #CBD5E1}
+  .old-tbl{width:540px;border-collapse:collapse;font-size:9px}
+  .old-tbl th{background:#F1F5F9;color:#0D1B3D;padding:4px;border:1px solid #CBD5E1;text-align:center}
+  .old-tbl td{padding:4px;border:1px solid #E2E8F0;text-align:center}
+  .old-stamp{border:1.5px dashed #0D1B3D;border-radius:5px;padding:8px;text-align:center;font-size:9px;color:#475569}
+
+  /* Tables & lists */
+  .tablewrap{overflow-x:auto;max-width:100%}
+  table.spec{border-collapse:collapse;width:100%;font-size:14px;margin-top:10px}
+  table.spec th,table.spec td{border-bottom:1px solid #E6E1E5;padding:7px 8px;text-align:start;vertical-align:top}
+  table.spec th{background:#F7F5F3}
+  td.n{font-variant-numeric:tabular-nums;white-space:nowrap}
+  ol.map li{margin:7px 0}
+  code{font-family:"Roboto Mono",ui-monospace,Menlo,Consolas,monospace;font-size:13px;background:#F3F0EE;padding:1px 4px;border-radius:4px;overflow-wrap:anywhere}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<main class="wrap">
+<h1>Mock S20: Two-page report dialog</h1>
+<p class="lede">Covers <code>ui/report/PatientTwoPageReportDialog.kt</code> (Level 3), <code>ui/report/ReportSections.kt</code>, and <code>strings.xml</code>. Static design specification mockup. Protected files <code>ui/report/PatientPrintHtmlGenerator.kt</code>, <code>ui/report/PatientPrintManager.kt</code>, and <code>ui/report/PatientShareText.kt</code> are untouched. Real sample data: Mona Ragab / <bdi lang="ar">منى رجب</bdi> (27+2 wks, G4 P1 A2, BP 110/70, A+, EDD 11/02/2027, Mothercare; fees 12000 excluded from delivery plan per <code>deliveryPlanRows</code>), supplemented where absent by clearly labeled in-repo <code>DemoFixtures</code> records (<code>DEMO-ANC-001</code>, <code>DEMO-ANC-002</code>, <code>DEMO-ANC-004</code>) and bracketed placeholders.</p>
+
+<section class="reason" aria-labelledby="r">
+  <h2 id="r">Design reasoning</h2>
+  <p>Reading this as: a bedside clinical record summary dialog where doctors review Page 1 and Page 2 on a 360 dp phone, switch cleanly between pages, share plain-text summaries, and trigger A4 PDF printing without horizontal table scroll or dark-mode glare. Antislop dials: ENERGY 1 / RHYTHM 1 / MOTION 1 (pressed and focus states only, no new animation).</p>
+  <ul>
+    <li><b>Native Record-system Page 1 and Page 2 replace the cramped WebView sheet on screen:</b> today <code>reportWebView</code> embeds light-only 7.5 pt HTML inside 600 px tables that force sideways scrolling on 360 dp phones and stay blinding white in Dark Theme. Rendering the exact same <code>ReportSections</code> data in native Compose cards adapts to Dark Theme, respects <code>fontScale 1.3</code>, eliminates horizontal table scroll, and leaves <code>PatientPrintHtmlGenerator.kt</code> intact for <code>Print PDF</code>.</li>
+    <li><b>Calm high-contrast header with full-width RTL-safe patient name:</b> move the dialog chrome from a shadowed navy slab with a 2.83:1 rose pill and 11 sp ellipsized name onto a flat <code>surface</code> header (<code>0 dp</code> elevation, <code>48 dp</code> Close/Share/Print PDF buttons, <code>primary</code>/<code>onPrimary</code> <code>10 dp</code> Print button), giving <code>PatientNameText</code> full width so Arabic names like <bdi lang="ar">منى رجب</bdi> anchor right and long English names wrap without colliding.</li>
+    <li><b>Two-page switcher with 48 dp <code>RecordFilterChip</code>s:</b> replace endless two-sheet scrolling with explicit <code>Page 1</code> (identity, dating, histories, previous pregnancies, visits) and <code>Page 2</code> (scans, labs, medications, delivery plan, clinician attestation) chips that stay unclipped side-by-side at <code>1.3x</code> scale.</li>
+    <li><b>Domain family rhythm without box-inside-box clutter:</b> Patient blue for identity, dating, and visits; Obstetric teal for previous pregnancies and scans; Background sand for histories, labs, and medications; Delivery plum for delivery plan. Multi-item logs (previous pregnancies, visits, scans, labs, medications) use hairline-separated rows with <code>PlainField</code>, <code>BandChip</code>, and <code>StatusWord</code> inside one <code>RecordSectionCard</code> per section.</li>
+    <li><b>Print crash boundary respected:</b> the known <code>PrintManager</code> <code>Activity</code> context defect lives outside Slice 20; <code>printReportButton</code> keeps its exact <code>PatientPrintManager.printPatientReport(...)</code> call unchanged.</li>
+  </ul>
+</section>
+
+<h2>1. Report dialog header, page switcher &amp; Page 1 (Summary, histories &amp; visits)</h2>
+<div class="pair">
+  <figure>
+    <figcaption><b>Before</b>, today, shadowed navy bar + WebView light HTML sheet</figcaption>
+    <div class="phone">
+      <div class="old-bar">
+        <div class="old-bar-l">
+          <span class="old-x" aria-hidden="true">✕</span>
+          <div style="min-width:0;flex:1">
+            <p class="old-t15">Clinical Medical Record</p>
+            <p class="old-n11">Mona Ragab</p>
+          </div>
+        </div>
+        <div class="old-bar-r">
+          <span class="old-x" aria-hidden="true">↗</span>
+          <span class="old-print">Print PDF</span>
+        </div>
+      </div>
+      <div class="old-web">
+        <div class="old-sheet">
+          <div class="old-chdr">
+            <div>
+              <h5>Dr. Sherif Radwan Clinic</h5>
+              <p>Maternal-Fetal Medicine &amp; Advanced Obstetrics</p>
+            </div>
+            <div class="old-badge-caps">CLINICAL RECORD</div>
+            <div style="display:flex;justify-content:space-between;font-size:9px;color:#475569"><span>Patient ID: [Case ID]</span><span>Print Date: 17/11/2026</span></div>
+          </div>
+          <div class="old-ptcard">
+            <div><b style="font-size:12px;color:#0D1B3D">Mona Ragab</b><br><span style="font-size:9px;color:#475569">Phone: Unspecified</span></div>
+            <div><span style="font-size:8px;color:#475569;text-transform:uppercase">Blood Group</span><br><b style="font-size:10px">A+</b></div>
+          </div>
+          <div class="old-sbox">
+            <p class="old-stitle">Pregnancy Dating</p>
+            <div class="old-dmat">
+              <div class="old-dm"><span>LMP</span><b>[LMP]</b></div>
+              <div class="old-dm"><span>EDD</span><b style="color:#B34A60">11/02/2027</b></div>
+              <div class="old-dm"><span>Method</span><b>[Method]</b></div>
+            </div>
+            <div style="background:#FDF2F4;border:1px solid #FBCFE8;color:#B34A60;font-weight:800;font-size:10px;padding:4px;text-align:center;border-radius:4px">Gestational age today: 27w 2d</div>
+          </div>
+          <div class="old-sbox">
+            <p class="old-stitle">Antenatal Care Visits Log</p>
+            <div class="old-tbl-clip">
+              <table class="old-tbl">
+                <thead><tr><th>#</th><th>Date</th><th>Gestational Age (GA)</th><th>Blood Pressure (BP)</th><th>Weight</th><th>Clinical Findings</th></tr></thead>
+                <tbody><tr><td>1</td><td>[visit date]</td><td>27w 2d</td><td>110/70</td><td>-</td><td>Not recorded</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="note"><code>labelSmall</code> (11 sp) patient name truncates in 1 line without RTL handling; <code>ActionRose</code> <code>Print PDF</code> pill has 2.83:1 contrast on navy; <code>min-width: 600px</code> HTML tables clip off-screen; no page switcher.</p>
+  </figure>
+
+  <figure>
+    <figcaption><b>After</b>, Page 1 (part 1): header, switcher, clinic meta, identity, dating</figcaption>
+    <div class="phone">
+      <header class="rhdr">
+        <div class="rbar">
+          <button type="button" class="ibtn" aria-label="Close">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+          </button>
+          <div class="rbar-acts">
+            <button type="button" class="ibtn" aria-label="Share clinical record">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92c0-1.61-1.31-2.92-2.92-2.92z"/></svg>
+            </button>
+            <button type="button" class="pbtn">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/></svg>
+              <span>Print PDF</span>
+            </button>
+          </div>
+        </div>
+        <div class="rtitle-blk">
+          <p class="rtitle-k">Clinical medical record</p>
+          <p class="rtitle-name ltr">Mona Ragab</p>
+        </div>
+        <div class="rswitch" role="tablist" aria-label="Report pages">
+          <span class="chipwrap"><button type="button" class="chip sel" role="tab" aria-selected="true">Page 1</button></span>
+          <span class="chipwrap"><button type="button" class="chip" role="tab" aria-selected="false">Page 2</button></span>
+        </div>
+      </header>
+      <div class="rbody">
+        <section class="sec fam-pt" aria-label="Clinic header">
+          <div class="sec-body" style="padding-top:12px">
+            <div class="cmeta-top">
+              <div style="min-width:0;flex:1 1 auto">
+                <p class="cmeta-title">Dr. Sherif Radwan Clinic</p>
+                <p class="cmeta-sub">Maternal-Fetal Medicine &amp; Advanced Obstetrics</p>
+              </div>
+              <span class="bchip pt">Clinical record</span>
+            </div>
+            <div class="frow">
+              <div class="f"><span class="flab">Patient ID</span><p class="fval"><bdi>[Case ID]</bdi></p></div>
+              <div class="f"><span class="flab">Print date</span><p class="fval"><bdi>17/11/2026</bdi></p></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="sec fam-pt" aria-label="Patient identity">
+          <div class="sec-head"><h4>Patient identity</h4></div>
+          <div class="sec-body">
+            <p class="rtitle-name ltr" style="font-size:18px;line-height:24px">Mona Ragab</p>
+            <div class="tags"><span class="tag t-inc">Risk not recorded</span></div>
+            <div class="frow">
+              <div class="f"><span class="flab">Age</span><p class="fval">[Age]</p></div>
+              <div class="f"><span class="flab">Blood group</span><p class="fval key"><bdi>A+</bdi></p></div>
+            </div>
+            <div class="f"><span class="flab">Phone</span><p class="fval miss">Unspecified</p></div>
+          </div>
+        </section>
+
+        <section class="sec fam-pt" aria-label="Pregnancy dating">
+          <div class="sec-head"><h4>Pregnancy dating</h4></div>
+          <div class="sec-body">
+            <div class="f"><span class="flab">Gestational age today</span><p class="fval key"><bdi>27+2 wks</bdi></p></div>
+            <div class="frow">
+              <div class="f"><span class="flab">LMP</span><p class="fval"><bdi>[LMP date]</bdi></p></div>
+              <div class="f"><span class="flab">EDD</span><p class="fval key"><bdi>11/02/2027</bdi></p></div>
+            </div>
+            <div class="f"><span class="flab">Method</span><p class="fval">[Method]</p></div>
+          </div>
+        </section>
+      </div>
+    </div>
+    <p class="note">Header uses <code>surface</code> + <code>0 dp</code> elevation; <code>Print PDF</code> uses <code>primary</code> / <code>onPrimary</code> (16.92:1); <code>Page 1</code> / <code>Page 2</code> chips keep 48 dp touch targets.</p>
+  </figure>
+
+  <figure>
+    <figcaption><b>After</b>, Page 1 (part 2): history, previous pregnancies &amp; visits</figcaption>
+    <div class="phone">
+      <div class="rbody">
+        <section class="sec fam-hx" aria-label="Obstetric and medical history">
+          <div class="sec-head"><h4>Obstetric and medical history</h4></div>
+          <div class="sec-body">
+            <div class="f fam-ob"><span class="flab">GPA formula</span><p class="fval key"><bdi>G4 P1 + A2</bdi> (<bdi>Prev 1 CS, 1 SVD</bdi>)</p></div>
+            <div class="f"><span class="flab">Drug allergies</span><p class="fval miss">Not recorded</p></div>
+            <div class="f"><span class="flab">Medical history</span><p class="fval miss">Not recorded</p></div>
+            <div class="f"><span class="flab">Surgical history</span><p class="fval miss">Not recorded</p></div>
+            <div class="f"><span class="flab">Family history</span><p class="fval miss">Not recorded</p></div>
+          </div>
+        </section>
+
+        <section class="sec fam-ob" aria-label="Previous pregnancies and obstetric outcomes">
+          <div class="sec-head"><h4>Previous pregnancies and obstetric outcomes</h4></div>
+          <div class="sec-body" style="gap:0">
+            <div class="hrow first">
+              <div class="rtop"><span class="rdate"><bdi>15/06/2022</bdi></span><span class="bchip ob">Live Birth</span></div>
+              <p class="rsub">Singleton · Vaginal</p>
+              <p class="rsub">Cairo Maternity Hospital · Uncomplicated vaginal birth at term</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="sec fam-pt" aria-label="Antenatal care visits log">
+          <div class="sec-head"><h4>Antenatal care visits log</h4></div>
+          <div class="sec-body" style="gap:0">
+            <div class="hrow first">
+              <div class="rtop">
+                <div style="display:flex;align-items:center;gap:6px"><span class="bchip pt">#1</span><span class="rdate"><bdi>[visit date]</bdi></span></div>
+                <span class="bchip pt"><bdi>27+2 wks</bdi></span>
+              </div>
+              <div class="pgrid">
+                <div><span class="l">Blood pressure</span><span class="v k"><bdi>110/70</bdi></span></div>
+                <div><span class="l">Weight</span><span class="v">-</span></div>
+              </div>
+              <div class="pf"><span class="l">Clinical findings and observations</span><span class="v miss">Not recorded</span></div>
+            </div>
+            <div class="hrow">
+              <div class="rtop">
+                <div style="display:flex;align-items:center;gap:6px"><span class="bchip pt">#2</span><span class="rdate"><bdi>10/10/2026</bdi></span></div>
+                <span class="bchip pt"><bdi>34+1 wks</bdi></span>
+              </div>
+              <div class="pgrid">
+                <div><span class="l">Blood pressure</span><span class="v k"><bdi>125/80</bdi></span></div>
+                <div><span class="l">Weight</span><span class="v k"><bdi>73 kg</bdi></span></div>
+              </div>
+              <div class="pf"><span class="l">Clinical findings and observations</span><span class="v">Cephalic, FHR 142 bpm, active movements, no edema · Growth scan performed today and linked</span></div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+    <p class="note">Mona's real <code>G4 P1 + A2</code> and <code>110/70</code> paired with in-repo <code>DemoFixtures</code> <code>DEMO-ANC-002</code> rows (previous pregnancy and visit #2) to show populated hairline layout without sideways scroll.</p>
+  </figure>
+</div>
+
+<h2>2. Report dialog Page 2 (Scans, labs, medications, delivery plan &amp; attestation)</h2>
+<div class="pair">
+  <figure>
+    <figcaption><b>Before</b>, today, Page 2 inside WebView (clipped 600 px tables)</figcaption>
+    <div class="phone">
+      <div class="old-web">
+        <div class="old-sheet">
+          <div class="old-chdr">
+            <div><h5>Dr. Sherif Radwan Clinic</h5><p style="color:#B34A60">Scans, laboratory results, medications and delivery plan</p></div>
+            <div class="old-badge-caps rose">CONTINUED</div>
+          </div>
+          <div class="old-sbox">
+            <p class="old-stitle">Ultrasound Biometry &amp; Fetal Surveillance</p>
+            <div class="old-tbl-clip">
+              <table class="old-tbl">
+                <thead><tr><th>Date</th><th>Gestational Age</th><th>Presentation</th><th>Placenta</th><th>Amniotic Fluid</th><th>EFW (g)</th></tr></thead>
+                <tbody><tr><td>10/10/2026</td><td>34w + 1d</td><td>Cephalic</td><td>Anterior</td><td>Normal</td><td>2350 g</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="old-sbox">
+            <p class="old-stitle">Laboratory Investigations</p>
+            <div class="old-tbl-clip">
+              <table class="old-tbl">
+                <thead><tr><th>Date</th><th>Investigation / Test Name</th><th>Result &amp; Unit</th><th>Reference Range</th></tr></thead>
+                <tbody><tr><td>10/10/2026</td><td>Complete Blood Count</td><td style="color:#B91C1C;font-weight:700">10.6 g/dL (Abnormal)</td><td>11.0 - 15.0</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="old-sbox">
+            <p class="old-stitle">Delivery Plan</p>
+            <div class="old-stamp">Dr. Sherif Radwan<br><bdi lang="ar">شريف جمال رضوان</bdi><br><i>Stamp</i></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="note">Page 2 sits below Page 1 in a single WebView scroll; 7-column scan table and 4-column lab table clip past 360 dp.</p>
+  </figure>
+
+  <figure>
+    <figcaption><b>After</b>, Page 2 (part 1): continued strip, scans &amp; labs (<code>DemoFixtures</code> <code>DEMO-ANC-002</code>)</figcaption>
+    <div class="phone">
+      <header class="rhdr">
+        <div class="rbar">
+          <button type="button" class="ibtn" aria-label="Close">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+          </button>
+          <div class="rbar-acts">
+            <button type="button" class="ibtn" aria-label="Share clinical record">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92c0-1.61-1.31-2.92-2.92-2.92z"/></svg>
+            </button>
+            <button type="button" class="pbtn">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/></svg>
+              <span>Print PDF</span>
+            </button>
+          </div>
+        </div>
+        <div class="rtitle-blk">
+          <p class="rtitle-k">Clinical medical record</p>
+          <p class="rtitle-name ltr">Mona Ragab</p>
+        </div>
+        <div class="rswitch" role="tablist" aria-label="Report pages">
+          <span class="chipwrap"><button type="button" class="chip" role="tab" aria-selected="false">Page 1</button></span>
+          <span class="chipwrap"><button type="button" class="chip sel" role="tab" aria-selected="true">Page 2</button></span>
+        </div>
+      </header>
+      <div class="rbody">
+        <section class="sec fam-pt" aria-label="Continued record summary">
+          <div class="sec-body" style="padding-top:12px">
+            <div class="cmeta-top">
+              <div style="min-width:0;flex:1 1 auto">
+                <p class="cmeta-title">Scans, laboratory results, medications and delivery plan</p>
+                <p class="cmeta-sub">Patient ID: [Case ID] · Print date: 17/11/2026</p>
+              </div>
+              <span class="bchip pt">Continued</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="sec fam-ob" aria-label="Ultrasound biometry and fetal surveillance">
+          <div class="sec-head"><h4>Ultrasound biometry and fetal surveillance</h4></div>
+          <div class="sec-body" style="gap:0">
+            <div class="hrow first">
+              <div class="rtop">
+                <span class="rdate"><bdi>10/10/2026</bdi></span>
+                <div class="tags"><span class="bchip ob"><bdi>34w + 1d</bdi></span><span class="bchip ob">1 photos in the clinic record</span></div>
+              </div>
+              <div class="pgrid">
+                <div><span class="l">Presentation</span><span class="v">Cephalic</span></div>
+                <div><span class="l">Placenta</span><span class="v">Anterior</span></div>
+                <div><span class="l">Amniotic fluid</span><span class="v">Normal</span></div>
+                <div><span class="l">EFW (g)</span><span class="v k"><bdi>2350 g</bdi></span></div>
+              </div>
+              <div class="pf"><span class="l">Clinical notes</span><span class="v">Fetuses: Singleton · FHR: 142 · High-risk growth &amp; Doppler surveillance · BPD: 86 · HC: 310 · AC: 300 · FL: 66</span></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="sec fam-hx" aria-label="Laboratory investigations">
+          <div class="sec-head"><h4>Laboratory investigations</h4></div>
+          <div class="sec-body" style="gap:0">
+            <div class="hrow first">
+              <div class="rtop">
+                <span class="rdate" style="flex:1 1 auto;min-width:0">Complete Blood Count</span>
+                <div style="text-align:end"><span class="rdate" style="color:var(--err)"><bdi>10.6 g/dL</bdi></span><br><span class="sw sw-hi">Abnormal</span></div>
+              </div>
+              <p class="rsub"><bdi>10/10/2026</bdi> · Ref: <bdi>11.0 - 15.0</bdi></p>
+              <p class="rsub">Al Borg Medical Labs · Mild anemia in pregnancy</p>
+            </div>
+            <div class="hrow">
+              <div class="rtop">
+                <span class="rdate" style="flex:1 1 auto;min-width:0">Oral Glucose Tolerance Test (75g) - 2h Post-Load</span>
+                <span class="rdate"><bdi>112 mg/dL</bdi></span>
+              </div>
+              <p class="rsub"><bdi>25/07/2026</bdi> · Ref: <bdi>&lt; 140</bdi></p>
+              <p class="rsub">Al Mokhtabar Labs</p>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+    <p class="note">Each scan shows 2-column <code>PlainField</code>s (never a 7-col table); abnormal lab results use <code>error</code> ink paired with the word <code>Abnormal</code> (never color alone).</p>
+  </figure>
+
+  <figure>
+    <figcaption><b>After</b>, Page 2 (part 2): medications, delivery plan (Mona: Mothercare, EDD 11/02/2027) &amp; attestation</figcaption>
+    <div class="phone">
+      <div class="rbody">
+        <section class="sec fam-hx" aria-label="Current medications">
+          <div class="sec-head"><h4>Current medications</h4></div>
+          <div class="sec-body" style="gap:0">
+            <div class="hrow first">
+              <span class="rdate">Ferrous Sulfate</span>
+              <p class="rsub">200 mg · Oral · Take with orange juice for absorption · Prophylaxis</p>
+              <p class="rmeta"><bdi>From 10/04/2026</bdi></p>
+            </div>
+            <div class="hrow">
+              <span class="rdate">Calcium + Vitamin D3</span>
+              <p class="rsub">500 mg / 400 IU · Oral · Prophylaxis · Adverse: Reports constipation and stomach discomfort</p>
+              <p class="rmeta"><bdi>From 08/05/2026</bdi></p>
+            </div>
+          </div>
+        </section>
+
+        <section class="sec fam-hx" aria-label="Stopped medications">
+          <div class="sec-head"><h4>Stopped medications</h4></div>
+          <div class="sec-body" style="gap:0">
+            <div class="hrow first">
+              <span class="rdate">Folic Acid</span>
+              <p class="rsub">5 mg · Oral · First trimester neural tube defect prophylaxis · Prophylaxis</p>
+              <p class="rmeta"><bdi>07/03/2026 to 04/04/2026</bdi></p>
+            </div>
+          </div>
+        </section>
+
+        <section class="sec fam-dl" aria-label="Delivery plan">
+          <div class="sec-head"><h4>Delivery plan</h4></div>
+          <div class="sec-body">
+            <div class="f"><span class="flab">Hospital</span><p class="fval">Mothercare</p></div>
+            <div class="f"><span class="flab">Estimated due date</span><p class="fval key"><bdi>11/02/2027</bdi></p></div>
+          </div>
+        </section>
+
+        <section class="sec fam-pt" aria-label="Clinician attestation">
+          <div class="sec-head"><h4>Clinician attestation</h4></div>
+          <div class="sec-body" style="gap:4px">
+            <p class="cmeta-title">Dr. Sherif Radwan</p>
+            <p class="cmeta-sub">Specialist of Obstetrics, Gynecology &amp; Laparoscopy</p>
+            <p class="att-ar" lang="ar" dir="rtl">شريف جمال رضوان</p>
+            <p class="att-ar-sub" lang="ar" dir="rtl">أخصائي التوليد وأمراض النساء وتأخر الحمل</p>
+            <p class="cmeta-sub" style="margin-top:6px">Confidential medical record · Dr. Sherif Radwan Clinic · Tel <bdi>01201720808</bdi></p>
+          </div>
+        </section>
+      </div>
+    </div>
+    <p class="note"><code>Stopped medications</code> renders only when stopped items exist (Level 3 rule); delivery fees (<code>12000</code>) never appear in <code>reportDeliveryRows</code>; physical Stamp box stays in A4 print HTML only.</p>
+  </figure>
+</div>
+
+<h2>3. Flagged, High-risk, Rh-negative, Delivered &amp; Archived states (<code>DemoFixtures</code> <code>DEMO-ANC-004</code>)</h2>
+<div class="pair">
+  <figure>
+    <figcaption><b>After</b>, conditional clinical alerts, hidden older rows, Rh-negative precautions &amp; delivered outcome</figcaption>
+    <div class="phone">
+      <div class="rbody">
+        <div class="statban" role="status">Archived record · Delivered 08 Oct 2026 · Vaginal · Live birth</div>
+
+        <section class="sec fam-pt" aria-label="High risk patient identity">
+          <div class="sec-head"><h4>Patient identity</h4></div>
+          <div class="sec-body">
+            <p class="rtitle-name rtl" lang="ar" dir="rtl" style="font-size:18px;line-height:24px">فريدة مصطفى أحمد</p>
+            <div class="tags">
+              <span class="tag t-hi">High risk</span>
+              <span class="tag t-hi">Rh negative</span>
+            </div>
+            <div class="frow">
+              <div class="f"><span class="flab">Age</span><p class="fval"><bdi>35 yrs</bdi></p></div>
+              <div class="f"><span class="flab">Blood group</span><p class="fval key"><bdi>O-</bdi></p></div>
+            </div>
+          </div>
+        </section>
+
+        <div class="attbox" role="note">
+          <span class="k">Clinical attention</span>
+          <span class="v">Prior IUFD at 34w + Primary APS + Rh-Negative. Daily Enoxaparin 4000 IU SC + Aspirin 150mg.</span>
+        </div>
+
+        <section class="sec fam-hx" aria-label="Drug allergies recorded">
+          <div class="sec-head"><h4>Obstetric and medical history</h4></div>
+          <div class="sec-body">
+            <div class="alrbox" role="alert">
+              <span class="k">Drug allergies</span>
+              <span class="v">Penicillin (moderate urticaria)</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="sec fam-pt" aria-label="Visits with BP alerts and cap notice">
+          <div class="sec-head"><h4>Antenatal care visits log</h4></div>
+          <div class="sec-body">
+            <div class="hidden-note">3 earlier visits not shown</div>
+            <div class="hrow first" style="padding-top:4px">
+              <div class="rtop">
+                <div style="display:flex;align-items:center;gap:6px"><span class="bchip pt">#4</span><span class="rdate"><bdi>10/11/2026</bdi></span></div>
+                <span class="bchip pt"><bdi>39+2 wks</bdi></span>
+              </div>
+              <div class="pgrid">
+                <div><span class="l">Blood pressure</span><span class="v k"><bdi>165/105</bdi></span><span class="sw sw-hi">Severe-range BP - urgent assessment</span></div>
+                <div><span class="l">Weight</span><span class="v k"><bdi>74.5 kg</bdi></span></div>
+              </div>
+              <div class="pf"><span class="l">Clinical findings and observations</span><span class="v">Headache, brisk reflexes</span></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="sec fam-dl" aria-label="Delivery plan with outcome and Rh precautions">
+          <div class="sec-head"><h4>Delivery plan</h4></div>
+          <div class="sec-body">
+            <div class="f"><span class="flab">Delivery Outcome</span><p class="fval key">Delivered 08 Oct 2026 · Vaginal · Live birth</p></div>
+            <div class="alrbox">
+              <span class="k">Blood bank precautions</span>
+              <span class="v">Anti-D Prophylaxis + Matched Packed RBCs Cross-match</span>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+    <p class="note">Preserves exact Level-3 labels: <code>Archived record</code>, <code>High risk</code>, <code>Rh negative</code>, <code>3 earlier visits not shown</code>, <code>Severe-range BP - urgent assessment</code>, <code>Delivery Outcome</code>, and <code>Anti-D Prophylaxis + Matched Packed RBCs Cross-match</code>.</p>
+  </figure>
+</div>
+
+<h2>4. Empty-section states (Page 1 &amp; Page 2)</h2>
+<div class="pair">
+  <figure>
+    <figcaption><b>After</b>, Page 1 empty state (exact <code>ReportSections</code> fallbacks)</figcaption>
+    <div class="phone">
+      <div class="rbody">
+        <section class="sec fam-pt" aria-label="Empty dating">
+          <div class="sec-head"><h4>Pregnancy dating</h4></div>
+          <div class="sec-body">
+            <div class="f"><span class="flab">Gestational age</span><p class="fval miss">Gestational age: not recorded</p></div>
+          </div>
+        </section>
+
+        <section class="sec fam-hx" aria-label="Empty histories">
+          <div class="sec-head"><h4>Obstetric and medical history</h4></div>
+          <div class="sec-body">
+            <div class="f fam-ob"><span class="flab">GPA formula</span><p class="fval key"><bdi>G1 P0 + A0</bdi> (Primigravida)</p></div>
+            <div class="f"><span class="flab">Drug allergies</span><p class="fval miss">Not recorded</p></div>
+            <div class="f"><span class="flab">Medical history</span><p class="fval miss">Not recorded</p></div>
+          </div>
+        </section>
+
+        <section class="sec fam-ob" aria-label="Empty previous pregnancies">
+          <div class="sec-head"><h4>Previous pregnancies and obstetric outcomes</h4></div>
+          <div class="sec-body">
+            <p class="emptytxt">No previous pregnancies or deliveries recorded (Primigravida).</p>
+          </div>
+        </section>
+
+        <section class="sec fam-pt" aria-label="Empty visits">
+          <div class="sec-head"><h4>Antenatal care visits log</h4></div>
+          <div class="sec-body">
+            <p class="emptytxt">No clinical visits recorded yet</p>
+          </div>
+        </section>
+      </div>
+    </div>
+  </figure>
+
+  <figure>
+    <figcaption><b>After</b>, Page 2 empty state (exact <code>ReportSections</code> fallbacks)</figcaption>
+    <div class="phone">
+      <div class="rbody">
+        <section class="sec fam-ob" aria-label="Empty scans">
+          <div class="sec-head"><h4>Ultrasound biometry and fetal surveillance</h4></div>
+          <div class="sec-body">
+            <p class="emptytxt">No ultrasound scans recorded yet</p>
+          </div>
+        </section>
+
+        <section class="sec fam-hx" aria-label="Empty labs">
+          <div class="sec-head"><h4>Laboratory investigations</h4></div>
+          <div class="sec-body">
+            <p class="emptytxt">No laboratory test results recorded yet</p>
+          </div>
+        </section>
+
+        <section class="sec fam-hx" aria-label="Empty medications">
+          <div class="sec-head"><h4>Current medications</h4></div>
+          <div class="sec-body">
+            <p class="emptytxt">No current medications recorded</p>
+          </div>
+        </section>
+
+        <section class="sec fam-dl" aria-label="Empty delivery plan">
+          <div class="sec-head"><h4>Delivery plan</h4></div>
+          <div class="sec-body">
+            <div class="f"><span class="flab">Plan</span><p class="fval miss">Not recorded</p></div>
+          </div>
+        </section>
+      </div>
+    </div>
+    <p class="note"><code>Stopped medications</code> card stays hidden when empty; every fallback string matches <code>PatientPrintHtmlGenerator.kt</code> and <code>ReportSections.kt</code> verbatim.</p>
+  </figure>
+</div>
+
+<h2>5. Long Arabic patient name (<bdi lang="ar">منى رجب</bdi>), long English name &amp; <code>fontScale 1.3</code></h2>
+<div class="pair">
+  <figure>
+    <figcaption><b>After</b>, RTL-safe Arabic patient name (<bdi lang="ar">منى رجب</bdi>, extended stress test)</figcaption>
+    <div class="phone">
+      <header class="rhdr">
+        <div class="rbar">
+          <button type="button" class="ibtn" aria-label="Close">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+          </button>
+          <div class="rbar-acts">
+            <button type="button" class="ibtn" aria-label="Share clinical record">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92c0-1.61-1.31-2.92-2.92-2.92z"/></svg>
+            </button>
+            <button type="button" class="pbtn">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/></svg>
+              <span>Print PDF</span>
+            </button>
+          </div>
+        </div>
+        <div class="rtitle-blk">
+          <p class="rtitle-k">Clinical medical record</p>
+          <p class="rtitle-name rtl" lang="ar" dir="rtl">منى رجب عبد الرحمن محمود إبراهيم</p>
+        </div>
+        <div class="rswitch" role="tablist" aria-label="Report pages">
+          <span class="chipwrap"><button type="button" class="chip sel" role="tab" aria-selected="true">Page 1</button></span>
+          <span class="chipwrap"><button type="button" class="chip" role="tab" aria-selected="false">Page 2</button></span>
+        </div>
+      </header>
+      <div class="rbody">
+        <section class="sec fam-pt" aria-label="Arabic identity">
+          <div class="sec-head"><h4>Patient identity</h4></div>
+          <div class="sec-body">
+            <p class="rtitle-name rtl" lang="ar" dir="rtl" style="font-size:18px;line-height:26px">منى رجب عبد الرحمن محمود إبراهيم</p>
+            <div class="frow">
+              <div class="f"><span class="flab">Gestational age</span><p class="fval key"><bdi>27+2 wks</bdi></p></div>
+              <div class="f"><span class="flab">Blood group</span><p class="fval key"><bdi>A+</bdi></p></div>
+            </div>
+            <div class="frow">
+              <div class="f fam-ob"><span class="flab">GPA formula</span><p class="fval key"><bdi>G4 P1 + A2</bdi></p></div>
+              <div class="f"><span class="flab">EDD</span><p class="fval key"><bdi>11/02/2027</bdi></p></div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+    <p class="note">Uses <code>PatientNameText</code>: Arabic <bdi lang="ar">منى رجب</bdi> (extended here as a layout wrap check) aligns right via <code>isRtlText</code> while English UI chrome stays LTR and <code>ltrIsolate</code> keeps <code>27+2 wks</code>, <code>G4 P1 + A2</code>, <code>A+</code>, and <code>11/02/2027</code> left-to-right.</p>
+  </figure>
+
+  <figure>
+    <figcaption><b>After</b>, long English name at <code>fontScale 1.3</code> (360 dp, zero clipping)</figcaption>
+    <div class="phone fs13">
+      <header class="rhdr">
+        <div class="rbar">
+          <button type="button" class="ibtn" aria-label="Close">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+          </button>
+          <div class="rbar-acts">
+            <button type="button" class="ibtn" aria-label="Share clinical record">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92c0-1.61-1.31-2.92-2.92-2.92z"/></svg>
+            </button>
+            <button type="button" class="pbtn">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/></svg>
+              <span>Print PDF</span>
+            </button>
+          </div>
+        </div>
+        <div class="rtitle-blk">
+          <p class="rtitle-k">Clinical medical record</p>
+          <p class="rtitle-name ltr">Mona Abdelrahman El-Sayed Hassan</p>
+        </div>
+        <div class="rswitch" role="tablist" aria-label="Report pages">
+          <span class="chipwrap"><button type="button" class="chip sel" role="tab" aria-selected="true">Page 1</button></span>
+          <span class="chipwrap"><button type="button" class="chip" role="tab" aria-selected="false">Page 2</button></span>
+        </div>
+      </header>
+      <div class="rbody">
+        <section class="sec fam-pt" aria-label="Scaled dating">
+          <div class="sec-head"><h4>Pregnancy dating</h4></div>
+          <div class="sec-body">
+            <div class="f"><span class="flab">Gestational age today</span><p class="fval key"><bdi>27+2 wks</bdi></p></div>
+            <div class="frow">
+              <div class="f"><span class="flab">LMP</span><p class="fval"><bdi>07/05/2026</bdi></p></div>
+              <div class="f"><span class="flab">EDD</span><p class="fval key"><bdi>11/02/2027</bdi></p></div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+    <p class="note">Long English name (layout stress check on Mona Ragab) wraps cleanly across full 328 dp header width at <code>1.3x</code> scale without colliding with <code>Share</code> or <code>Print PDF</code>; pairs stack vertically above <code>1.3x</code>.</p>
+  </figure>
+</div>
+
+<h2>6. Dark theme (<code>AncTheme(darkTheme = true)</code>)</h2>
+<div class="pair">
+  <figure>
+    <figcaption><b>Before</b>, dark theme defect: blinding light WebView + pink Print pill</figcaption>
+    <div class="phone dark">
+      <div class="old-bar">
+        <div class="old-bar-l">
+          <span class="old-x" aria-hidden="true">✕</span>
+          <div style="min-width:0;flex:1"><p class="old-t15">Clinical Medical Record</p><p class="old-n11">Mona Ragab</p></div>
+        </div>
+        <div class="old-bar-r"><span class="old-x" aria-hidden="true">↗</span><span class="old-print dk">Print PDF</span></div>
+      </div>
+      <div class="old-web" style="min-height:220px">
+        <div class="old-sheet">
+          <div class="old-chdr"><h5>Dr. Sherif Radwan Clinic</h5><div class="old-badge-caps">CLINICAL RECORD</div></div>
+          <div class="old-ptcard"><div><b>Mona Ragab</b></div><div><b>A+</b></div></div>
+          <p style="margin:0;color:#475569;font-size:10px">HTML canvas stays #FFFFFF / #E2E8F0 regardless of dark theme.</p>
+        </div>
+      </div>
+    </div>
+  </figure>
+
+  <figure>
+    <figcaption><b>Dark</b>, after, Page 1 (<code>FieldPatientDark</code> + <code>FieldObstetricDark</code>)</figcaption>
+    <div class="phone dark">
+      <header class="rhdr">
+        <div class="rbar">
+          <button type="button" class="ibtn" aria-label="Close">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+          </button>
+          <div class="rbar-acts">
+            <button type="button" class="ibtn" aria-label="Share clinical record">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92c0-1.61-1.31-2.92-2.92-2.92z"/></svg>
+            </button>
+            <button type="button" class="pbtn">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/></svg>
+              <span>Print PDF</span>
+            </button>
+          </div>
+        </div>
+        <div class="rtitle-blk">
+          <p class="rtitle-k">Clinical medical record</p>
+          <p class="rtitle-name ltr">Mona Ragab</p>
+        </div>
+        <div class="rswitch" role="tablist" aria-label="Report pages">
+          <span class="chipwrap"><button type="button" class="chip sel" role="tab" aria-selected="true">Page 1</button></span>
+          <span class="chipwrap"><button type="button" class="chip" role="tab" aria-selected="false">Page 2</button></span>
+        </div>
+      </header>
+      <div class="rbody">
+        <section class="sec fam-pt" aria-label="Dark identity">
+          <div class="sec-head"><h4>Patient identity</h4></div>
+          <div class="sec-body">
+            <div class="tags"><span class="tag t-mod">Medium risk</span><span class="tag t-inc">A+</span></div>
+            <div class="frow">
+              <div class="f"><span class="flab">Gestational age</span><p class="fval key"><bdi>27+2 wks</bdi></p></div>
+              <div class="f"><span class="flab">EDD</span><p class="fval key"><bdi>11/02/2027</bdi></p></div>
+            </div>
+            <div class="f fam-ob"><span class="flab">GPA formula</span><p class="fval key"><bdi>G4 P1 + A2</bdi></p></div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </figure>
+
+  <figure>
+    <figcaption><b>Dark</b>, after, Page 2 (<code>FieldBackgroundDark</code> + <code>FieldDeliveryDark</code>)</figcaption>
+    <div class="phone dark">
+      <div class="rbody">
+        <section class="sec fam-hx" aria-label="Dark labs">
+          <div class="sec-head"><h4>Laboratory investigations</h4></div>
+          <div class="sec-body" style="gap:0">
+            <div class="hrow first">
+              <div class="rtop">
+                <span class="rdate" style="flex:1 1 auto;min-width:0">Complete Blood Count</span>
+                <div style="text-align:end"><span class="rdate" style="color:var(--err)"><bdi>10.6 g/dL</bdi></span><br><span class="sw sw-hi">Abnormal</span></div>
+              </div>
+              <p class="rsub"><bdi>10/10/2026</bdi> · Ref: <bdi>11.0 - 15.0</bdi></p>
+            </div>
+          </div>
+        </section>
+        <section class="sec fam-dl" aria-label="Dark delivery plan">
+          <div class="sec-head"><h4>Delivery plan</h4></div>
+          <div class="sec-body">
+            <div class="f"><span class="flab">Hospital</span><p class="fval">Mothercare</p></div>
+            <div class="f"><span class="flab">Estimated due date</span><p class="fval key"><bdi>11/02/2027</bdi></p></div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </figure>
+</div>
+
+<h2>7. Contrast (computed, WCAG 2.x formula)</h2>
+<div class="tablewrap"><table class="spec">
+<thead><tr><th>Pair</th><th>Foreground</th><th>Background</th><th>Light</th><th>Dark</th></tr></thead>
+<tbody>
+<tr><td>Section headings, action icons (<code>primary</code> on <code>surface</code>)</td><td><code>#0D1B3D</code> / <code>#B4C5FF</code></td><td><code>#FFFFFF</code> / <code>#1A202E</code></td><td class="n">16.92</td><td class="n">9.59</td></tr>
+<tr><td>Patient name &amp; field values (<code>onSurface</code> on <code>surface</code>)</td><td><code>#0D1B3D</code> / <code>#E2E2EA</code></td><td><code>#FFFFFF</code> / <code>#1A202E</code></td><td class="n">16.92</td><td class="n">12.64</td></tr>
+<tr><td>PlainField labels, secondary lines, missing text (<code>onSurfaceVariant</code> on <code>surface</code>)</td><td><code>#4C3F43</code> / <code>#CDC3C6</code></td><td><code>#FFFFFF</code> / <code>#1A202E</code></td><td class="n">10.00</td><td class="n">9.47</td></tr>
+<tr><td>Print PDF button &amp; active Page chip (<code>onPrimary</code> on <code>primary</code>)</td><td><code>#FFFFFF</code> / <code>#002A78</code></td><td><code>#0D1B3D</code> / <code>#B4C5FF</code></td><td class="n">16.92</td><td class="n">7.72</td></tr>
+<tr><td>Inactive Page chip border on surface (<code>outline</code> on <code>surface</code>, 3:1 non-text)</td><td><code>#79747E</code> / <code>#8E95A5</code></td><td><code>#FFFFFF</code> / <code>#1A202E</code></td><td class="n">4.55</td><td class="n">5.42</td></tr>
+<tr><td>Patient family label / value (<code>FieldPatientLabel</code> &amp; <code>onSurface</code> on <code>FieldPatientBg</code>)</td><td><code>#23407A</code> / <code>#AFC6F2</code></td><td><code>#E9EEF8</code> / <code>#22304A</code></td><td class="n">8.65 / 14.54</td><td class="n">7.66 / 10.25</td></tr>
+<tr><td>Obstetric family label / value (<code>FieldObstetricLabel</code> &amp; <code>onSurface</code> on <code>FieldObstetricBg</code>)</td><td><code>#1D5149</code> / <code>#9FD6CC</code></td><td><code>#E3F0EE</code> / <code>#1D3836</code></td><td class="n">7.73 / 14.47</td><td class="n">7.76 / 9.75</td></tr>
+<tr><td>Background family label / value (<code>FieldBackgroundLabel</code> &amp; <code>onSurface</code> on <code>FieldBackgroundBg</code>)</td><td><code>#594A2C</code> / <code>#E0CFA6</code></td><td><code>#F1EDE4</code> / <code>#36301F</code></td><td class="n">7.36 / 14.48</td><td class="n">8.53 / 10.19</td></tr>
+<tr><td>Delivery family label / value (<code>FieldDeliveryLabel</code> &amp; <code>onSurface</code> on <code>FieldDeliveryBg</code>)</td><td><code>#4E3A78</code> / <code>#CDBDF0</code></td><td><code>#EEE9F5</code> / <code>#2E2842</code></td><td class="n">8.00 / 14.19</td><td class="n">8.10 / 10.88</td></tr>
+<tr><td>High risk &amp; Rh negative tag (<code>StatusHighText</code> on <code>StatusHighBg</code>)</td><td><code>#8E1B1B</code> / <code>#FFC9C9</code></td><td><code>#FBE3E3</code> / <code>#4A1616</code></td><td class="n">7.40</td><td class="n">10.19</td></tr>
+<tr><td>Medium risk &amp; Clinical attention (<code>StatusModerateText</code> on <code>StatusModerateBg</code>)</td><td><code>#6E4708</code> / <code>#F3D18E</code></td><td><code>#FCEFD6</code> / <code>#3A2A0E</code></td><td class="n">7.19</td><td class="n">9.44</td></tr>
+<tr><td>Low risk &amp; hidden-row notice (<code>StatusIncompleteText</code> on <code>StatusIncompleteBg</code>)</td><td><code>#333B4A</code> / <code>#D5DAE3</code></td><td><code>#EEF0F4</code> / <code>#2A3140</code></td><td class="n">9.87</td><td class="n">9.29</td></tr>
+<tr><td>Abnormal lab &amp; Severe BP words (<code>error</code> on <code>surface</code>)</td><td><code>#BA1A1A</code> / <code>#FFB4AB</code></td><td><code>#FFFFFF</code> / <code>#1A202E</code></td><td class="n">6.46</td><td class="n">9.59</td></tr>
+<tr><td>Drug allergy &amp; Blood bank alert (<code>onErrorContainer</code> on <code>errorContainer</code>)</td><td><code>#410002</code> / <code>#FFDAD6</code></td><td><code>#FFDAD6</code> / <code>#5C141D</code></td><td class="n">13.26</td><td class="n">10.33</td></tr>
+<tr><td>Archived/Delivered status banner (<code>onPrimaryContainer</code> on <code>primaryContainer</code>)</td><td><code>#041334</code> / <code>#DCE1FF</code></td><td><code>#D6DFFF</code> / <code>#183F91</code></td><td class="n">13.82</td><td class="n">7.53</td></tr>
+<tr><td>Before defect (fixed): <code>Print PDF</code> rose button boundary on navy bar</td><td><code>#934F5B</code></td><td><code>#0D1B3D</code></td><td class="n">2.83 (Fail)</td><td class="n"></td></tr>
+</tbody></table></div>
+
+<h2>8. Compose mapping (existing tokens &amp; components)</h2>
+<ol class="map">
+  <li><b><code>PatientTwoPageReportDialog</code> (<code>ui/report/PatientTwoPageReportDialog.kt</code>):</b> keep exact signature, <code>Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false, dismissOnBackPress = true))</code>, and outer <code>Surface(Modifier.fillMaxSize().testTag("patientTwoPageReportDialog"), color = MaterialTheme.colorScheme.background)</code>.</li>
+  <li><b>Pinned header &amp; page switcher:</b> <code>Surface(color = MaterialTheme.colorScheme.surface, shadowElevation = 0.dp)</code> holding Row 1 (<code>48.dp</code> <code>closeReportDialog</code> <code>IconButton</code>, <code>48.dp</code> <code>shareReportButton</code> <code>IconButton</code> calling unchanged <code>patientShareText(patient)</code> + <code>Intent.ACTION_SEND</code>, <code>48.dp</code> <code>RecordShapes.Small</code> <code>printReportButton</code> <code>Button</code> calling unchanged <code>PatientPrintManager.printPatientReport(context, patient, securitySettings)</code>), Row 2 (<code>RecordType.FieldLabel</code> dialog title + full-width <code>PatientNameText(patient.displayName, style = RecordType.HeaderName)</code>), Row 3 (<code>FlowRow</code> of <code>48.dp</code> <code>RecordFilterChip</code>s for <code>Page 1</code> and <code>Page 2</code>), and <code>HorizontalDivider(color = outlineVariant)</code>.</li>
+  <li><b>Page 1 &amp; Page 2 sections (<code>ui/report/ReportSections.kt</code>):</b> preserve every existing pure helper function untouched for <code>ReportSectionsTest</code>, <code>PatientPrintHtmlGenerator</code>, and <code>PatientShareText</code>; add Compose section blocks built from <code>RecordSectionCard</code>, <code>LabeledValue</code> / <code>LabeledValueRow</code> (stacking when <code>fontScale &gt; 1.3f</code>), <code>PlainField</code>, <code>BandChip</code>, <code>StatusTag</code>, <code>StatusWord</code>, and <code>PatientNameText</code> / <code>ltrIsolate</code> across the four <code>FieldFamilies.*</code>.</li>
+</ol>
+
+<h2>9. Decisions for the owner (max 5)</h2>
+<ol class="map">
+  <li><b>Native Compose Page 1 &amp; Page 2 body vs keeping <code>AndroidView(WebView)</code> (<code>reportWebView</code> tag):</b> Today the dialog mounts only a light-mode <code>WebView</code> with 600 px tables. Grep confirms zero tests in <code>androidTest</code> or <code>test</code> reference <code>reportWebView</code>. <b>Recommend:</b> render Page 1 and Page 2 natively in Compose (<code>Page 1</code> and <code>Page 2</code> switcher) and retire <code>reportWebView</code> from the dialog (keeping <code>PatientPrintHtmlGenerator</code> untouched for <code>Print PDF</code>); alternatively, keep <code>reportWebView</code> behind an optional 3rd <code>Print sheet</code> chip if on-screen A4 inspection is wanted.</li>
+  <li><b>Gestational age format in the native report cards (<code>27+2 wks</code> vs <code>27w 2d</code>):</b> <code>PLAN.md</code> Decision 9 sets <code>27+2 wks</code> across reports, whereas <code>reportGestationalAge()</code> in <code>ReportSections.kt</code> returns <code>27w 2d</code> (pinned by <code>ReportSectionsTest</code>) and <code>scanGestationalAge()</code> returns <code>12w + 3d</code>. <b>Recommend:</b> leave <code>reportGestationalAge()</code> and <code>scanGestationalAge()</code> untouched for tests, print HTML, and share text, and display <code>shortWeeksText</code> (<code>27+2 wks</code>) for current/visit GA in the native dialog cards.</li>
+  <li><b>Sentence-case section headings in native UI vs HTML Title Case:</b> <code>PatientPrintHtmlGenerator.kt</code> uses Title Case headings and ALL-CAPS <code>CLINICAL RECORD</code> / <code>CONTINUED</code> badges. <b>Recommend:</b> keep every clinical value, <code>ReportRow.label</code> (<code>Delivery Outcome</code>, <code>Planned delivery</code>, <code>Hospital</code>, <code>Postpartum</code>, <code>Blood bank precautions</code>, <code>Estimated due date</code>, <code>Plan</code>), and <code>ReportRisk</code> label (<code>Medium risk</code>, <code>High risk</code>, <code>Low risk</code>, <code>Risk not recorded</code>) verbatim, while using sentence case for native section headings and <code>Clinical record</code> / <code>Continued</code> chips.</li>
+  <li><b>Clinician attestation block on Page 2 without dashed Stamp box:</b> Print HTML ends Page 2 with <code>Dr. Sherif Radwan</code> / Arabic signature and a dashed <code>Stamp</code> placeholder. <b>Recommend:</b> render the clinician attestation card on Page 2 without the empty physical <code>Stamp</code> box (which stays in A4 print HTML only).</li>
+  <li><b>Known <code>PrintManager</code> <code>Activity</code> context crash:</b> <b>Recommend:</b> keep <code>PatientPrintManager.printPatientReport(context, patient, securitySettings)</code> verbatim inside <code>printReportButton</code> and leave the <code>Activity</code> context fix in its dedicated separate task.</li>
+</ol>
+</main>
+</body>
+</html>
