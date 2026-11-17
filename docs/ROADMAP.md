@@ -262,6 +262,7 @@ Build, sign and roll out without disturbing the records already on your phone.
 
 ## Recent log
 
+- 2026-11-18: Pre-push phone test: 18 pass, 0 fail, logcat clean (docs/qa/prepush/REPORT.md); 5 owner observations.
 - 2026-11-18: QA copy (com.sherifradwan.anc.qa) with slices 14 to 21 installed on the phone at 192.168.1.4:43135.
 - 2026-11-18: Push gate run: 931 of 933 emulator tests passed, the 2 failures were keyboard-sensitive tests; fixed (Meds date-field keyboard test updated for picker-only dates, lab batch tests made keyboard-proof) and re-run as classes, both green. Full gate to be repeated right before merge.
 - 2026-11-17: Lint errors fixed (rd41). Emulator restarted; one lab batch test fails on the fresh emulator at older commits too (rd43).
