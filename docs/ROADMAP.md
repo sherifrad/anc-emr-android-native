@@ -1,10 +1,10 @@
 # Roadmap (generated from docs/PROJECT_STATE.json; do not edit by hand)
 
-Updated 2026-11-16. 108 of 182 tasks done.
+Updated 2026-11-17. 109 of 183 tasks done.
 
 Working on now: You: check the redone lab, ultrasound and medication screens on your phone; New patient with dating, obstetric history, previous pregnancies, clinical attention entry; Large font: filter chip clipped; header subtitle truncated; Patient directory and patient chart in the approved style; Phone testing: Block A and B run by the agy lane (self-reported PASS); Block C, D and two hand checks still need you; Remove duplicates found in the audit (removal only); Apply the design system to lab, ultrasound and medication editors; Go-live checklist: draft written, needs your review; Arabic-name cards mirror the whole card; chips touch; Backup, restore, camera and print-to-PDF end to end on the phone; Design system: one shared card, section title, label/value, choice chips and action bar; Screen-capture block removed in release builds (done); release-build device check still open; Medication screen: multi-drug 'Today's list', one-tap add, Stop (next; two statuses only); Light theme: high-risk card frame; Workspace opens with first tab cut; Device pass 2: PIN lock, TalkBack, Keystore, missing-pointer recovery; Backups lose data: ultrasound EDD merged, attachments missing; Decode photos off the main thread; respect camera rotation; Printed report does not show the blood-pressure alert; Should a severe blood pressure also raise the patient's attention banner or list badge?
 
-## Whole-app redesign (current work) (21/32)
+## Whole-app redesign (current work) (22/33)
 
 22 slices on branch redesign-2026-11-15, mock first, owner approves, lane models build, review and test. Plan: docs/designs/redesign/PLAN.md. Nothing is pushed until the owner says so.
 
@@ -30,8 +30,8 @@ Working on now: You: check the redone lab, ultrasound and medication screens on 
 | rd17 | done | Slice 17: Catalog settings | slice 17 |
 | rd18 | done | Slice 18: Security, lock and vault | slice 18 |
 | rd19 | done | Slice 19: Shell and shared dialogs | slice 19 |
-| rd20 | next | Slice 20: Report dialog |  |
-| rd21 | todo | Slice 21: Cleanup of unused code |  |
+| rd20 | done | Slice 20: Report dialog | slice 20 |
+| rd21 | next | Slice 21: Cleanup of unused code |  |
 | rd30 | todo | Full emulator push gate on the redesign branch (about 85 min) |  |
 | rd31 | blocked | Merge and push the redesign |  |
 | rd32 | todo | Export and print v2 (print crash fix, new layout) |  |
@@ -42,6 +42,7 @@ Working on now: You: check the redone lab, ultrasound and medication screens on 
 | rd37 | todo | MedicationStatusBadge: 12sp text and 10dp radius |  |
 | rd38 | todo | Delivery sheet Switch has no accessible label |  |
 | rd39 | done | Documentation cleanup and single source of truth |  |
+| rd40 | todo | Report attestation doctor name and clinic phone are hardcoded (print sheet and dialog); drive from clinic settings |  |
 
 ## Working rules for every round (4/4)
 
@@ -258,6 +259,7 @@ Build, sign and roll out without disturbing the records already on your phone.
 
 ## Recent log
 
+- 2026-11-17: Slice 20 report dialog done: native pages, 19 new emulator tests, review fixes (post-term marker, no-GA and no-EDD rows, fixed subtitle).
 - 2026-11-16: Slice 19 shared dialogs done: all date fields picker-only, 35 new emulator tests, frontier review and alphacode clean after fixes.
 - 2026-11-16: Slice 18 security, lock and vault done: 36 new emulator tests, SecurityWorkflow and catalog tests green.
 - 2026-11-16: Slice 17 catalog settings done: 29 new emulator tests, CustomChoicesStore and SecurityWorkflow green.

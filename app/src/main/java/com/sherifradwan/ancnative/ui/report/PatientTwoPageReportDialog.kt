@@ -1,51 +1,66 @@
 package com.sherifradwan.ancnative.ui.report
 
-import android.annotation.SuppressLint
 import android.content.Intent
-import android.view.ViewGroup
-import android.webkit.WebView
-import android.webkit.WebViewClient
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.sherifradwan.ancnative.R
 import com.sherifradwan.ancnative.model.DemoPatient
 import com.sherifradwan.ancnative.security.SecuritySettingsState
-import com.sherifradwan.ancnative.ui.ClinicalNavy
+import com.sherifradwan.ancnative.ui.components.FieldFamilies
+import com.sherifradwan.ancnative.ui.components.PatientNameText
+import com.sherifradwan.ancnative.ui.components.RecordFilterChip
+import com.sherifradwan.ancnative.ui.components.RecordShapes
+import com.sherifradwan.ancnative.ui.components.RecordSpacing
+import com.sherifradwan.ancnative.ui.components.RecordType
 import com.sherifradwan.ancnative.ui.minimumTouchTarget
+import java.time.LocalDate
 
-@SuppressLint("SetJavaScriptEnabled")
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun PatientTwoPageReportDialog(
     patient: DemoPatient,
@@ -53,13 +68,13 @@ fun PatientTwoPageReportDialog(
     onDismiss: () -> Unit,
 ) {
     val context = LocalContext.current
-    val htmlContent = remember(patient, securitySettings) {
-        PatientPrintHtmlGenerator.generateHtml(
-            context = context,
-            patient = patient,
-            settings = securitySettings,
-        )
-    }
+    val shareSubject = stringResource(R.string.report_share_subject_format, patient.displayName)
+    val shareChooserTitle = stringResource(R.string.report_share_chooser_title)
+    val pageSwitcherDescription = stringResource(R.string.report_pages_tab_group)
+    var selectedPage by rememberSaveable(patient.id) { mutableIntStateOf(0) }
+    val page1Scroll = rememberScrollState()
+    val page2Scroll = rememberScrollState()
+    val asOfDate = remember { LocalDate.now() }
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -73,144 +88,178 @@ fun PatientTwoPageReportDialog(
                 .fillMaxSize()
                 .testTag("patientTwoPageReportDialog"),
             color = MaterialTheme.colorScheme.background,
+            shadowElevation = 0.dp,
         ) {
             Column(modifier = Modifier.fillMaxSize()) {
-                // Top Action Bar
                 Surface(
-                    color = ClinicalNavy,
-                    contentColor = Color.White,
-                    shadowElevation = 4.dp,
+                    color = MaterialTheme.colorScheme.surface,
+                    shadowElevation = 0.dp,
                 ) {
-                    Row(
+                    Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 12.dp, vertical = 8.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
+                            .statusBarsPadding(),
                     ) {
                         Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(start = 4.dp, end = 8.dp, top = 4.dp, bottom = 4.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            modifier = Modifier.weight(1f),
                         ) {
                             IconButton(
                                 onClick = onDismiss,
-                                modifier = Modifier.minimumTouchTarget().testTag("closeReportDialog"),
-                            ) {
-                                Icon(Icons.Default.Close, contentDescription = "Close", tint = Color.White)
-                            }
-                            Column {
-                                Text(
-                                    text = "Clinical Medical Record",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color.White,
-                                    maxLines = 2,
-                                    overflow = TextOverflow.Ellipsis,
-                                )
-                                Text(
-                                    text = patient.displayName,
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = Color.White.copy(alpha = 0.85f),
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                )
-                            }
-                        }
-
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(6.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            // Share text/summary button
-                            IconButton(
-                                onClick = {
-                                    val summary = patientShareText(patient)
-                                    val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                                        type = "text/plain"
-                                        putExtra(Intent.EXTRA_SUBJECT, "Clinical Record - ${patient.displayName}")
-                                        putExtra(Intent.EXTRA_TEXT, summary)
-                                    }
-                                    context.startActivity(Intent.createChooser(shareIntent, "Share Clinical Record"))
-                                },
-                                modifier = Modifier.minimumTouchTarget().testTag("shareReportButton"),
-                            ) {
-                                Icon(Icons.Default.Share, contentDescription = "Share", tint = Color.White)
-                            }
-
-                            // Print / Export PDF button
-                            Button(
-                                onClick = {
-                                    PatientPrintManager.printPatientReport(
-                                        context = context,
-                                        patient = patient,
-                                        settings = securitySettings,
-                                    )
-                                },
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = MaterialTheme.colorScheme.secondary,
-                                    contentColor = MaterialTheme.colorScheme.onSecondary,
-                                ),
-                                contentPadding = androidx.compose.foundation.layout.PaddingValues(
-                                    horizontal = 12.dp,
-                                    vertical = 8.dp,
-                                ),
-                                modifier = Modifier.minimumTouchTarget().testTag("printReportButton"),
+                                modifier = Modifier
+                                    .minimumTouchTarget()
+                                    .testTag("closeReportDialog"),
                             ) {
                                 Icon(
-                                    imageVector = Icons.Default.Print,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(20.dp),
-                                )
-                                Spacer(Modifier.width(4.dp))
-                                Text(
-                                    text = "Print PDF",
-                                    maxLines = 1,
-                                    softWrap = false,
-                                    style = MaterialTheme.typography.labelLarge,
-                                    fontWeight = FontWeight.Bold,
+                                    imageVector = Icons.Default.Close,
+                                    contentDescription = stringResource(R.string.close),
+                                    tint = MaterialTheme.colorScheme.primary,
                                 )
                             }
+
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                IconButton(
+                                    onClick = {
+                                        val summary = patientShareText(patient)
+                                        val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                                            type = "text/plain"
+                                            putExtra(Intent.EXTRA_SUBJECT, shareSubject)
+                                            putExtra(Intent.EXTRA_TEXT, summary)
+                                        }
+                                        context.startActivity(Intent.createChooser(shareIntent, shareChooserTitle))
+                                    },
+                                    modifier = Modifier
+                                        .minimumTouchTarget()
+                                        .testTag("shareReportButton"),
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Share,
+                                        contentDescription = stringResource(R.string.report_share_cd),
+                                        tint = MaterialTheme.colorScheme.primary,
+                                    )
+                                }
+
+                                Button(
+                                    onClick = {
+                                        PatientPrintManager.printPatientReport(
+                                            context = context,
+                                            patient = patient,
+                                            settings = securitySettings,
+                                        )
+                                    },
+                                    shape = RecordShapes.Small,
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = MaterialTheme.colorScheme.primary,
+                                        contentColor = MaterialTheme.colorScheme.onPrimary,
+                                    ),
+                                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+                                    modifier = Modifier
+                                        .defaultMinSize(minWidth = 48.dp, minHeight = 48.dp)
+                                        .minimumTouchTarget()
+                                        .testTag("printReportButton"),
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Print,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(18.dp),
+                                    )
+                                    Spacer(Modifier.width(6.dp))
+                                    Text(
+                                        text = stringResource(R.string.print_pdf),
+                                        style = RecordType.Action,
+                                        maxLines = 2,
+                                        textAlign = TextAlign.Center,
+                                    )
+                                }
+                            }
                         }
+
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp)
+                                .padding(bottom = 8.dp),
+                            verticalArrangement = Arrangement.spacedBy(2.dp),
+                        ) {
+                            Text(
+                                text = stringResource(R.string.report_dialog_kicker),
+                                style = RecordType.FieldLabel,
+                                color = FieldFamilies.patient().label,
+                            )
+                            PatientNameText(
+                                name = patient.displayName,
+                                style = RecordType.HeaderName,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                        }
+
+                        FlowRow(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp)
+                                .padding(bottom = 8.dp)
+                                .semantics { contentDescription = pageSwitcherDescription }
+                                .testTag("reportPageSwitcher"),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp),
+                        ) {
+                            RecordFilterChip(
+                                selected = selectedPage == 0,
+                                label = stringResource(R.string.report_page_1),
+                                onClick = { selectedPage = 0 },
+                                tag = "reportPage1Chip",
+                                wrap = true,
+                                minTouchTarget = true,
+                            )
+                            RecordFilterChip(
+                                selected = selectedPage == 1,
+                                label = stringResource(R.string.report_page_2),
+                                onClick = { selectedPage = 1 },
+                                tag = "reportPage2Chip",
+                                wrap = true,
+                                minTouchTarget = true,
+                            )
+                        }
+
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                     }
                 }
 
-                // Interactive WebView Paper Canvas
                 Box(
                     modifier = Modifier
-                        .fillMaxSize()
                         .weight(1f)
-                        .background(MaterialTheme.colorScheme.surfaceVariant),
+                        .fillMaxWidth()
+                        .navigationBarsPadding(),
                 ) {
-                    AndroidView(
-                        factory = { ctx ->
-                            WebView(ctx).apply {
-                                layoutParams = ViewGroup.LayoutParams(
-                                    ViewGroup.LayoutParams.MATCH_PARENT,
-                                    ViewGroup.LayoutParams.MATCH_PARENT,
-                                )
-                                this.settings.apply {
-                                    javaScriptEnabled = false
-                                    domStorageEnabled = true
-                                    builtInZoomControls = true
-                                    displayZoomControls = false
-                                    useWideViewPort = false
-                                    loadWithOverviewMode = true
-                                    defaultTextEncodingName = "UTF-8"
-                                }
-                                webViewClient = WebViewClient()
-                                tag = htmlContent
-                                loadDataWithBaseURL("file:///android_asset/", htmlContent, "text/html", "UTF-8", null)
-                            }
-                        },
-                        update = { webView ->
-                            if (webView.tag != htmlContent) {
-                                webView.tag = htmlContent
-                                webView.loadDataWithBaseURL("file:///android_asset/", htmlContent, "text/html", "UTF-8", null)
-                            }
-                        },
-                        modifier = Modifier.fillMaxSize().testTag("reportWebView"),
-                    )
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .verticalScroll(if (selectedPage == 0) page1Scroll else page2Scroll)
+                            .padding(RecordSpacing.L)
+                            .testTag("reportPageContent"),
+                        verticalArrangement = Arrangement.spacedBy(RecordSpacing.M),
+                    ) {
+                        if (selectedPage == 0) {
+                            ReportPageOneSections(
+                                patient = patient,
+                                securitySettings = securitySettings,
+                                asOfDate = asOfDate,
+                            )
+                        } else {
+                            ReportPageTwoSections(
+                                patient = patient,
+                                securitySettings = securitySettings,
+                                asOfDate = asOfDate,
+                            )
+                        }
+                    }
                 }
             }
         }

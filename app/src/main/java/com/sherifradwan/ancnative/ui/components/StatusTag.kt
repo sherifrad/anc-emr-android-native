@@ -118,11 +118,26 @@ fun BandChip(
     tone: StatusTone?,
     modifier: Modifier = Modifier,
     family: FieldFamily = currentFieldFamily(),
+    tinted: Boolean = false,
+    wrap: Boolean = false,
 ) {
     val dark = isDarkTheme()
+    val neutralColors = if (tinted) {
+        if (dark) {
+            Triple(StatusIncompleteDarkBg, StatusIncompleteDarkBorder, StatusIncompleteDarkText)
+        } else {
+            Triple(StatusIncompleteBg, StatusIncompleteBorder, StatusIncompleteText)
+        }
+    } else {
+        Triple(MaterialTheme.colorScheme.surface, Color.Transparent, MaterialTheme.colorScheme.onSurfaceVariant)
+    }
     val (bg, border, fg) = when (tone) {
-        null -> Triple(MaterialTheme.colorScheme.surface, Color.Transparent, family.label)
-        StatusTone.Neutral -> Triple(MaterialTheme.colorScheme.surface, Color.Transparent, MaterialTheme.colorScheme.onSurfaceVariant)
+        null -> Triple(
+            if (tinted) family.container else MaterialTheme.colorScheme.surface,
+            Color.Transparent,
+            family.label,
+        )
+        StatusTone.Neutral -> neutralColors
         StatusTone.Moderate -> if (dark) {
             Triple(StatusModerateDarkBg, StatusModerateDarkBorder, StatusModerateDarkText)
         } else {
@@ -144,7 +159,7 @@ fun BandChip(
             text = text,
             style = RecordType.Tag.copy(fontWeight = FontWeight.Bold),
             color = fg,
-            maxLines = 1,
+            maxLines = if (wrap) Int.MAX_VALUE else 1,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.padding(horizontal = 10.dp, vertical = 2.dp),
         )

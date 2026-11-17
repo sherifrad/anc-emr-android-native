@@ -1,5 +1,5 @@
 {
- "updated": "2026-11-16",
+ "updated": "2026-11-17",
  "phases": {
   "p1": {
    "order": 1,
@@ -1756,22 +1756,22 @@
   "rd20": {
    "phase": "pRD",
    "order": 21,
-   "status": "next",
+   "status": "done",
    "title": "Slice 20: Report dialog",
-   "ref": "",
-   "detail": "Report dialog (level 3). Mock first.",
+   "ref": "slice 20",
+   "detail": "Report dialog drawn natively (pages 1 and 2, no WebView), print generator and share text untouched, post-term marker and empty-field rules match the print sheet. 19 new tests green.",
    "owner": "Lane models",
-   "updated": "2026-11-16"
+   "updated": "2026-11-17"
   },
   "rd21": {
    "phase": "pRD",
    "order": 22,
-   "status": "todo",
+   "status": "next",
    "title": "Slice 21: Cleanup of unused code",
    "ref": "",
-   "detail": "",
+   "detail": "Cleanup: delete unused code, compile-proven only.",
    "owner": "Lane models",
-   "updated": "2026-11-16"
+   "updated": "2026-11-17"
   },
   "rd30": {
    "phase": "pRD",
@@ -1872,9 +1872,23 @@
    "detail": "Local cleanup committed (246eb27). Remote main still holds the old files until the owner approves a push.",
    "owner": "",
    "updated": "2026-11-16"
+  },
+  "rd40": {
+   "phase": "pRD",
+   "order": 40,
+   "status": "todo",
+   "title": "Report attestation doctor name and clinic phone are hardcoded (print sheet and dialog); drive from clinic settings",
+   "ref": "",
+   "detail": "Found in slice 20 review; pre-existing in PatientPrintHtmlGenerator (protected), needs owner sign-off.",
+   "owner": "",
+   "updated": "2026-11-17"
   }
  },
  "log": [
+  {
+   "date": "2026-11-17",
+   "text": "Slice 20 report dialog done: native pages, 19 new emulator tests, review fixes (post-term marker, no-GA and no-EDD rows, fixed subtitle)."
+  },
   {
    "date": "2026-11-16",
    "text": "Slice 19 shared dialogs done: all date fields picker-only, 35 new emulator tests, frontier review and alphacode clean after fixes."

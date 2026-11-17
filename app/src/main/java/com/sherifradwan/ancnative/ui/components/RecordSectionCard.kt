@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
@@ -26,7 +27,7 @@ import com.sherifradwan.ancnative.ui.minimumTouchTarget
 
 @Composable
 fun RecordSectionCard(
-    title: String,
+    title: String?,
     family: FieldFamily,
     modifier: Modifier = Modifier,
     action: (@Composable () -> Unit)? = null,
@@ -39,31 +40,45 @@ fun RecordSectionCard(
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
     ) {
         CompositionLocalProvider(LocalFieldFamily provides family) {
-            Column(
-                modifier = Modifier.padding(start = 16.dp, end = 4.dp, top = 4.dp, bottom = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(RecordSpacing.M),
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = 48.dp),
-                    verticalAlignment = Alignment.CenterVertically,
+            if (title != null || action != null) {
+                Column(
+                    modifier = Modifier.padding(start = 16.dp, end = 4.dp, top = 4.dp, bottom = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(RecordSpacing.M),
                 ) {
-                    Text(
-                        text = title,
-                        style = RecordType.SectionTitle,
-                        color = MaterialTheme.colorScheme.primary,
+                    Row(
                         modifier = Modifier
-                            .weight(1f)
-                            .padding(vertical = 6.dp)
-                            .semantics { heading() },
+                            .fillMaxWidth()
+                            .heightIn(min = 48.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        if (title != null) {
+                            Text(
+                                text = title,
+                                style = RecordType.SectionTitle,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .padding(vertical = 6.dp)
+                                    .semantics { heading() },
+                            )
+                        } else {
+                            Spacer(Modifier.weight(1f))
+                        }
+                        action?.invoke()
+                    }
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(end = 12.dp),
+                        verticalArrangement = Arrangement.spacedBy(RecordSpacing.M),
+                        content = content,
                     )
-                    action?.invoke()
                 }
+            } else {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(end = 12.dp),
+                        .padding(RecordSpacing.L),
                     verticalArrangement = Arrangement.spacedBy(RecordSpacing.M),
                     content = content,
                 )

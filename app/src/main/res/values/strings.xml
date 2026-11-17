@@ -1028,4 +1028,75 @@
     <string name="clear_date">Clear</string>
     <string name="date_picker_open_cd">Select %1$s</string>
     <string name="date_field_value_cd">%1$s, %2$s</string>
+
+    <!-- Slice 20: Two-page clinical report dialog -->
+    <string name="report_dialog_kicker">Clinical medical record</string>
+    <string name="report_page_1">Page 1</string>
+    <string name="report_page_2">Page 2</string>
+    <string name="report_pages_tab_group">Report pages</string>
+    <string name="report_share_cd">Share clinical record</string>
+    <string name="report_share_chooser_title">Share Clinical Record</string>
+    <string name="report_share_subject_format">Clinical Record - %1$s</string>
+
+    <string name="report_badge_clinical_record">Clinical record</string>
+    <string name="report_badge_continued">Continued</string>
+    <string name="report_page2_subtitle">Scans, laboratory results, medications and delivery plan</string>
+    <string name="report_clinic_subtitle_full">Maternal-Fetal Medicine &amp; Advanced Obstetrics</string>
+    <string name="report_patient_id_label">Patient ID</string>
+    <string name="report_print_date_label">Print date</string>
+    <string name="report_meta_pair_format">%1$s: %2$s</string>
+
+    <string name="report_section_patient_identity">Patient identity</string>
+    <string name="report_section_pregnancy_dating">Pregnancy dating</string>
+    <string name="report_section_history">Obstetric and medical history</string>
+    <string name="report_section_previous_pregnancies">Previous pregnancies and obstetric outcomes</string>
+    <string name="report_section_visits">Antenatal care visits log</string>
+    <string name="report_section_scans">Ultrasound biometry and fetal surveillance</string>
+    <string name="report_section_labs">Laboratory investigations</string>
+    <string name="report_section_current_meds">Current medications</string>
+    <string name="report_section_stopped_meds">Stopped medications</string>
+    <string name="report_section_delivery_plan">Delivery plan</string>
+    <string name="report_section_attestation">Clinician attestation</string>
+
+    <string name="report_phone_label">Phone</string>
+    <string name="report_phone_unspecified">Unspecified</string>
+    <string name="report_dob_label">Date of birth</string>
+    <string name="report_age_years_format">%1$d yrs</string>
+    <string name="report_ga_today_label">Gestational age today</string>
+    <string name="report_ga_post_term_format">%1$s (Post-term)</string>
+    <string name="report_ga_not_recorded">Gestational age: not recorded</string>
+    <string name="report_gpa_label">GPA formula</string>
+    <string name="report_gpa_value_format">%1$s (%2$s)</string>
+    <string name="report_drug_allergies_label">Drug allergies</string>
+
+    <string name="report_bp_label">Blood pressure</string>
+    <string name="report_weight_label">Weight</string>
+    <string name="report_findings_label">Clinical findings and observations</string>
+    <string name="report_visit_number_format">#%1$d</string>
+    <string name="report_bp_raised">Raised BP - recheck</string>
+    <string name="report_bp_severe">Severe-range BP - urgent assessment</string>
+
+    <string name="report_presentation_label">Presentation</string>
+    <string name="report_placenta_label">Placenta</string>
+    <string name="report_amniotic_fluid_label">Amniotic fluid</string>
+    <string name="report_efw_label">EFW (g)</string>
+    <string name="report_scan_notes_label">Clinical notes</string>
+    <string name="report_scan_photos_format">%1$d photos in the clinic record</string>
+    <string name="report_lab_ref_format">Ref: %1$s</string>
+
+    <string name="report_hidden_visits_format">%1$d earlier visits not shown</string>
+    <string name="report_hidden_scans_format">%1$d earlier scans not shown</string>
+    <string name="report_hidden_labs_format">%1$d older results not shown</string>
+
+    <string name="report_empty_previous_pregnancies_format">No previous pregnancies or deliveries recorded (%1$s).</string>
+    <string name="report_empty_visits">No clinical visits recorded yet</string>
+    <string name="report_empty_scans">No ultrasound scans recorded yet</string>
+    <string name="report_empty_labs">No laboratory test results recorded yet</string>
+    <string name="report_empty_current_meds">No current medications recorded</string>
+
+    <string name="report_doctor_name_en">Dr. Sherif Radwan</string>
+    <string name="report_doctor_specialty_en">Specialist of Obstetrics, Gynecology &amp; Laparoscopy</string>
+    <string name="report_doctor_name_ar">شريف جمال رضوان</string>
+    <string name="report_doctor_specialty_ar">أخصائي التوليد وأمراض النساء وتأخر الحمل</string>
+    <string name="report_confidential_footer_format">Confidential medical record · %1$s · Tel %2$s</string>
 </resources>
