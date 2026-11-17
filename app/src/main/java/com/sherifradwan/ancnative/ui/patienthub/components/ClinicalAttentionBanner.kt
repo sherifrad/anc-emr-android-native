@@ -88,17 +88,7 @@ data class AttentionColors(
     val accent: Color,
     val border: Color,
     val borderWidth: Dp = 1.dp,
-) {
-    val containerColor: Color get() = container
-    val textColor: Color get() = content
-    val iconColor: Color get() = accent
-    val borderColor: Color get() = border
-}
-
-typealias ClinicalAttentionColors = AttentionColors
-
-@Composable
-fun clinicalAttentionColors(level: ClinicalAttentionLevel): AttentionColors = attentionColors(level)
+)
 
 @Composable
 fun attentionColors(level: ClinicalAttentionLevel): AttentionColors {

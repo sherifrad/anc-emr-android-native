@@ -1,0 +1,127 @@
+unused-import	app/src/main/java/com/sherifradwan/ancnative/model/ClinicalModels.kt:5	import java.time.temporal.ChronoUnit
+unreferenced	app/src/main/java/com/sherifradwan/ancnative/security/SecuritySettingsRepository.kt:149	setAutoLockTimeout
+unused-import	app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt:10	import com.sherifradwan.ancnative.model.PreviousPregnancyFormRules
+unused-import	app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt:11	import com.sherifradwan.ancnative.model.effectiveMedicationStatus
+unused-import	app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt:12	import com.sherifradwan.ancnative.model.parseBloodPressure
+unused-import	app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt:13	import com.sherifradwan.ancnative.model.parseVisitFindings
+unused-import	app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt:14	import com.sherifradwan.ancnative.storage.ClinicalRecordKind
+unused-import	app/src/main/java/com/sherifradwan/ancnative/state/AncViewModel.kt:35	import kotlinx.coroutines.Job
+unused-import	app/src/main/java/com/sherifradwan/ancnative/state/AncViewModel.kt:36	import kotlinx.coroutines.delay
+unreferenced	app/src/main/java/com/sherifradwan/ancnative/storage/AttachmentSyncManager.kt:26	localizedStatus
+unreferenced	app/src/main/java/com/sherifradwan/ancnative/storage/AttachmentSyncManager.kt:49	computeStats
+unreferenced	app/src/main/java/com/sherifradwan/ancnative/storage/CameraCaptureHelper.kt:26	createCameraTempUri
+unused-import	app/src/main/java/com/sherifradwan/ancnative/storage/ClinicalCommands.kt:4	import com.sherifradwan.ancnative.model.DemoLabInvestigation
+unused-import	app/src/main/java/com/sherifradwan/ancnative/storage/ClinicalCommands.kt:5	import com.sherifradwan.ancnative.model.DemoMedicationRecord
+unreferenced	app/src/main/java/com/sherifradwan/ancnative/storage/PatientAttachmentVault.kt:96	saveAttachmentFromStream
+unused-import	app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt:15	import com.sherifradwan.ancnative.model.PatientVocabulary
+unused-import	app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt:17	import java.time.LocalDate
+unused-import	app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt:18	import java.time.format.DateTimeParseException
+unreferenced	app/src/main/java/com/sherifradwan/ancnative/storage/VaultFiles.kt:149	hasEnvelope
+unreferenced	app/src/main/java/com/sherifradwan/ancnative/storage/VaultFiles.kt:151	hasDatabase
+unreferenced	app/src/main/java/com/sherifradwan/ancnative/storage/VaultFiles.kt:152	hasIncompletePointerArtifact
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/AddAttachmentDialog.kt:33	import androidx.compose.runtime.getValue
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/AddAttachmentDialog.kt:36	import androidx.compose.runtime.setValue
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/AncApp.kt:10	import androidx.compose.foundation.layout.Spacer
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/AncApp.kt:17	import androidx.compose.foundation.layout.width
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/AncApp.kt:30	import androidx.compose.material3.OutlinedButton
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/AncApp.kt:37	import androidx.compose.runtime.getValue
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/AncApp.kt:40	import androidx.compose.runtime.setValue
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/AncDatePicker.kt:31	import androidx.compose.runtime.getValue
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/AncDatePicker.kt:35	import androidx.compose.runtime.setValue
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/AppLockScreen.kt:35	import androidx.compose.runtime.getValue
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/AppLockScreen.kt:39	import androidx.compose.runtime.setValue
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/CatalogSettingsSections.kt:40	import androidx.compose.runtime.getValue
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/CatalogSettingsSections.kt:43	import androidx.compose.runtime.setValue
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalBadges.kt:8	import androidx.compose.foundation.layout.Column
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalBadges.kt:10	import androidx.compose.foundation.layout.fillMaxWidth
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalBadges.kt:24	import androidx.compose.ui.graphics.Color
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalBadges.kt:25	import androidx.compose.ui.graphics.luminance
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalPresets.kt:16	import androidx.compose.runtime.getValue
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalPresets.kt:19	import androidx.compose.runtime.setValue
+unreferenced	app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalPresets.kt:66	ClinicalPresets
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/Components.kt:6	import androidx.compose.foundation.background
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/Components.kt:7	import androidx.compose.foundation.clickable
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/Components.kt:15	import androidx.compose.foundation.layout.fillMaxSize
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/Components.kt:17	import androidx.compose.foundation.layout.height
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/Components.kt:27	import androidx.compose.material.icons.filled.AccountCircle
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/Components.kt:58	import androidx.compose.ui.text.style.TextAlign
+unreferenced	app/src/main/java/com/sherifradwan/ancnative/ui/DesignSystem.kt:57	SectionCard
+unreferenced	app/src/main/java/com/sherifradwan/ancnative/ui/DesignSystem.kt:253	NoticeCard
+unreferenced	app/src/main/java/com/sherifradwan/ancnative/ui/DesignSystem.kt:488	SectionHeader
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/InAppCameraDialog.kt:44	import androidx.compose.runtime.getValue
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/InAppCameraDialog.kt:48	import androidx.compose.runtime.setValue
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/LabBatchScreen.kt:43	import androidx.compose.runtime.getValue
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/LabBatchScreen.kt:47	import androidx.compose.runtime.setValue
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/LabEditor.kt:28	import androidx.compose.runtime.getValue
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/LabEditor.kt:33	import androidx.compose.runtime.setValue
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/PatientEditor.kt:34	import androidx.compose.runtime.getValue
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/PatientEditor.kt:37	import androidx.compose.runtime.setValue
+unreferenced	app/src/main/java/com/sherifradwan/ancnative/ui/PatientEditor.kt:619	EditorActions
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt:4	import androidx.compose.foundation.background
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt:6	import androidx.compose.foundation.clickable
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt:12	import androidx.compose.foundation.layout.FlowRow
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt:18	import androidx.compose.foundation.layout.height
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt:27	import androidx.compose.foundation.shape.RoundedCornerShape
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt:29	import androidx.compose.material.icons.filled.AccountCircle
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt:30	import androidx.compose.material.icons.filled.Add
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt:33	import androidx.compose.material.icons.filled.Edit
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt:34	import androidx.compose.material.icons.filled.EditNote
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt:36	import androidx.compose.material.icons.filled.MoreVert
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt:38	import androidx.compose.material.icons.filled.Unarchive
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt:39	import androidx.compose.material.icons.filled.Warning
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt:42	import androidx.compose.material3.CardDefaults
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt:46	import androidx.compose.material3.HorizontalDivider
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt:50	import androidx.compose.material3.ModalBottomSheet
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt:51	import androidx.compose.material3.OutlinedButton
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt:54	import androidx.compose.material3.Surface
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt:59	import androidx.compose.runtime.getValue
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt:63	import androidx.compose.runtime.setValue
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt:66	import androidx.compose.ui.draw.clip
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt:67	import androidx.compose.ui.graphics.Color
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt:68	import androidx.compose.ui.graphics.lerp
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt:69	import androidx.compose.ui.graphics.luminance
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt:82	import com.sherifradwan.ancnative.model.SevereBpAttention
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/SecuritySettingsDialog.kt:45	import androidx.compose.runtime.getValue
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/SecuritySettingsDialog.kt:48	import androidx.compose.runtime.setValue
+unreferenced	app/src/main/java/com/sherifradwan/ancnative/ui/TimelineSpine.kt:17	TimelineSpineItem
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/UltrasoundEditor.kt:31	import androidx.compose.runtime.getValue
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/UltrasoundEditor.kt:35	import androidx.compose.runtime.setValue
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/UltrasoundPhotoViewerDialog.kt:32	import androidx.compose.runtime.getValue
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/UltrasoundPhotoViewerDialog.kt:35	import androidx.compose.runtime.setValue
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/VisitEditor.kt:22	import androidx.compose.runtime.getValue
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/VisitEditor.kt:27	import androidx.compose.runtime.setValue
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/components/ZoomableImage.kt:20	import androidx.compose.runtime.getValue
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/components/ZoomableImage.kt:24	import androidx.compose.runtime.setValue
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/patientdirectory/PatientDirectoryCard.kt:24	import androidx.compose.material3.Text
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/patientdirectory/PatientDirectoryMetricsRow.kt:16	import androidx.compose.ui.graphics.Color
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubHeader.kt:35	import androidx.compose.runtime.getValue
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubHeader.kt:38	import androidx.compose.runtime.setValue
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubScreen.kt:12	import androidx.compose.runtime.getValue
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubScreen.kt:18	import androidx.compose.runtime.setValue
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/AttachmentsSectionCard.kt:21	import androidx.compose.runtime.getValue
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/AttachmentsSectionCard.kt:25	import androidx.compose.runtime.setValue
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/ClinicalAttentionBanner.kt:29	import androidx.compose.runtime.getValue
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/ClinicalAttentionBanner.kt:32	import androidx.compose.runtime.setValue
+unreferenced	app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/ClinicalAttentionBanner.kt:101	clinicalAttentionColors
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/DeliveryPlanSheet.kt:25	import androidx.compose.runtime.getValue
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/DeliveryPlanSheet.kt:29	import androidx.compose.runtime.setValue
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/EditorSheetParts.kt:24	import androidx.compose.runtime.getValue
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/LabReportItem.kt:21	import androidx.compose.runtime.getValue
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/LabReportItem.kt:26	import androidx.compose.runtime.setValue
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicationForm.kt:19	import androidx.compose.runtime.getValue
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicationForm.kt:25	import androidx.compose.runtime.setValue
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicationSheet.kt:21	import androidx.compose.runtime.getValue
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicationSheet.kt:24	import androidx.compose.runtime.setValue
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicationStopBar.kt:17	import androidx.compose.runtime.getValue
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicationTapToAddSection.kt:47	import androidx.compose.runtime.getValue
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicationTapToAddSection.kt:53	import androidx.compose.runtime.setValue
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/MedsTab.kt:35	import androidx.compose.runtime.getValue
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/MedsTab.kt:40	import androidx.compose.runtime.setValue
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/VisitsTab.kt:6	import androidx.compose.foundation.layout.Row
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/VisitsTab.kt:8	import androidx.compose.foundation.layout.fillMaxWidth
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/VisitsTab.kt:9	import androidx.compose.foundation.layout.padding
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt:10	import com.sherifradwan.ancnative.model.GestationalAgeEngine
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt:11	import com.sherifradwan.ancnative.model.PreviousPregnancyFormRules
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientTwoPageReportDialog.kt:35	import androidx.compose.runtime.getValue
+unused-import	app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientTwoPageReportDialog.kt:39	import androidx.compose.runtime.setValue
+# 126 findings in 166 main files

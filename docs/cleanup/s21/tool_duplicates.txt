@@ -1,0 +1,106 @@
+## 18 significant lines, 2 places
+  app/src/main/java/com/sherifradwan/ancnative/ui/LabEditorComponents.kt:62-80
+  app/src/main/java/com/sherifradwan/ancnative/ui/VisitEditorSteps.kt:103-121
+
+## 18 significant lines, 2 places
+  app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt:742-759
+  app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt:921-938
+
+## 17 significant lines, 3 places
+  app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt:658-674
+  app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt:743-759
+  app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt:922-938
+
+## 16 significant lines, 2 places
+  app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalAttachmentViewerDialog.kt:94-110
+  app/src/main/java/com/sherifradwan/ancnative/ui/UltrasoundPhotoViewerDialog.kt:109-124
+
+## 16 significant lines, 6 places
+  app/src/main/java/com/sherifradwan/ancnative/storage/RecordsMigration.kt:449-469
+  app/src/main/java/com/sherifradwan/ancnative/storage/RecordsMigration.kt:478-498
+  app/src/main/java/com/sherifradwan/ancnative/storage/RecordsMigration.kt:521-541
+  app/src/main/java/com/sherifradwan/ancnative/storage/RecordsMigration.kt:564-584
+  app/src/main/java/com/sherifradwan/ancnative/storage/RecordsMigration.kt:607-627
+  app/src/main/java/com/sherifradwan/ancnative/storage/RecordsMigration.kt:650-670
+
+## 16 significant lines, 2 places
+  app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt:1148-1163
+  app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt:1178-1193
+
+## 15 significant lines, 2 places
+  app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/DeliveryPlanSheet.kt:107-122
+  app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicationSheet.kt:96-112
+
+## 15 significant lines, 2 places
+  app/src/main/java/com/sherifradwan/ancnative/model/DemoModels.kt:80-94
+  app/src/main/java/com/sherifradwan/ancnative/storage/PatientCommands.kt:240-254
+
+## 15 significant lines, 2 places
+  app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt:862-876
+  app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt:880-894
+
+## 14 significant lines, 2 places
+  app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt:1328-1341
+  app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt:1435-1448
+
+## 13 significant lines, 2 places
+  app/src/main/java/com/sherifradwan/ancnative/model/ClinicalModels.kt:144-156
+  app/src/main/java/com/sherifradwan/ancnative/storage/ClinicalCommands.kt:178-190
+
+## 13 significant lines, 4 places
+  app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt:1098-1112
+  app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt:1206-1220
+  app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt:1287-1301
+  app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt:1537-1551
+
+## 12 significant lines, 2 places
+  app/src/main/java/com/sherifradwan/ancnative/ui/CatalogSettingsSections.kt:1179-1197
+  app/src/main/java/com/sherifradwan/ancnative/ui/SecuritySettingsDialog.kt:900-918
+
+## 12 significant lines, 2 places
+  app/src/main/java/com/sherifradwan/ancnative/state/AncViewModel.kt:799-810
+  app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt:1494-1505
+
+## 12 significant lines, 2 places
+  app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt:768-779
+  app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt:977-988
+
+## 12 significant lines, 2 places
+  app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt:785-796
+  app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt:994-1005
+
+## 12 significant lines, 2 places
+  app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt:800-811
+  app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt:1009-1020
+
+## 11 significant lines, 2 places
+  app/src/main/java/com/sherifradwan/ancnative/storage/RecordsMigration.kt:72-84
+  app/src/main/java/com/sherifradwan/ancnative/storage/RecordsMigration.kt:222-234
+
+## 11 significant lines, 2 places
+  app/src/main/java/com/sherifradwan/ancnative/model/ClinicalModels.kt:178-188
+  app/src/main/java/com/sherifradwan/ancnative/storage/ClinicalCommands.kt:391-401
+
+## 10 significant lines, 2 places
+  app/src/main/java/com/sherifradwan/ancnative/ui/DesignSystem.kt:731-740
+  app/src/main/java/com/sherifradwan/ancnative/ui/DesignSystem.kt:776-785
+
+## 10 significant lines, 2 places
+  app/src/main/java/com/sherifradwan/ancnative/ui/Components.kt:128-137
+  app/src/main/java/com/sherifradwan/ancnative/ui/Components.kt:297-306
+
+## 10 significant lines, 2 places
+  app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt:1119-1128
+  app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt:1138-1147
+
+## 10 significant lines, 3 places
+  app/src/main/java/com/sherifradwan/ancnative/state/AncViewModel.kt:801-810
+  app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt:1496-1505
+  app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt:1521-1530
+
+## 10 significant lines, 2 places
+  app/src/main/java/com/sherifradwan/ancnative/storage/EncryptedBackupManager.kt:50-60
+  app/src/main/java/com/sherifradwan/ancnative/storage/EncryptedBackupManager.kt:67-77
+
+24 duplicate clusters of at least 10 lines in 166 files
+

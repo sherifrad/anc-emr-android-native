@@ -19,15 +19,6 @@ data class CompositeTestGroup(
 ) {
     val abnormalCount: Int get() = items.count { it.isAbnormal }
     val isAnyAbnormal: Boolean get() = abnormalCount > 0
-    val summaryPillText: String
-        get() {
-            val abnormalItem = items.firstOrNull { it.isAbnormal }
-            return if (abnormalItem != null) {
-                "${abnormalItem.testName} ${abnormalItem.result} [ABNORMAL]"
-            } else {
-                "ALL NORMAL ✓"
-            }
-        }
 }
 
 private val CBC_KEYWORDS = listOf(

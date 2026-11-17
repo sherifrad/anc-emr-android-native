@@ -1,0 +1,251 @@
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/AncApp.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/AncApp.kt
+index 011e05d..b8130f4 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/AncApp.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/AncApp.kt
+@@ -7,14 +7,12 @@ import androidx.compose.foundation.layout.Arrangement
+ import androidx.compose.foundation.layout.Box
+ import androidx.compose.foundation.layout.Column
+ import androidx.compose.foundation.layout.Row
+-import androidx.compose.foundation.layout.Spacer
+ import androidx.compose.foundation.layout.WindowInsets
+ import androidx.compose.foundation.layout.fillMaxSize
+ import androidx.compose.foundation.layout.fillMaxWidth
+ import androidx.compose.foundation.layout.padding
+ import androidx.compose.foundation.layout.safeDrawing
+ import androidx.compose.foundation.layout.size
+-import androidx.compose.foundation.layout.width
+ import androidx.compose.foundation.layout.windowInsetsPadding
+ import androidx.compose.material.icons.Icons
+ import androidx.compose.material.icons.filled.BrightnessAuto
+@@ -27,7 +25,6 @@ import androidx.compose.material3.CircularProgressIndicator
+ import androidx.compose.material3.Icon
+ import androidx.compose.material3.IconButton
+ import androidx.compose.material3.MaterialTheme
+-import androidx.compose.material3.OutlinedButton
+ import androidx.compose.material3.Surface
+ import androidx.compose.material3.Text
+ import androidx.compose.material3.TextButton
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalBadges.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalBadges.kt
+index a6516a2..627ed45 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalBadges.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalBadges.kt
+@@ -5,9 +5,7 @@ import androidx.compose.foundation.BorderStroke
+ import androidx.compose.foundation.background
+ import androidx.compose.foundation.layout.Arrangement
+ import androidx.compose.foundation.layout.size
+-import androidx.compose.foundation.layout.Column
+ import androidx.compose.foundation.layout.Row
+-import androidx.compose.foundation.layout.fillMaxWidth
+ import androidx.compose.foundation.layout.height
+ import androidx.compose.foundation.layout.padding
+ import androidx.compose.foundation.layout.IntrinsicSize
+@@ -21,8 +19,6 @@ import androidx.compose.material3.Text
+ import androidx.compose.runtime.Composable
+ import androidx.compose.ui.Alignment
+ import androidx.compose.ui.Modifier
+-import androidx.compose.ui.graphics.Color
+-import androidx.compose.ui.graphics.luminance
+ import androidx.compose.ui.platform.testTag
+ import androidx.compose.ui.res.stringResource
+ import androidx.compose.ui.semantics.clearAndSetSemantics
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/Components.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/Components.kt
+index 8506d6e..d409a17 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/Components.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/Components.kt
+@@ -3,8 +3,6 @@ package com.sherifradwan.ancnative.ui
+ import java.time.LocalDate
+ import androidx.annotation.StringRes
+ import androidx.compose.foundation.BorderStroke
+-import androidx.compose.foundation.background
+-import androidx.compose.foundation.clickable
+ import androidx.compose.foundation.layout.Arrangement
+ import androidx.compose.foundation.layout.Box
+ import androidx.compose.foundation.layout.Column
+@@ -12,9 +10,7 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
+ import androidx.compose.foundation.layout.FlowRow
+ import androidx.compose.foundation.layout.Row
+ import androidx.compose.foundation.layout.Spacer
+-import androidx.compose.foundation.layout.fillMaxSize
+ import androidx.compose.foundation.layout.fillMaxWidth
+-import androidx.compose.foundation.layout.height
+ import androidx.compose.foundation.layout.padding
+ import androidx.compose.foundation.layout.size
+ import androidx.compose.foundation.layout.sizeIn
+@@ -24,7 +20,6 @@ import androidx.compose.foundation.text.KeyboardActions
+ import androidx.compose.foundation.text.KeyboardOptions
+ import androidx.compose.material.icons.Icons
+ import androidx.compose.material.icons.automirrored.filled.ArrowBack
+-import androidx.compose.material.icons.filled.AccountCircle
+ import androidx.compose.material.icons.filled.Print
+ import androidx.compose.material.icons.filled.Warning
+ import androidx.compose.material3.Card
+@@ -55,7 +50,6 @@ import androidx.compose.ui.text.TextStyle
+ import androidx.compose.ui.text.font.FontWeight
+ import androidx.compose.ui.text.input.ImeAction
+ import androidx.compose.ui.text.input.KeyboardType
+-import androidx.compose.ui.text.style.TextAlign
+ import androidx.compose.ui.text.style.TextOverflow
+ import androidx.compose.ui.unit.dp
+ import com.sherifradwan.ancnative.R
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt
+index 78f4399..01ebb45 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt
+@@ -1,21 +1,17 @@
+ package com.sherifradwan.ancnative.ui
+ 
+ import androidx.compose.foundation.BorderStroke
+-import androidx.compose.foundation.background
+ import androidx.compose.foundation.border
+-import androidx.compose.foundation.clickable
+ import androidx.compose.foundation.horizontalScroll
+ import androidx.compose.foundation.layout.Arrangement
+ import androidx.compose.foundation.layout.Box
+ import androidx.compose.foundation.layout.BoxWithConstraints
+ import androidx.compose.foundation.layout.Column
+-import androidx.compose.foundation.layout.FlowRow
+ import androidx.compose.foundation.layout.PaddingValues
+ import androidx.compose.foundation.layout.Row
+ import androidx.compose.foundation.layout.Spacer
+ import androidx.compose.foundation.layout.fillMaxSize
+ import androidx.compose.foundation.layout.fillMaxWidth
+-import androidx.compose.foundation.layout.height
+ import androidx.compose.foundation.layout.heightIn
+ import androidx.compose.foundation.layout.padding
+ import androidx.compose.foundation.layout.size
+@@ -24,34 +20,21 @@ import androidx.compose.foundation.lazy.LazyColumn
+ import androidx.compose.foundation.lazy.items
+ import androidx.compose.foundation.rememberScrollState
+ import java.time.LocalDate
+-import androidx.compose.foundation.shape.RoundedCornerShape
+ import androidx.compose.material.icons.Icons
+-import androidx.compose.material.icons.filled.AccountCircle
+-import androidx.compose.material.icons.filled.Add
+ import androidx.compose.material.icons.filled.Archive
+ import androidx.compose.material.icons.filled.Clear
+-import androidx.compose.material.icons.filled.Edit
+-import androidx.compose.material.icons.filled.EditNote
+ import androidx.compose.material.icons.filled.KeyboardArrowDown
+-import androidx.compose.material.icons.filled.MoreVert
+ import androidx.compose.material.icons.filled.Search
+-import androidx.compose.material.icons.filled.Unarchive
+-import androidx.compose.material.icons.filled.Warning
+ import androidx.compose.material3.Button
+ import androidx.compose.material3.Card
+-import androidx.compose.material3.CardDefaults
+ import androidx.compose.material3.DropdownMenu
+ import androidx.compose.material3.DropdownMenuItem
+ import androidx.compose.material3.ExperimentalMaterial3Api
+-import androidx.compose.material3.HorizontalDivider
+ import androidx.compose.material3.Icon
+ import androidx.compose.material3.IconButton
+ import androidx.compose.material3.MaterialTheme
+-import androidx.compose.material3.ModalBottomSheet
+-import androidx.compose.material3.OutlinedButton
+ import androidx.compose.material3.OutlinedCard
+ import androidx.compose.material3.OutlinedTextField
+-import androidx.compose.material3.Surface
+ import androidx.compose.material3.Text
+ import androidx.compose.material3.TextButton
+ import androidx.compose.material3.rememberModalBottomSheetState
+@@ -63,10 +46,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
+ import androidx.compose.runtime.setValue
+ import androidx.compose.ui.Alignment
+ import androidx.compose.ui.Modifier
+-import androidx.compose.ui.draw.clip
+-import androidx.compose.ui.graphics.Color
+-import androidx.compose.ui.graphics.lerp
+-import androidx.compose.ui.graphics.luminance
+ import androidx.compose.ui.platform.testTag
+ import androidx.compose.ui.res.stringResource
+ import androidx.compose.ui.semantics.heading
+@@ -79,7 +58,6 @@ import androidx.compose.ui.unit.dp
+ import androidx.compose.ui.unit.sp
+ import com.sherifradwan.ancnative.R
+ import com.sherifradwan.ancnative.model.DemoPatient
+-import com.sherifradwan.ancnative.model.SevereBpAttention
+ import com.sherifradwan.ancnative.model.datingSummaryOf
+ import com.sherifradwan.ancnative.model.formatDmy
+ import com.sherifradwan.ancnative.model.previousDeliverySummary
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/patientdirectory/PatientDirectoryCard.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/patientdirectory/PatientDirectoryCard.kt
+index c539d31..cc92618 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/patientdirectory/PatientDirectoryCard.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/patientdirectory/PatientDirectoryCard.kt
+@@ -21,7 +21,6 @@ import androidx.compose.material3.CardDefaults
+ import androidx.compose.material3.Icon
+ import androidx.compose.material3.IconButton
+ import androidx.compose.material3.MaterialTheme
+-import androidx.compose.material3.Text
+ import androidx.compose.runtime.Composable
+ import androidx.compose.ui.Alignment
+ import androidx.compose.ui.Modifier
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/patientdirectory/PatientDirectoryMetricsRow.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/patientdirectory/PatientDirectoryMetricsRow.kt
+index 6d97f3e..8943acb 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/patientdirectory/PatientDirectoryMetricsRow.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/patientdirectory/PatientDirectoryMetricsRow.kt
+@@ -13,7 +13,6 @@ import androidx.compose.material3.Text
+ import androidx.compose.runtime.Composable
+ import androidx.compose.ui.Alignment
+ import androidx.compose.ui.Modifier
+-import androidx.compose.ui.graphics.Color
+ import androidx.compose.ui.res.stringResource
+ import androidx.compose.ui.text.style.TextOverflow
+ import androidx.compose.ui.unit.dp
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/ClinicalAttentionBanner.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/ClinicalAttentionBanner.kt
+index e2c3256..9623f1e 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/ClinicalAttentionBanner.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/ClinicalAttentionBanner.kt
+@@ -88,17 +88,7 @@ data class AttentionColors(
+     val accent: Color,
+     val border: Color,
+     val borderWidth: Dp = 1.dp,
+-) {
+-    val containerColor: Color get() = container
+-    val textColor: Color get() = content
+-    val iconColor: Color get() = accent
+-    val borderColor: Color get() = border
+-}
+-
+-typealias ClinicalAttentionColors = AttentionColors
+-
+-@Composable
+-fun clinicalAttentionColors(level: ClinicalAttentionLevel): AttentionColors = attentionColors(level)
++)
+ 
+ @Composable
+ fun attentionColors(level: ClinicalAttentionLevel): AttentionColors {
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/model/LabReportGrouping.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/model/LabReportGrouping.kt
+index bbcdfc4..765d71a 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/model/LabReportGrouping.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/model/LabReportGrouping.kt
+@@ -19,15 +19,6 @@ data class CompositeTestGroup(
+ ) {
+     val abnormalCount: Int get() = items.count { it.isAbnormal }
+     val isAnyAbnormal: Boolean get() = abnormalCount > 0
+-    val summaryPillText: String
+-        get() {
+-            val abnormalItem = items.firstOrNull { it.isAbnormal }
+-            return if (abnormalItem != null) {
+-                "${abnormalItem.testName} ${abnormalItem.result} [ABNORMAL]"
+-            } else {
+-                "ALL NORMAL ✓"
+-            }
+-        }
+ }
+ 
+ private val CBC_KEYWORDS = listOf(
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/VisitsTab.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/VisitsTab.kt
+index 6daa0b0..7484490 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/VisitsTab.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/VisitsTab.kt
+@@ -3,10 +3,7 @@ package com.sherifradwan.ancnative.ui.patienthub.tabs
+ import androidx.compose.foundation.layout.Arrangement
+ import androidx.compose.foundation.layout.Column
+ import androidx.compose.foundation.layout.PaddingValues
+-import androidx.compose.foundation.layout.Row
+ import androidx.compose.foundation.layout.fillMaxSize
+-import androidx.compose.foundation.layout.fillMaxWidth
+-import androidx.compose.foundation.layout.padding
+ import androidx.compose.foundation.lazy.LazyColumn
+ import androidx.compose.foundation.lazy.items
+ import androidx.compose.material3.MaterialTheme

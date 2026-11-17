@@ -1879,7 +1879,7 @@
    "status": "todo",
    "title": "Report attestation doctor name and clinic phone are hardcoded (print sheet and dialog); drive from clinic settings",
    "ref": "",
-   "detail": "Found in slice 20 review; pre-existing in PatientPrintHtmlGenerator (protected), needs owner sign-off.",
+   "detail": "Owner agreed 2026-11-17 to make attestation doctor name and clinic phone come from clinic settings. Needs print generator change (protected): do with frontier review and independent tests.",
    "owner": "",
    "updated": "2026-11-17"
   }
