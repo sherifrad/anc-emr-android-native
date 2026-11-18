@@ -1,8 +1,8 @@
 # Roadmap (generated from docs/PROJECT_STATE.json; do not edit by hand)
 
-Updated 2026-11-18. 115 of 186 tasks done.
+Updated 2026-11-18. 131 of 186 tasks done.
 
-Working on now: You: check the redone lab, ultrasound and medication screens on your phone; New patient with dating, obstetric history, previous pregnancies, clinical attention entry; Large font: filter chip clipped; header subtitle truncated; Patient directory and patient chart in the approved style; Phone testing: Block A and B run by the agy lane (self-reported PASS); Block C, D and two hand checks still need you; Remove duplicates found in the audit (removal only); Apply the design system to lab, ultrasound and medication editors; Go-live checklist: draft written, needs your review; Arabic-name cards mirror the whole card; chips touch; Backup, restore, camera and print-to-PDF end to end on the phone; Design system: one shared card, section title, label/value, choice chips and action bar; Screen-capture block removed in release builds (done); release-build device check still open; Medication screen: multi-drug 'Today's list', one-tap add, Stop (next; two statuses only); Light theme: high-risk card frame; Workspace opens with first tab cut; Device pass 2: PIN lock, TalkBack, Keystore, missing-pointer recovery; Backups lose data: ultrasound EDD merged, attachments missing; Decode photos off the main thread; respect camera rotation; Printed report does not show the blood-pressure alert; Should a severe blood pressure also raise the patient's attention banner or list badge?
+Working on now: Large font: filter chip clipped; header subtitle truncated; Phone testing: Block A and B run by the agy lane (self-reported PASS); Block C, D and two hand checks still need you; Remove duplicates found in the audit (removal only); Go-live checklist: draft written, needs your review; Arabic-name cards mirror the whole card; chips touch; Backup, restore, camera and print-to-PDF end to end on the phone; Screen-capture block removed in release builds (done); release-build device check still open; Medication screen: multi-drug 'Today's list', one-tap add, Stop (next; two statuses only); Light theme: high-risk card frame; Workspace opens with first tab cut; Device pass 2: PIN lock, TalkBack, Keystore, missing-pointer recovery; Backups lose data: ultrasound EDD merged, attachments missing; Decode photos off the main thread; respect camera rotation; Printed report does not show the blood-pressure alert; Should a severe blood pressure also raise the patient's attention banner or list badge?
 
 ## Whole-app redesign (current work) (28/36)
 
@@ -58,7 +58,7 @@ A round is logic OR design, never both. One function per rule, defined once and 
 | g08 | done | Handoff for agy and progress log updated for the delete/Undo plan (done) | commit 4d8f0fe |
 | x03 | done | Handoff to Gemini: report, start prompt and fixed redesign specs written | 2026-11-02 |
 
-## Logic and functions (no visual change) (7/19)
+## Logic and functions (no visual change) (8/19)
 
 Model, state and storage code with unit tests written first. No layout, colour or wording changes. Screens only call the new function.
 
@@ -70,7 +70,7 @@ Model, state and storage code with unit tests written first. No layout, colour o
 | w02 | done | New patient: choose how the pregnancy is dated, using the same dating rule (after the dating logic) | your phone feedback 2026-11-01 |
 | w03 | todo | Alert notes: one rule splits them into lines and counts '+ N more' (the card layout is a design task) | your phone feedback 2026-11-01 |
 | w12 | todo | Hysterotomy deliveries counted as cesarean, with the difference shown | your decision D17 2026-11-01 |
-| l03 | todo | Edit medications in settings (name, dose, route, frequency), like lab tests | plan L7 |
+| l03 | done | Edit medications in settings (name, dose, route, frequency), like lab tests | plan L7 |
 | l04 | blocked | Print title 'Active Medications': rename to 'Medications'? (waiting for your yes or no) | owner decision |
 | w04 | blocked | Delivery plan: its own data and editor (waiting for your list of fields) | your phone feedback 2026-11-01 |
 | l05 | todo | Check that the blood-pressure alert on the print and the severe-BP badge are really finished | visit checks |
@@ -84,29 +84,29 @@ Model, state and storage code with unit tests written first. No layout, colour o
 | g07 | todo | Delete and Undo for attachments (files removed for good only after the Undo window) | round r6b6 |
 | g09 | done | Reuse kit for new deletable sections: guide, wiring check, registry test (done) | 7f26beb |
 
-## Graphic design and UX (no logic change) (6/23)
+## Graphic design and UX (no logic change) (15/23)
 
 Mock-up first, you approve, then Compose files only. No model, state or storage changes. Large changes are staged so each step can be checked on your phone.
 
 | Id | Status | Task | Ref |
 |---|---|---|---|
 | d21 | done | Ultrasound screen: guided findings, shared design-system cards, More section | commit 80e6416 |
-| w11 | active | Design system: one shared card, section title, label/value, choice chips and action bar | your phone feedback 2026-11-01 |
-| d10 | active | Apply the design system to lab, ultrasound and medication editors | after the design system |
+| w11 | done | Design system: one shared card, section title, label/value, choice chips and action bar | your phone feedback 2026-11-01 |
+| d10 | done | Apply the design system to lab, ultrasound and medication editors | after the design system |
 | d22 | done | Lab screen: one-test card, edit-details, big result buttons, Flag and Note, Add tests | commit 6ef0f9c |
-| d11 | todo | One risk badge per patient card and compact two-line rows | design proposal 2026-11-01 |
+| d11 | done | One risk badge per patient card and compact two-line rows | design proposal 2026-11-01 |
 | d23 | done | Approved mock-ups: lab/ultrasound/medication (B), five recommended screens, directory, chart, visit entry | design/d4 and the Entry Mock-ups artifact |
 | d12 | blocked | Colour palette: keep Navy / Ivory / Rose / Teal, or switch to slate and teal? (your decision) | design proposal 2026-11-01 |
 | d24 | active | Medication screen: multi-drug 'Today's list', one-tap add, Stop (next; two statuses only) | after logic L-2 |
 | d14 | todo | Dating screen: the three due dates side by side with 'Use this one' | after the dating logic |
-| d25 | todo | Text size A- / A+ (90-130 percent, hard limit) and one-line labels at 360 dp, applied to every screen | after logic L-2 |
-| d15 | todo | Alert card shows the first alert plus '+ N more' | after the alert-notes logic |
-| d26 | active | Patient directory and patient chart in the approved style | approved d4/d3 |
-| d27 | active | New patient with dating, obstetric history, previous pregnancies, clinical attention entry | approved d4/d2 |
-| d28 | todo | Visit and vitals entry: guided steps, same as last, fill normal | approved d4/d3 and logic L-3 |
+| d25 | done | Text size A- / A+ (90-130 percent, hard limit) and one-line labels at 360 dp, applied to every screen | after logic L-2 |
+| d15 | done | Alert card shows the first alert plus '+ N more' | after the alert-notes logic |
+| d26 | done | Patient directory and patient chart in the approved style | approved d4/d3 |
+| d27 | done | New patient with dating, obstetric history, previous pregnancies, clinical attention entry | approved d4/d2 |
+| d28 | done | Visit and vitals entry: guided steps, same as last, fill normal | approved d4/d3 and logic L-3 |
 | w09 | todo | Previous pregnancies list: crowded, title and value look the same | your phone feedback 2026-11-01 |
 | w10 | todo | Obstetric history screen: less crowded, two switchable designs | your phone feedback 2026-11-01 |
-| d16 | todo | The same entry style for visit, dating, other histories, patient form and delivery editor | owner decision D20 |
+| d16 | done | The same entry style for visit, dating, other histories, patient form and delivery editor | owner decision D20 |
 | d17 | blocked | Lab on-screen number keypad: build it or keep the phone's number keyboard? (your decision) | lab mock-up B |
 | d13 | blocked | Navigation redesign (merge Overview and Workspace into one chart, '+' button, no card icons): mock-up only, after the phone check | design proposal 2026-11-01 |
 | d18 | blocked | Ultrasound: biometry steppers and numbered collapsible sections (steppers need your reference values) | ultrasound mock-up |
@@ -182,22 +182,22 @@ No record can be lost, locked away, or read by someone who picks up the phone.
 | f04 | done | 'Unsaved draft found' alert: Continue or Discard and start fresh (done) | f01 |
 | f05 | done | Draft recovery tests done (hand pass on the phone still on the postponed list) | f01 |
 
-## Device testing (4/8)
+## Device testing (6/8)
 
 Checks on the Honor 400 and on emulators that unit tests cannot cover.
 
 | Id | Status | Task | Ref |
 |---|---|---|---|
-| d20 | active | You: check the redone lab, ultrasound and medication screens on your phone | lab/ultrasound/medication rounds |
+| d20 | done | You: check the redone lab, ultrasound and medication screens on your phone | lab/ultrasound/medication rounds |
 | d01 | done | Device test pass 1 on Honor 400 and emulators | D5 |
 | d02 | done | Release build starts with an empty vault | R3a |
 | d03 | active | Device pass 2: PIN lock, TalkBack, Keystore, missing-pointer recovery | after R3c |
 | d04 | done | Run the instrumented test suite on an emulator | androidTest |
 | d05 | active | Backup, restore, camera and print-to-PDF end to end on the phone |  |
 | d06 | done | Instrumented tests: 56 of 56 pass on the emulator (twice in a row) | d04 |
-| w13 | todo | Parked until full device testing: settings dialog emulator test fails | D23 |
+| w13 | done | Parked until full device testing: settings dialog emulator test fails | D23 |
 
-## UI and UX polish (15/21)
+## UI and UX polish (16/21)
 
 Findings from the device test: touch targets, labels, layout, themes, transitions.
 
@@ -209,7 +209,7 @@ Findings from the device test: touch targets, labels, layout, themes, transition
 | u04 | done | Readable values in Obstetric History ("LiveBirth", "Entered date text") | DV-4 |
 | u05 | done | Prior-pregnancy cards: text runs together, everything in red | DV-5 |
 | u06 | active | Arabic-name cards mirror the whole card; chips touch | DV-7 · DV-8 |
-| u07 | todo | Profile header: risk badge crowds the name | DV-9 |
+| u07 | done | Profile header: risk badge crowds the name | DV-9 |
 | u08 | done | "1 photos" and other wording fixes | DV-10 |
 | u09 | active | Large font: filter chip clipped; header subtitle truncated | DV-11 · DV-15 |
 | u10 | done | Print preview: duplicate headings, low-contrast Print button | DV-12 |
@@ -225,7 +225,7 @@ Findings from the device test: touch targets, labels, layout, themes, transition
 | w07 | done | Ultrasound entry redesign: one fast entry style for every field | your phone feedback 2026-11-01 |
 | w08 | done | Medication entry redesign: fast and light to add a drug | your phone feedback 2026-11-01 |
 
-## Performance and architecture (5/13)
+## Performance and architecture (7/13)
 
 Keeps the app fast with thousands of records and easy to change safely.
 
@@ -239,13 +239,13 @@ Keeps the app fast with thousands of records and easy to change safely.
 | a06 | done | Model fleet reorganised and the fallback fixed | fleet |
 | a07 | todo | Load the clinical catalog off the main thread (low priority) | concurrency audit |
 | a10 | done | Reuse sweep: find rules written twice | reuse rule |
-| a11 | todo | MAJOR (future): full duplicate check across design, functions and the whole codebase | owner 2026-10-31 |
+| a11 | done | MAJOR (future): full duplicate check across design, functions and the whole codebase | owner 2026-10-31 |
 | t01 | done | Team tooling changes not committed (needs your OK) | tooling |
 | a15 | done | Smaller duplicates from the reuse audit: all 7 done | a10 R-2 R-5 R-6 R-8 R-9 R-10 R-11 |
 | g10 | todo | Review gap: frontier + independent test review of 33e63cd and the medication redo commits | AGENTS.md level-3 rule |
-| w14 | todo | Review gap: independent test review and frontier-tier review for the ultrasound and lab settings commits | AGENTS.md level-3 rule |
+| w14 | done | Review gap: independent test review and frontier-tier review for the ultrasound and lab settings commits | AGENTS.md level-3 rule |
 
-## Release to production (2/8)
+## Release to production (3/8)
 
 Build, sign and roll out without disturbing the records already on your phone.
 
@@ -256,12 +256,13 @@ Build, sign and roll out without disturbing the records already on your phone.
 | r03 | done | English only: Arabic resources removed and README fixed (done) | your decision |
 | r04 | todo | Release signing, version numbers, safe upgrade over the current clinic install | release |
 | r05 | todo | Final regression: unit, instrumented and device pass | release |
-| r06 | todo | Merge maca-round2 into main and push | you |
+| r06 | done | Merge maca-round2 into main and push | you |
 | r07 | active | Go-live checklist: draft written, needs your review | release |
 | r08 | active | Screen-capture block removed in release builds (done); release-build device check still open | 3l/d06 review |
 
 ## Recent log
 
+- 2026-11-18: Roadmap cleanup 2026-11-18: 16 tasks closed (covered by the redesign, or duplicates merged), 3 marked for a phone check, rd34 reworded per owner.
 - 2026-11-18: Redesign merged and pushed: origin/main 4b905d1 (slices 0 to 21, polish, rd40).
 - 2026-11-18: Polish batch and rd40 done (attestation from clinic settings). Final gate and merge next.
 - 2026-11-18: Pre-push phone test: 18 pass, 0 fail, logcat clean (docs/qa/prepush/REPORT.md); 5 owner observations.

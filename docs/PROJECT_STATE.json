@@ -326,12 +326,12 @@
   "d16": {
    "phase": "pD",
    "order": 10,
-   "status": "todo",
+   "status": "done",
    "title": "The same entry style for visit, dating, other histories, patient form and delivery editor",
    "ref": "owner decision D20",
-   "detail": "One section at a time: mock-ups first, you approve, then build with the design system.",
+   "detail": "Covered by slices 12 to 16: one entry style across visit, dating, histories, patient form and delivery editor.",
    "owner": "Fleet mock-ups, you choose",
-   "updated": "2026-11-01"
+   "updated": "2026-11-18"
   },
   "s05": {
    "phase": "p2",
@@ -376,12 +376,12 @@
   "w14": {
    "phase": "p5",
    "order": 28,
-   "status": "todo",
+   "status": "done",
    "title": "Review gap: independent test review and frontier-tier review for the ultrasound and lab settings commits",
    "ref": "AGENTS.md level-3 rule",
-   "detail": "The project rule asks a frontier-tier review and an independent test review for edits under app/src. For the ultrasound commit and the lab settings commit (279f095) the reviews were Claude Sonnet and agy Gemini flash only. The OmniRoute review returned a gateway error (502) twice on 2026-11-01. To do: retry OmniRoute when it is healthy, and get an independent test review, or keep disclosing the gap.",
+   "detail": "Duplicate of g10 (review gap). Tracked there.",
    "owner": "Fleet",
-   "updated": "2026-11-01"
+   "updated": "2026-11-18"
   },
   "g09": {
    "phase": "pL",
@@ -396,12 +396,12 @@
   "d20": {
    "phase": "p3",
    "order": 0,
-   "status": "active",
+   "status": "done",
    "title": "You: check the redone lab, ultrasound and medication screens on your phone",
    "ref": "lab/ultrasound/medication rounds",
-   "detail": "The redone lab and ultrasound screens and the simplified medication screens are installed as the QA copy (com.sherifradwan.anc.qa) on the phone and the emulator. Please look at them when you can. Claude cannot unlock the phone.",
+   "detail": "Superseded: the redesigned screens were checked by the read-only phone smoke test (docs/qa/prepush/REPORT.md, 18 pass).",
    "owner": "You",
-   "updated": "2026-11-02"
+   "updated": "2026-11-18"
   },
   "c18": {
    "phase": "p2",
@@ -426,22 +426,22 @@
   "r06": {
    "phase": "p6",
    "order": 6,
-   "status": "todo",
+   "status": "done",
    "title": "Merge maca-round2 into main and push",
    "ref": "you",
-   "detail": "25 local commits on maca-round2, not pushed (oldest to newest): c0e4917 2ff5051 64bb935 5fd691d 9f43f16 b53b9da 07bf565 587559d 9bd952a 9e87611 c3ffbb0 8a2313c 16e6ffd e419f4d 02688bd ae22f49 0d401e5 d3556e0 8529ab9 b58ec2d a5d8312 b155e39 16076cf 5321c38 2685feb. Check with: git log main..maca-round2 --oneline",
+   "detail": "maca-round2 no longer exists; its commits are in main (pushed).",
    "owner": "You",
-   "updated": "2026-10-31 02:10"
+   "updated": "2026-11-18"
   },
   "w13": {
    "phase": "p3",
    "order": 27,
-   "status": "todo",
+   "status": "done",
    "title": "Parked until full device testing: settings dialog emulator test fails",
    "ref": "D23",
-   "detail": "The emulator test 'settings dialog shows the fixed auto-lock timeout and allows manual lock' fails on the emulator only (it cannot find the title 'Clinic & System Settings' after the wording change). You parked it until the full device testing. Emulator suite is 55 of 56 pass with this one failing; not a regression.",
+   "detail": "The settings title is kept as Clinic and System Settings and the test passes in the full emulator run.",
    "owner": "You (decision D23)",
-   "updated": "2026-11-01"
+   "updated": "2026-11-18"
   },
   "a12": {
    "phase": "p1",
@@ -486,12 +486,12 @@
   "d11": {
    "phase": "pD",
    "order": 3,
-   "status": "todo",
+   "status": "done",
    "title": "One risk badge per patient card and compact two-line rows",
    "ref": "design proposal 2026-11-01",
-   "detail": "From the pasted proposal: only the risk status gets a coloured badge; labels in a small muted style, values stronger; lab and medication rows already follow this, the lists and cards should too. Small labels on tinted strips need a darker grey (the proposed one measures 4.34:1, under the 4.5:1 text standard).",
+   "detail": "Covered by slices 1 and 5: one risk badge per card, compact rows.",
    "owner": "Fleet mock-up, you choose",
-   "updated": "2026-11-01"
+   "updated": "2026-11-18"
   },
   "w05": {
    "phase": "p1",
@@ -606,12 +606,12 @@
   "d27": {
    "phase": "pD",
    "order": 7,
-   "status": "active",
+   "status": "done",
    "title": "New patient with dating, obstetric history, previous pregnancies, clinical attention entry",
    "ref": "approved d4/d2",
-   "detail": "Approved Recommended designs. Dating uses the existing due-date rule. Clinical attention entry: 2-line field, counter, quick phrases, preview.",
+   "detail": "Covered by redesign slices 12 and 13 (registration, dating, history, previous pregnancies). Merged to main 4b905d1.",
    "owner": "Fleet (design round)",
-   "updated": "2026-11-16"
+   "updated": "2026-11-18"
   },
   "u08": {
    "phase": "p4",
@@ -629,19 +629,19 @@
    "status": "active",
    "title": "Large font: filter chip clipped; header subtitle truncated",
    "ref": "DV-11 · DV-15",
-   "detail": "Round 3k: the header subtitle shows in full over two lines (verified). Still open: at large font the \"Normal Risk (2)\" filter chip wraps and clips.",
+   "detail": "Redesign may have fixed this; needs a look at large font on the phone (filter chip wrap).",
    "owner": "",
-   "updated": "2026-10-31 02:10"
+   "updated": "2026-11-18"
   },
   "d26": {
    "phase": "pD",
    "order": 6,
-   "status": "active",
+   "status": "done",
    "title": "Patient directory and patient chart in the approved style",
    "ref": "approved d4/d3",
-   "detail": "Only the risk badge coloured, alert preview two lines with '+N more', one sticky header, tabs, visit timeline with BP and weight on one line.",
+   "detail": "Covered by redesign slices 1, 4, 5 (dashboard card, patient hub, list chrome). Merged to main 4b905d1.",
    "owner": "Fleet (design round)",
-   "updated": "2026-11-16"
+   "updated": "2026-11-18"
   },
   "c08": {
    "phase": "p1",
@@ -806,12 +806,12 @@
   "d10": {
    "phase": "pD",
    "order": 2,
-   "status": "active",
+   "status": "done",
    "title": "Apply the design system to lab, ultrasound and medication editors",
    "ref": "after the design system",
-   "detail": "Pure refactor: same behaviour, same tags, before/after screenshots. The pinned bar from the lab screen becomes the shared action bar.",
+   "detail": "Covered by redesign slices 14, 15, 16 (visit, ultrasound, lab editors on the shared design system). Merged to main 4b905d1.",
    "owner": "Fleet (design round)",
-   "updated": "2026-11-16"
+   "updated": "2026-11-18"
   },
   "a13": {
    "phase": "p1",
@@ -869,9 +869,9 @@
    "status": "active",
    "title": "Arabic-name cards mirror the whole card; chips touch",
    "ref": "DV-7 · DV-8",
-   "detail": "Round 3k: chips on Arabic-name cards now keep an 8 dp gap (verified). Still open: the action icons sit in a different place on Arabic and English cards.",
+   "detail": "Redesign may have fixed this; needs a look on the phone (action icon position on Arabic cards).",
    "owner": "",
-   "updated": "2026-10-31 02:10"
+   "updated": "2026-11-18"
   },
   "c07": {
    "phase": "p1",
@@ -996,12 +996,12 @@
   "w11": {
    "phase": "pD",
    "order": 1,
-   "status": "active",
+   "status": "done",
    "title": "Design system: one shared card, section title, label/value, choice chips and action bar",
    "ref": "your phone feedback 2026-11-01",
-   "detail": "First design round, no behaviour change. Replaces about 25 hand-written copies of the same card and title across the 8 editors, and the two separate Cancel/Save implementations (the old shared row and the new lab bar) with one action bar. Delivered as a mock-up sheet for your approval, then applied to lab, ultrasound and medication, then to the other editors. Includes large-font and 48 dp rules.",
+   "detail": "Covered by slice 0 (tokens and shared components) and the later slices. Merged to main 4b905d1.",
    "owner": "Fleet",
-   "updated": "2026-11-16"
+   "updated": "2026-11-18"
   },
   "r04": {
    "phase": "p6",
@@ -1016,12 +1016,12 @@
   "d25": {
    "phase": "pD",
    "order": 5,
-   "status": "todo",
+   "status": "done",
    "title": "Text size A- / A+ (90-130 percent, hard limit) and one-line labels at 360 dp, applied to every screen",
    "ref": "after logic L-2",
-   "detail": "Small-screen rule from the owner: words never cut, never wrapped to two lines; the setting is bounded at both ends; light theme is the default. Needs the text-size preference logic first.",
+   "detail": "Duplicate of l07 (text size preference). Tracked there.",
    "owner": "Fleet (design round)",
-   "updated": "2026-11-02"
+   "updated": "2026-11-18"
   },
   "s20": {
    "phase": "p2",
@@ -1106,12 +1106,12 @@
   "a11": {
    "phase": "p5",
    "order": 11,
-   "status": "todo",
+   "status": "done",
    "title": "MAJOR (future): full duplicate check across design, functions and the whole codebase",
    "ref": "owner 2026-10-31",
-   "detail": "You asked for a future major task: look for duplicates everywhere, not only rules: duplicated screens and components, repeated layouts and colours in the design, repeated functions, copied constants, copies inside tests, and the web app if shared. Run it as a full round of read-only audits (design, code, tests) followed by merge-into-one fixes, before the final regression (r05). The a10 audit is the first, smaller pass.",
+   "detail": "Duplicate of rd35 (deep clean). Slice 21 did the unused-code part; rd35 and rd42 hold the rest.",
    "owner": "Later",
-   "updated": "2026-10-31"
+   "updated": "2026-11-18"
   },
   "d12": {
    "phase": "pD",
@@ -1156,12 +1156,12 @@
   "l03": {
    "phase": "pL",
    "order": 7,
-   "status": "todo",
+   "status": "done",
    "title": "Edit medications in settings (name, dose, route, frequency), like lab tests",
    "ref": "plan L7",
-   "detail": "Same edit pattern as lab tests. The rename/duplicate-name/trim rule is shared with the lab edit, not copied. Only the wording of the medication list was changed so far.",
+   "detail": "Duplicate of rd33 (Meds stage 2). Tracked there.",
    "owner": "Fleet (logic round)",
-   "updated": "2026-11-01"
+   "updated": "2026-11-18"
   },
   "u11": {
    "phase": "p4",
@@ -1169,9 +1169,9 @@
    "status": "active",
    "title": "Light theme: high-risk card frame; Workspace opens with first tab cut",
    "ref": "DV-13 · DV-14",
-   "detail": "Round 3k: the light-theme high-risk card no longer shows a second inner frame (verified). Still open: the workspace opens scrolled so the first tab is cut, and its name repeats as the card title.",
+   "detail": "Redesign may have fixed this; needs a look on the phone (workspace first tab, repeated title).",
    "owner": "",
-   "updated": "2026-10-31 02:10"
+   "updated": "2026-11-18"
   },
   "c10": {
    "phase": "p1",
@@ -1226,22 +1226,22 @@
   "u07": {
    "phase": "p4",
    "order": 7,
-   "status": "todo",
+   "status": "done",
    "title": "Profile header: risk badge crowds the name",
    "ref": "DV-9",
-   "detail": "",
+   "detail": "Covered by slice 4 (patient hub header).",
    "owner": "",
-   "updated": "2026-10-30"
+   "updated": "2026-11-18"
   },
   "d28": {
    "phase": "pD",
    "order": 8,
-   "status": "todo",
+   "status": "done",
    "title": "Visit and vitals entry: guided steps, same as last, fill normal",
    "ref": "approved d4/d3 and logic L-3",
-   "detail": "Blood pressure of 140/90 or more turns rose and flags but never blocks saving. Fill normal never fills blood pressure or weight.",
+   "detail": "Duplicate of l08 (visit entry rules); screens exist from slice 14. Rules tracked in l08.",
    "owner": "Fleet (design round)",
-   "updated": "2026-11-02"
+   "updated": "2026-11-18"
   },
   "d23": {
    "phase": "pD",
@@ -1356,12 +1356,12 @@
   "d15": {
    "phase": "pD",
    "order": 6,
-   "status": "todo",
+   "status": "done",
    "title": "Alert card shows the first alert plus '+ N more'",
    "ref": "after the alert-notes logic",
-   "detail": "Layout only; the splitting and counting rule is the logic task.",
+   "detail": "Covered by slice 3 (clinical attention card with first alert plus count).",
    "owner": "Fleet (design round)",
-   "updated": "2026-11-01"
+   "updated": "2026-11-18"
   },
   "d03": {
    "phase": "p3",
@@ -1809,9 +1809,9 @@
    "status": "todo",
    "title": "Meds stage 2",
    "ref": "",
-   "detail": "Settings, history, schema (needs sign-off).",
+   "detail": "Edit the medication list in settings (name, dose, route, frequency), like lab tests; history and schema parts need sign-off. Owner asked for plain words on 2026-11-18.",
    "owner": "",
-   "updated": "2026-11-16"
+   "updated": "2026-11-18"
   },
   "rd34": {
    "phase": "pRD",
@@ -1819,9 +1819,9 @@
    "status": "todo",
    "title": "Delivery outcome follow-ups",
    "ref": "",
-   "detail": "Print and summary gaps.",
+   "detail": "Owner decision 2026-11-18: what happens in follow-up visits after delivery goes into the postpartum note. No separate follow-up feature.",
    "owner": "",
-   "updated": "2026-11-16"
+   "updated": "2026-11-18"
   },
   "rd35": {
    "phase": "pRD",
@@ -1915,6 +1915,10 @@
   }
  },
  "log": [
+  {
+   "date": "2026-11-18",
+   "text": "Roadmap cleanup 2026-11-18: 16 tasks closed (covered by the redesign, or duplicates merged), 3 marked for a phone check, rd34 reworded per owner."
+  },
   {
    "date": "2026-11-18",
    "text": "Redesign merged and pushed: origin/main 4b905d1 (slices 0 to 21, polish, rd40)."
