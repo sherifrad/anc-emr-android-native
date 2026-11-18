@@ -2026,10 +2026,10 @@
   "rd55": {
    "phase": "p2",
    "order": 37,
-   "status": "blocked",
+   "status": "todo",
    "title": "DECISION: the automatic 'Blood bank precautions' note in the report",
    "ref": "",
-   "detail": "Owner asked 2026-11-19 if the app has an engine that decides what to do. Verified answer: no general engine, only fixed rules. This note is one hard-coded rule (ReportSections.kt reportDeliveryRows, since commit 5c272ef 2026-10-27): shown for EVERY Rh-negative blood group (isRhNegative in ui/ClinicalFormat.kt), text 'Anti-D Prophylaxis + Matched Packed RBCs Cross-match', in the app, print and share, not editable, ignores antibodies, sensitisation and delivery already done. Needs an owner decision: remove, make it editable per patient, or condition it (not delivered, antibody status). Also inventory all automatic rules. Study: docs/qa/study/STUDY_rules.md",
+   "detail": "OWNER DECIDED 2026-11-19: make the blood bank precaution optional for Rh-negative patients: it must NOT appear automatically. The clinician chooses to add it (for example a switch or checkbox in the Delivery plan editor shown only when the blood group is Rh negative, default off), and only then it prints, shares and shows in the app. Store the choice without a schema change (for example a marker in the existing delivery plan notes parsed by DeliveryNotes.kt, one parser, one function). Default for existing patients: off. Text stays Anti-D Prophylaxis + Matched Packed RBCs Cross-match unless the owner edits it. Remove the auto rule in reportDeliveryRows (ReportSections.kt), the print generator and the share text must read the same function. Tests: Rh-negative off by default, on only when chosen, Rh-positive never, delivered patient. Study: docs/qa/study/STUDY_rules.md",
    "owner": "",
    "updated": "2026-11-19"
   },
@@ -2045,6 +2045,10 @@
   }
  },
  "log": [
+  {
+   "date": "2026-11-19",
+   "text": "2026-11-19: owner decided the blood bank precaution becomes optional for Rh-negative patients (rd55 now todo)."
+  },
   {
    "date": "2026-11-19",
    "text": "2026-11-19 owner phone review of print v2: 10 follow-up tasks written (rd47 to rd56) from six read-only lane studies in docs/qa/study/."

@@ -192,7 +192,7 @@ No record can be lost, locked away, or read by someone who picks up the phone.
 | rd52 | todo | Labs tab: collapsible report cards |  |
 | rd53 | todo | Labs tab: comparison view of the same test across dates |  |
 | rd54 | todo | Lab results: allow less-than, more-than and text (urine culture) |  |
-| rd55 | blocked | DECISION: the automatic 'Blood bank precautions' note in the report |  |
+| rd55 | todo | DECISION: the automatic 'Blood bank precautions' note in the report |  |
 | rd56 | blocked | DECISION: Overview without active medications and labs (documented, confirm) |  |
 
 ## Device testing (6/8)
@@ -275,6 +275,7 @@ Build, sign and roll out without disturbing the records already on your phone.
 
 ## Recent log
 
+- 2026-11-19: 2026-11-19: owner decided the blood bank precaution becomes optional for Rh-negative patients (rd55 now todo).
 - 2026-11-19: 2026-11-19 owner phone review of print v2: 10 follow-up tasks written (rd47 to rd56) from six read-only lane studies in docs/qa/study/.
 - 2026-11-19: 2026-11-19: print v2 pushed (86c6259) and QA installed on the phone; docs and logs deep clean (superseded run logs, prompts, patches, screenshots and old specs removed from git, recoverable from history); docs/HANDOFF.md added as the start-here file; open follow-ups rd44 to rd46.
 - 2026-11-18: Full push gate on print v2: unit 1707 pass, lint 0 errors after one fix, androidTest compile pass, emulator suite 975 of 977 first run, the 2 failures pass when rerun alone (2 of 2 each). Protected files changed since the last push: only the print generator and its test (owner approved).
@@ -299,4 +300,3 @@ Build, sign and roll out without disturbing the records already on your phone.
 - 2026-11-16: Slice 15 (ultrasound editor and photo viewer) built, reviewed, tested, committed locally.
 - 2026-11-16: Slice 14 (visit editor) built, reviewed, tested, committed locally.
 - 2026-11-16: Mocks for slices 14, 15, 16 approved by the owner as drawn.
-- 2026-11-16: Docs cleanup done locally: 74,284 tracked files down to 1,512; progress now only in docs/PROJECT_STATE.json. Not pushed.
