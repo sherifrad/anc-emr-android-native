@@ -1,0 +1,196 @@
+<style>
+    .figures-container {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        margin-top: 8px;
+        margin-bottom: 8px;
+    }
+
+    .figures-row {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 14px;
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+
+    .figure-card {
+        margin: 0;
+        break-inside: avoid;
+        page-break-inside: avoid;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .image-placeholder {
+        width: 100%;
+        aspect-ratio: 4 / 3;
+        background-color: #f1f5f9;
+        border: 1px solid var(--color-rule, #cbd5e1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 10pt;
+        font-weight: 700;
+        color: var(--color-text-secondary, #475569);
+        box-sizing: border-box;
+    }
+
+    .figure-caption {
+        padding-top: 5px;
+        font-size: 9pt;
+        line-height: 1.35;
+        color: var(--color-text-primary, #0f172a);
+    }
+
+    .figure-title {
+        font-size: 9.5pt;
+        font-weight: 700;
+        color: var(--color-text-primary, #0f172a);
+    }
+
+    .figure-meta {
+        font-size: 9pt;
+        color: var(--color-text-secondary, #475569);
+    }
+
+    .image-count-line {
+        font-size: 9pt;
+        font-weight: 600;
+        color: var(--color-text-secondary, #475569);
+        margin-top: 10px;
+        padding-top: 6px;
+        border-top: 1px solid var(--color-rule-subtle, #e2e8f0);
+    }
+
+    .doc-meta {
+        font-size: 9pt;
+    }
+
+    .doc-badge {
+        font-size: 9pt;
+        text-transform: none;
+    }
+
+    .page-footer {
+        font-size: 9pt;
+    }
+
+    .col-date {
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+    }
+
+    .abnormal-val {
+        font-weight: 700;
+        color: #000000;
+    }
+
+    tr, .avoid-break {
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+
+    thead {
+        display: table-header-group;
+    }
+
+    @media print {
+        .image-placeholder {
+            background-color: #f8fafc;
+            border: 1px solid #94a3b8;
+            color: #334155;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        .figures-row, .figure-card {
+            break-inside: avoid;
+            page-break-inside: avoid;
+        }
+    }
+</style>
+<div class="page-sheet">
+    <div class="sheet-main">
+        <header class="clinic-header">
+            <div class="clinic-brand">
+                <div class="clinic-mark">DR</div>
+                <div class="clinic-title-box">
+                    <h1>Dr. Sherif Radwan Clinic</h1>
+                    <div class="subhead">Attached clinical images and scan documentation</div>
+                </div>
+            </div>
+            <div class="doc-meta">
+                <div class="doc-badge">Continued</div>
+                <div>Patient: <strong>Sample Layout Patient</strong></div>
+                <div>Patient ID: <span class="col-date"><strong>DUMP-1</strong></span></div>
+                <div>Print date: <span class="col-date"><strong>31/10/2026</strong></span></div>
+            </div>
+        </header>
+
+        <section>
+            <h2 class="section-heading">Attached images</h2>
+            <div class="figures-container">
+                <div class="figures-row">
+                    <figure class="figure-card">
+                        <div class="image-placeholder">Image</div>
+                        <figcaption class="figure-caption">
+                            <div class="figure-title"><strong>Fig 1</strong></div>
+                            <div class="figure-meta">Source: Ultrasound <span class="col-date">12/05/2026</span></div>
+                            <div class="figure-meta">Date: <span class="col-date">12/05/2026</span></div>
+                        </figcaption>
+                    </figure>
+                    <figure class="figure-card">
+                        <div class="image-placeholder">Image</div>
+                        <figcaption class="figure-caption">
+                            <div class="figure-title"><strong>Fig 2</strong></div>
+                            <div class="figure-meta">Source: Ultrasound <span class="col-date">03/05/2026</span></div>
+                            <div class="figure-meta">Date: <span class="col-date">03/05/2026</span></div>
+                        </figcaption>
+                    </figure>
+                    <figure class="figure-card">
+                        <div class="image-placeholder">Image</div>
+                        <figcaption class="figure-caption">
+                            <div class="figure-title"><strong>Fig 3</strong></div>
+                            <div class="figure-meta">Source: Ultrasound <span class="col-date">28/03/2026</span></div>
+                            <div class="figure-meta">Date: <span class="col-date">28/03/2026</span></div>
+                        </figcaption>
+                    </figure>
+                </div>
+                <div class="figures-row">
+                    <figure class="figure-card">
+                        <div class="image-placeholder">Image</div>
+                        <figcaption class="figure-caption">
+                            <div class="figure-title"><strong>Fig 4</strong></div>
+                            <div class="figure-meta">Source: Visit 8</div>
+                            <div class="figure-meta">Date: <span class="col-date">03/05/2026</span></div>
+                        </figcaption>
+                    </figure>
+                    <figure class="figure-card">
+                        <div class="image-placeholder">Image</div>
+                        <figcaption class="figure-caption">
+                            <div class="figure-title"><strong>Fig 5</strong></div>
+                            <div class="figure-meta">Source: Visit 4</div>
+                            <div class="figure-meta">Date: <span class="col-date">28/03/2026</span></div>
+                        </figcaption>
+                    </figure>
+                    <figure class="figure-card">
+                        <div class="image-placeholder">Image</div>
+                        <figcaption class="figure-caption">
+                            <div class="figure-title"><strong>Fig 6</strong></div>
+                            <div class="figure-meta">Source: Patient profile</div>
+                            <div class="figure-meta">Date: <span class="col-date">01/02/2026</span></div>
+                        </figcaption>
+                    </figure>
+                </div>
+            </div>
+            <div class="image-count-line">Pictures selected for this print: <span class="col-date">6</span></div>
+        </section>
+    </div>
+
+    <footer class="page-footer">
+        <span>Confidential medical record · Dr. Sherif Radwan Clinic · Specialist of obstetrics, gynecology and laparoscopy · Tel <span class="col-date">01201720808</span></span>
+        <span>Page <span class="col-date">3</span> of <span class="col-date">3</span></span>
+    </footer>
+</div>

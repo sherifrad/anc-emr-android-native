@@ -1,0 +1,273 @@
+<style>
+    table.clinical-table {
+        width: 100%;
+        table-layout: fixed;
+        border-collapse: collapse;
+        font-size: 9pt;
+        line-height: 1.35;
+    }
+
+    table.clinical-table thead {
+        display: table-header-group;
+    }
+
+    table.clinical-table th {
+        font-size: 9pt;
+        font-weight: 700;
+        color: var(--color-text-primary, #0f172a);
+        border-bottom: 1.5px solid var(--color-text-primary, #0f172a);
+        padding: 4px 5px;
+        text-align: left;
+        background: #ffffff;
+    }
+
+    table.clinical-table td {
+        font-size: 9pt;
+        padding: 4px 5px;
+        border-bottom: 1px solid var(--color-rule-subtle, #e2e8f0);
+        color: var(--color-text-primary, #0f172a);
+        vertical-align: top;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+    }
+
+    table.clinical-table tr {
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+
+    table.clinical-table tbody tr:nth-child(even) {
+        background-color: var(--color-zebra, #f8fafc);
+    }
+
+    .nowrap,
+    .col-date,
+    .col-ga,
+    .col-bp,
+    .col-num {
+        white-space: nowrap;
+    }
+
+    .bold-val {
+        font-weight: 700;
+    }
+
+    .scan-primary {
+        display: block;
+        line-height: 1.3;
+    }
+
+    .scan-measurements {
+        display: block;
+        font-size: 9pt;
+        color: var(--color-text-secondary, #475569);
+        line-height: 1.25;
+        margin-top: 1px;
+    }
+
+    .subtext {
+        font-size: 9pt;
+        color: var(--color-text-secondary, #475569);
+        display: block;
+        margin-top: 1px;
+    }
+
+    .bp-warning {
+        font-size: 9pt;
+        font-weight: 700;
+        color: var(--color-alert-text, #b91c1c);
+        display: block;
+        line-height: 1.25;
+        margin-top: 2px;
+    }
+
+    .abnormal-val {
+        font-weight: 800;
+        color: var(--color-alert-text, #b91c1c);
+    }
+
+    .empty-prior-row td {
+        text-align: center;
+        font-style: italic;
+        color: var(--color-text-secondary, #475569);
+        font-size: 9pt;
+        padding: 4px;
+        background-color: var(--color-zebra, #f8fafc);
+    }
+
+    .fig-ref {
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    @media print {
+        table.clinical-table {
+            color: #000000 !important;
+        }
+
+        table.clinical-table th,
+        table.clinical-table td,
+        .scan-measurements,
+        .subtext,
+        .empty-prior-row td {
+            color: #000000 !important;
+        }
+
+        .bp-warning,
+        .abnormal-val {
+            color: #000000 !important;
+        }
+    }
+</style>
+
+<section>
+    <h2 class="section-heading">Antenatal care visits log</h2>
+    <div class="table-wrap">
+        <table class="clinical-table">
+            <thead>
+                <tr>
+                    <th style="width: 20%;">Visit and date</th>
+                    <th style="width: 12%;">GA</th>
+                    <th style="width: 22%;">BP and weight</th>
+                    <th style="width: 46%;">Scan outcome</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr class="empty-prior-row">
+                    <td colspan="4">3 earlier visits not shown</td>
+                </tr>
+                <tr>
+                    <td><strong>#4</strong> · <span class="col-date nowrap">28/03/2026</span></td>
+                    <td class="col-ga bold-val nowrap">7w 6d</td>
+                    <td><span class="col-bp nowrap">120/80</span> · <span class="col-num nowrap">68.5 kg</span></td>
+                    <td>-</td>
+                </tr>
+                <tr>
+                    <td><strong>#5</strong> · <span class="col-date nowrap">06/04/2026</span></td>
+                    <td class="col-ga bold-val nowrap">9w 1d</td>
+                    <td><span class="col-bp nowrap">120/80</span> · <span class="col-num nowrap">68.5 kg</span></td>
+                    <td>-</td>
+                </tr>
+                <tr>
+                    <td><strong>#6</strong> · <span class="col-date nowrap">15/04/2026</span></td>
+                    <td class="col-ga bold-val nowrap">10w 3d</td>
+                    <td><span class="col-bp nowrap">120/80</span> · <span class="col-num nowrap">68.5 kg</span></td>
+                    <td>-</td>
+                </tr>
+                <tr>
+                    <td><strong>#7</strong> · <span class="col-date nowrap">24/04/2026</span></td>
+                    <td class="col-ga bold-val nowrap">11w 5d</td>
+                    <td><span class="col-bp nowrap">120/80</span> · <span class="col-num nowrap">68.5 kg</span></td>
+                    <td>
+                        <span class="scan-primary"><strong>Singleton</strong>, cephalic · <span class="fig-ref">Fig 1</span></span>
+                        <span class="scan-measurements">BPD 18 mm, HC 66 mm, AC 56 mm, FL 8 mm, EFW 50 g</span>
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>#8</strong> · <span class="col-date nowrap">03/05/2026</span></td>
+                    <td class="col-ga bold-val nowrap">13w 0d</td>
+                    <td>
+                        <span class="col-bp bold-val abnormal-val nowrap">165/105 *</span> · <span class="col-num nowrap">68.5 kg</span>
+                        <span class="bp-warning">* Severe-range BP (urgent assessment)</span>
+                    </td>
+                    <td>-</td>
+                </tr>
+                <tr>
+                    <td><strong>#9</strong> · <span class="col-date nowrap">12/05/2026</span></td>
+                    <td class="col-ga bold-val nowrap">14w 2d</td>
+                    <td><span class="col-bp nowrap">120/80</span> · <span class="col-num nowrap">68.5 kg</span></td>
+                    <td>-</td>
+                </tr>
+                <tr>
+                    <td><strong>#10</strong> · <span class="col-date nowrap">21/05/2026</span></td>
+                    <td class="col-ga bold-val nowrap">15w 4d</td>
+                    <td><span class="col-bp nowrap">120/80</span> · <span class="col-num nowrap">68.5 kg</span></td>
+                    <td>
+                        <span class="scan-primary"><strong>Multiple pregnancy</strong>, twin 1 cephalic, twin 2 breech · <span class="fig-ref">Fig 2</span></span>
+                        <span class="scan-measurements">BPD 33 mm, HC 120 mm, AC 104 mm, FL 20 mm, EFW 145 g</span>
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>#11</strong> · <span class="col-date nowrap">30/05/2026</span></td>
+                    <td class="col-ga bold-val nowrap">16w 6d</td>
+                    <td><span class="col-bp nowrap">120/80</span> · <span class="col-num nowrap">68.5 kg</span></td>
+                    <td>-</td>
+                </tr>
+                <tr>
+                    <td><strong>#12</strong> · <span class="col-date nowrap">08/06/2026</span></td>
+                    <td class="col-ga bold-val nowrap">18w 1d</td>
+                    <td><span class="col-bp nowrap">120/80</span> · <span class="col-num nowrap">68.5 kg</span></td>
+                    <td>
+                        <span class="scan-primary"><strong>Singleton</strong>, cephalic</span>
+                        <span class="scan-measurements">BPD 41 mm, HC 152 mm, AC 131 mm, FL 27 mm, EFW 245 g</span>
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>#13</strong> · <span class="col-date nowrap">17/06/2026</span></td>
+                    <td class="col-ga bold-val nowrap">19w 3d</td>
+                    <td><span class="col-bp nowrap">120/80</span> · <span class="col-num nowrap">68.5 kg</span></td>
+                    <td>-</td>
+                </tr>
+                <tr>
+                    <td><strong>#14</strong> · <span class="col-date nowrap">26/06/2026</span></td>
+                    <td class="col-ga bold-val nowrap">20w 5d</td>
+                    <td><span class="col-bp nowrap">120/80</span> · <span class="col-num nowrap">68.5 kg</span></td>
+                    <td>
+                        <span class="scan-primary"><strong>Singleton</strong>, breech · <span class="fig-ref">Fig 3</span></span>
+                        <span class="scan-measurements">BPD 49 mm, HC 182 mm, AC 160 mm, FL 34 mm, EFW 385 g</span>
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>#15</strong> · <span class="col-date nowrap">05/07/2026</span></td>
+                    <td class="col-ga bold-val nowrap">22w 0d</td>
+                    <td><span class="col-bp nowrap">120/80</span> · <span class="col-num nowrap">68.5 kg</span></td>
+                    <td>
+                        <span class="scan-primary"><strong>Singleton</strong>, cephalic</span>
+                        <span class="scan-measurements">BPD 54 mm, HC 200 mm, AC 176 mm, FL 39 mm, EFW 505 g</span>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section>
+    <h2 class="section-heading">Scans not linked to a visit</h2>
+    <div class="table-wrap">
+        <table class="clinical-table">
+            <thead>
+                <tr>
+                    <th style="width: 20%;">Scan date</th>
+                    <th style="width: 12%;">GA</th>
+                    <th style="width: 68%;">Scan outcome</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="col-date nowrap">18/04/2026</td>
+                    <td class="col-ga bold-val nowrap">10w 6d</td>
+                    <td>
+                        <span class="scan-primary"><strong>Singleton</strong>, cephalic</span>
+                        <span class="scan-measurements">BPD 16 mm, HC 58 mm, AC 50 mm, FL 7 mm, EFW 40 g</span>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="col-date nowrap">18/05/2026</td>
+                    <td class="col-ga bold-val nowrap">15w 1d</td>
+                    <td>
+                        <span class="scan-primary"><strong>Singleton</strong>, cephalic · <span class="fig-ref">Fig 4</span></span>
+                        <span class="scan-measurements">BPD 31 mm, HC 114 mm, AC 98 mm, FL 18 mm, EFW 130 g</span>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="col-date nowrap">14/06/2026</td>
+                    <td class="col-ga bold-val nowrap">18w 6d</td>
+                    <td>
+                        <span class="scan-primary"><strong>Singleton</strong>, breech</span>
+                        <span class="scan-measurements">BPD 44 mm, HC 160 mm, AC 140 mm, FL 29 mm, EFW 275 g</span>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</section>
