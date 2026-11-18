@@ -4,7 +4,6 @@
 A branch is listed here only when it is deliberate. One line each: `- <branch>: <why it is kept and what decides its fate>`.
 Remove the line when the branch is merged or deleted.
 
-- redesign-2026-11-15: whole-app redesign in slices (docs/designs/redesign/PLAN.md). Kept until the owner approves the merge; needs the full push gate first. Not pushed.
 
 
 

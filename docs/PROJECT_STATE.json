@@ -1776,22 +1776,22 @@
   "rd30": {
    "phase": "pRD",
    "order": 30,
-   "status": "todo",
+   "status": "done",
    "title": "Full emulator push gate on the redesign branch (about 85 min)",
    "ref": "",
-   "detail": "Required before any merge: STAGE_BASE=<ref> .agents/scripts/push_gate.sh pre then post.",
+   "detail": "Final gate 2026-11-18: build, unit tests, lint (0 errors) and androidTest compile pass; emulator suite 943 of 944 (one order-dependent DeliveryPlanSheet test, passes alone 3 of 3). Protected-files check flagged PatientPrintHtmlGenerator.kt: rd40, owner approved.",
    "owner": "",
-   "updated": "2026-11-16"
+   "updated": "2026-11-18"
   },
   "rd31": {
    "phase": "pRD",
    "order": 31,
-   "status": "blocked",
+   "status": "done",
    "title": "Merge and push the redesign",
    "ref": "",
-   "detail": "Only on the owner's explicit word, each time. Never force-push.",
+   "detail": "Merged redesign-2026-11-15 into main (fast-forward) and pushed to origin/main at 4b905d1 on the owner's word, 2026-11-18. Post-push check passed.",
    "owner": "",
-   "updated": "2026-11-16"
+   "updated": "2026-11-18"
   },
   "rd32": {
    "phase": "pRD",
@@ -1915,6 +1915,10 @@
   }
  },
  "log": [
+  {
+   "date": "2026-11-18",
+   "text": "Redesign merged and pushed: origin/main 4b905d1 (slices 0 to 21, polish, rd40)."
+  },
   {
    "date": "2026-11-18",
    "text": "Polish batch and rd40 done (attestation from clinic settings). Final gate and merge next."

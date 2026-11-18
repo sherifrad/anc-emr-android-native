@@ -1,10 +1,10 @@
 # Roadmap (generated from docs/PROJECT_STATE.json; do not edit by hand)
 
-Updated 2026-11-18. 113 of 186 tasks done.
+Updated 2026-11-18. 115 of 186 tasks done.
 
 Working on now: You: check the redone lab, ultrasound and medication screens on your phone; New patient with dating, obstetric history, previous pregnancies, clinical attention entry; Large font: filter chip clipped; header subtitle truncated; Patient directory and patient chart in the approved style; Phone testing: Block A and B run by the agy lane (self-reported PASS); Block C, D and two hand checks still need you; Remove duplicates found in the audit (removal only); Apply the design system to lab, ultrasound and medication editors; Go-live checklist: draft written, needs your review; Arabic-name cards mirror the whole card; chips touch; Backup, restore, camera and print-to-PDF end to end on the phone; Design system: one shared card, section title, label/value, choice chips and action bar; Screen-capture block removed in release builds (done); release-build device check still open; Medication screen: multi-drug 'Today's list', one-tap add, Stop (next; two statuses only); Light theme: high-risk card frame; Workspace opens with first tab cut; Device pass 2: PIN lock, TalkBack, Keystore, missing-pointer recovery; Backups lose data: ultrasound EDD merged, attachments missing; Decode photos off the main thread; respect camera rotation; Printed report does not show the blood-pressure alert; Should a severe blood pressure also raise the patient's attention banner or list badge?
 
-## Whole-app redesign (current work) (26/36)
+## Whole-app redesign (current work) (28/36)
 
 22 slices on branch redesign-2026-11-15, mock first, owner approves, lane models build, review and test. Plan: docs/designs/redesign/PLAN.md. Nothing is pushed until the owner says so.
 
@@ -32,8 +32,8 @@ Working on now: You: check the redone lab, ultrasound and medication screens on 
 | rd19 | done | Slice 19: Shell and shared dialogs | slice 19 |
 | rd20 | done | Slice 20: Report dialog | slice 20 |
 | rd21 | done | Slice 21: Cleanup of unused code | slice 21 |
-| rd30 | todo | Full emulator push gate on the redesign branch (about 85 min) |  |
-| rd31 | blocked | Merge and push the redesign |  |
+| rd30 | done | Full emulator push gate on the redesign branch (about 85 min) |  |
+| rd31 | done | Merge and push the redesign |  |
 | rd32 | todo | Export and print v2 (print crash fix, new layout) |  |
 | rd33 | todo | Meds stage 2 |  |
 | rd34 | todo | Delivery outcome follow-ups |  |
@@ -262,6 +262,7 @@ Build, sign and roll out without disturbing the records already on your phone.
 
 ## Recent log
 
+- 2026-11-18: Redesign merged and pushed: origin/main 4b905d1 (slices 0 to 21, polish, rd40).
 - 2026-11-18: Polish batch and rd40 done (attestation from clinic settings). Final gate and merge next.
 - 2026-11-18: Pre-push phone test: 18 pass, 0 fail, logcat clean (docs/qa/prepush/REPORT.md); 5 owner observations.
 - 2026-11-18: QA copy (com.sherifradwan.anc.qa) with slices 14 to 21 installed on the phone at 192.168.1.4:43135.
