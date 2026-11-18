@@ -1,8 +1,10 @@
 package com.sherifradwan.ancnative.ui.report
 
+import com.sherifradwan.ancnative.model.DemoLabInvestigation
 import com.sherifradwan.ancnative.model.DemoPatient
 import com.sherifradwan.ancnative.model.DemoPatientDating
 import com.sherifradwan.ancnative.model.DemoUltrasoundScan
+import com.sherifradwan.ancnative.model.DemoVisit
 import com.sherifradwan.ancnative.model.parseDeliveryNotes
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -672,5 +674,323 @@ class PatientPrintHtmlGeneratorTest {
     fun estimatedDueDate_noEddAnywhereRowIsAbsent() {
         val html = printDating(printDatingFields(agreed = "garbage", method = "LMP"), scanDate = null)
         assertFalse(html.contains("""<span class="data-key">Estimated due date</span>"""))
+    }
+
+    // =====================================================================
+    // Owner decisions 2026-11-18: fluid, visit notes, and lab notes
+    // =====================================================================
+
+    @Test
+    fun ownerDecisions_fluidNormalPrinted() {
+        val scan = DemoUltrasoundScan(
+            id = "s-norm-fluid",
+            patientId = "r2e-print-1",
+            date = "2026-09-01",
+            gestationalAgeWeeks = 20,
+            gestationalAgeDays = 0,
+            fetalNumber = "Singleton",
+            presentation = "Cephalic",
+            placentalSite = "Posterior",
+            amnioticFluid = "Normal",
+            fetalHeartRate = "140",
+            biometryBpd = null,
+            biometryHc = null,
+            biometryAc = null,
+            biometryFl = null,
+            estimatedFetalWeight = null,
+            impression = null,
+            linkedVisitId = "v-fluid",
+        )
+        val visit = DemoVisit(
+            id = "v-fluid",
+            date = "2026-09-01",
+            bloodPressure = "120/80",
+            weight = "65",
+            findings = null,
+            notes = null,
+            revision = 1,
+            isSyntheticEdit = false,
+        )
+        val p = patient("Low Risk", "O+").copy(
+            visits = listOf(visit),
+            ultrasoundScans = listOf(scan),
+        )
+        val html = PatientPrintHtmlGenerator.generateHtml(context = null, patient = p, asOfDate = AS_OF_DATE)
+        val visitsSection = html.substringAfter("Antenatal care visits log").substringBefore("</section>")
+
+        assertTrue("Scan outcome extras line contains 'Fluid: Normal'", visitsSection.contains("Fluid: Normal"))
+        assertTrue(visitsSection.contains("""<span class="subtext">Fluid: Normal · Placenta: Posterior · FHR: 140</span>"""))
+    }
+
+    @Test
+    fun ownerDecisions_visitNotePrintedOnceUnderScanOutcome_andNotAtAllWhenBlank() {
+        val visitWithNote = DemoVisit(
+            id = "v-with-note",
+            date = "2026-09-01",
+            bloodPressure = "120/80",
+            weight = "65",
+            findings = null,
+            notes = "Discussed screening results and diet",
+            revision = 1,
+            isSyntheticEdit = false,
+        )
+        val scanLinked = DemoUltrasoundScan(
+            id = "s-linked",
+            patientId = "r2e-print-1",
+            date = "2026-09-01",
+            linkedVisitId = "v-with-note",
+            gestationalAgeWeeks = 20,
+            gestationalAgeDays = 0,
+            fetalNumber = "Singleton",
+            presentation = "Cephalic",
+            placentalSite = null,
+            amnioticFluid = null,
+            fetalHeartRate = null,
+            biometryBpd = null,
+            biometryHc = null,
+            biometryAc = null,
+            biometryFl = null,
+            estimatedFetalWeight = null,
+            impression = "Normal anatomy",
+        )
+        val visitBlankNote = DemoVisit(
+            id = "v-blank-note",
+            date = "2026-09-15",
+            bloodPressure = "118/75",
+            weight = "66",
+            findings = null,
+            notes = "   ",
+            revision = 1,
+            isSyntheticEdit = false,
+        )
+        val p = patient("Low Risk", "O+").copy(
+            visits = listOf(visitWithNote, visitBlankNote),
+            ultrasoundScans = listOf(scanLinked),
+        )
+        val html = PatientPrintHtmlGenerator.generateHtml(context = null, patient = p, asOfDate = AS_OF_DATE)
+        val visitsSection = html.substringAfter("Antenatal care visits log").substringBefore("</section>")
+
+        val noteSnippet = """<span class="subtext">Note: Discussed screening results and diet</span>"""
+        assertTrue("Note prints under scan outcome", visitsSection.contains(noteSnippet))
+        assertEquals("Note line appears exactly once in the table", 1, visitsSection.split("Note: Discussed screening results and diet").size - 1)
+        assertEquals("No extra Note: lines exist for blank visit", 1, visitsSection.split("Note:").size - 1)
+    }
+
+    @Test
+    fun ownerDecisions_visitWithNoteAndNoScan_printsDashPlusNote() {
+        val visitNoScan = DemoVisit(
+            id = "v-no-scan",
+            date = "2026-09-01",
+            bloodPressure = "120/80",
+            weight = "65",
+            findings = null,
+            notes = "Routine antenatal checkup",
+            revision = 1,
+            isSyntheticEdit = false,
+        )
+        val p = patient("Low Risk", "O+").copy(visits = listOf(visitNoScan))
+        val html = PatientPrintHtmlGenerator.generateHtml(context = null, patient = p, asOfDate = AS_OF_DATE)
+        val visitsSection = html.substringAfter("Antenatal care visits log").substringBefore("</section>")
+        val visitRow = visitsSection.substringAfter("<tbody>").substringBefore("</tbody>")
+
+        assertTrue(
+            "Dash plus note line when visit has note and no scan",
+            visitRow.contains("<td>-\n<span class=\"subtext\">Note: Routine antenatal checkup</span></td>"),
+        )
+    }
+
+    @Test
+    fun ownerDecisions_noteContainingScriptIsEscaped() {
+        val script = "<script>alert('pwn')</script>"
+        val visit = DemoVisit(
+            id = "v-script",
+            date = "2026-09-01",
+            bloodPressure = "120/80",
+            weight = "65",
+            findings = null,
+            notes = script,
+            revision = 1,
+            isSyntheticEdit = false,
+        )
+        val lab = DemoLabInvestigation(
+            id = "l-script",
+            patientId = "r2e-print-1",
+            date = "2026-09-01",
+            testCategory = "General",
+            testName = "Urine Culture",
+            result = "No growth",
+            unit = null,
+            referenceRange = null,
+            isAbnormal = false,
+            notes = script,
+            labName = "<b>SafeLab</b>",
+        )
+        val p = patient("Low Risk", "O+").copy(visits = listOf(visit), labInvestigations = listOf(lab))
+        val html = PatientPrintHtmlGenerator.generateHtml(context = null, patient = p, asOfDate = AS_OF_DATE)
+
+        assertFalse("No raw <script>", html.contains("<script>"))
+        assertFalse("No raw </script>", html.contains("</script>"))
+        assertTrue("Visit note escaped", html.contains("&lt;script&gt;alert(&#39;pwn&#39;)&lt;/script&gt;"))
+        assertTrue("Lab name escaped", html.contains("&lt;b&gt;SafeLab&lt;/b&gt;"))
+    }
+
+    @Test
+    fun ownerDecisions_labNoteWithLabNameUnderCorrectTable() {
+        val hb1 = DemoLabInvestigation(
+            id = "l-hb1",
+            patientId = "r2e-print-1",
+            date = "2026-09-01",
+            testCategory = "Hematology",
+            testName = "Hemoglobin",
+            result = "11.5",
+            unit = "g/dL",
+            referenceRange = "11.5-15.5",
+            isAbnormal = false,
+            notes = "Mild lipemia noted",
+            labName = "Al-Mokhtabar",
+        )
+        val hb2 = DemoLabInvestigation(
+            id = "l-hb2",
+            patientId = "r2e-print-1",
+            date = "2026-09-15",
+            testCategory = "Hematology",
+            testName = "Hemoglobin",
+            result = "12.0",
+            unit = "g/dL",
+            referenceRange = "11.5-15.5",
+            isAbnormal = false,
+            notes = null,
+        )
+        val glu1 = DemoLabInvestigation(
+            id = "l-g1",
+            patientId = "r2e-print-1",
+            date = "2026-09-01",
+            testCategory = "Biochemistry",
+            testName = "Glucose Fasting",
+            result = "90",
+            unit = "mg/dL",
+            referenceRange = "70-100",
+            isAbnormal = false,
+            notes = null,
+        )
+        val glu2 = DemoLabInvestigation(
+            id = "l-g2",
+            patientId = "r2e-print-1",
+            date = "2026-09-15",
+            testCategory = "Biochemistry",
+            testName = "Glucose Fasting",
+            result = "92",
+            unit = "mg/dL",
+            referenceRange = "70-100",
+            isAbnormal = false,
+            notes = null,
+        )
+        val p = patient("Low Risk", "O+").copy(labInvestigations = listOf(hb1, hb2, glu1, glu2))
+        val html = PatientPrintHtmlGenerator.generateHtml(context = null, patient = p, asOfDate = AS_OF_DATE)
+
+        val labsSection = html.substringAfter("Laboratory investigations").substringBefore("</section>")
+        val hemaBlock = labsSection.substringAfter("Hematology").substringBefore("Biochemistry")
+        val bioBlock = labsSection.substringAfter("Biochemistry")
+
+        assertTrue("Hematology has lab-notes block", hemaBlock.contains("""<div class="lab-notes">"""))
+        assertTrue("Hematology has note line with lab name", hemaBlock.contains("""01/09/2026, Hemoglobin: Mild lipemia noted (Al-Mokhtabar)"""))
+        assertFalse("Biochemistry has no lab-notes block", bioBlock.contains("""<div class="lab-notes">"""))
+    }
+
+    @Test
+    fun ownerDecisions_twoNotesSortedByDate() {
+        val labLater = DemoLabInvestigation(
+            id = "l-later",
+            patientId = "r2e-print-1",
+            date = "2026-09-20",
+            testCategory = "Hematology",
+            testName = "Hemoglobin",
+            result = "12.2",
+            unit = "g/dL",
+            referenceRange = "11.5-15.5",
+            isAbnormal = false,
+            notes = "Post-treatment check",
+            labName = "Lab B",
+        )
+        val labEarlier = DemoLabInvestigation(
+            id = "l-earlier",
+            patientId = "r2e-print-1",
+            date = "2026-09-01",
+            testCategory = "Hematology",
+            testName = "Hemoglobin",
+            result = "10.1",
+            unit = "g/dL",
+            referenceRange = "11.5-15.5",
+            isAbnormal = true,
+            notes = "Baseline check",
+            labName = "Lab A",
+        )
+        val p = patient("Low Risk", "O+").copy(labInvestigations = listOf(labLater, labEarlier))
+        val html = PatientPrintHtmlGenerator.generateHtml(context = null, patient = p, asOfDate = AS_OF_DATE)
+
+        val earlierIdx = html.indexOf("01/09/2026, Hemoglobin: Baseline check (Lab A)")
+        val laterIdx = html.indexOf("20/09/2026, Hemoglobin: Post-treatment check (Lab B)")
+        assertTrue(earlierIdx >= 0)
+        assertTrue(laterIdx >= 0)
+        assertTrue("Earlier date note must appear before later date note", earlierIdx < laterIdx)
+    }
+
+    @Test
+    fun ownerDecisions_noNotesBlockWithoutNotes() {
+        val l1 = DemoLabInvestigation(
+            id = "l-1",
+            patientId = "r2e-print-1",
+            date = "2026-09-01",
+            testCategory = "Hematology",
+            testName = "Hemoglobin",
+            result = "12.0",
+            unit = "g/dL",
+            referenceRange = null,
+            isAbnormal = false,
+            notes = null,
+        )
+        val l2 = DemoLabInvestigation(
+            id = "l-2",
+            patientId = "r2e-print-1",
+            date = "2026-09-15",
+            testCategory = "Hematology",
+            testName = "Hemoglobin",
+            result = "12.5",
+            unit = "g/dL",
+            referenceRange = null,
+            isAbnormal = false,
+            notes = "   ",
+        )
+        val p = patient("Low Risk", "O+").copy(labInvestigations = listOf(l1, l2))
+        val html = PatientPrintHtmlGenerator.generateHtml(context = null, patient = p, asOfDate = AS_OF_DATE)
+        val labsSection = html.substringAfter("Laboratory investigations").substringBefore("</section>")
+
+        assertFalse("No notes block when notes are null or blank", labsSection.contains("""class="lab-notes""""))
+    }
+
+    @Test
+    fun ownerDecisions_singleTestNotes() {
+        val single = DemoLabInvestigation(
+            id = "l-s1",
+            patientId = "r2e-print-1",
+            date = "2026-09-01",
+            testCategory = "Microbiology",
+            testName = "Urine Culture",
+            result = "E. coli >10^5 CFU/mL",
+            unit = null,
+            referenceRange = null,
+            isAbnormal = true,
+            notes = "Sensitive to nitrofurantoin",
+            labName = "City Lab",
+        )
+        val p = patient("Low Risk", "O+").copy(labInvestigations = listOf(single))
+        val html = PatientPrintHtmlGenerator.generateHtml(context = null, patient = p, asOfDate = AS_OF_DATE)
+
+        val singlesSection = html.substringAfter("Single tests").substringBefore("</section>")
+        assertTrue("Singles section has lab-notes block", singlesSection.contains("""<div class="lab-notes">"""))
+        assertTrue(
+            "Singles section has formatted note",
+            singlesSection.contains("""<div class="lab-note-line">01/09/2026, Urine Culture: Sensitive to nitrofurantoin (City Lab)</div>"""),
+        )
     }
 }

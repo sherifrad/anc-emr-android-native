@@ -851,4 +851,367 @@ class PrintV2LayoutTest {
         assertTrue("Source label is kept", imagesSection.contains("Source: Ultrasound 01/09/2026"))
         assertFalse("No figure-image img tag when picture resolver returns null", imagesSection.contains("<img class=\"figure-image\""))
     }
+
+    @Test
+    fun scanOutcome_fluidNormalPrinted() {
+        val scan = DemoUltrasoundScan(
+            id = "s-fluid-norm",
+            patientId = "p-v2-1",
+            date = "2026-09-01",
+            linkedVisitId = "v-1",
+            gestationalAgeWeeks = 24,
+            gestationalAgeDays = 0,
+            fetalNumber = "Singleton",
+            presentation = "Cephalic",
+            placentalSite = "Posterior",
+            amnioticFluid = "Normal",
+            fetalHeartRate = "140",
+            biometryBpd = null,
+            biometryHc = null,
+            biometryAc = null,
+            biometryFl = null,
+            estimatedFetalWeight = null,
+            impression = null,
+        )
+        val visit = DemoVisit(
+            id = "v-1",
+            date = "2026-09-01",
+            bloodPressure = "120/80",
+            weight = "65",
+            findings = null,
+            notes = null,
+            revision = 1,
+            isSyntheticEdit = false,
+        )
+        val html = PatientPrintHtmlGenerator.generateHtml(
+            patient = testPatient(visits = listOf(visit), scans = listOf(scan)),
+            asOfDate = asOfDate,
+        )
+        val visitsSection = html.substringAfter("Antenatal care visits log").substringBefore("</section>")
+        assertTrue("Fluid: Normal must be printed in scan outcome extras", visitsSection.contains("Fluid: Normal"))
+        assertTrue("Extras line contains Fluid: Normal", visitsSection.contains("""<span class="subtext">Fluid: Normal · Placenta: Posterior · FHR: 140</span>"""))
+    }
+
+    @Test
+    fun visitsTable_visitNotePrintedOnceUnderScanOutcome_andNotAtAllWhenBlank() {
+        val visitWithNote = DemoVisit(
+            id = "v-note",
+            date = "2026-09-01",
+            bloodPressure = "120/80",
+            weight = "65",
+            findings = null,
+            notes = "Patient complains of mild heartburn, advised antacids",
+            revision = 1,
+            isSyntheticEdit = false,
+        )
+        val scanWithNote = DemoUltrasoundScan(
+            id = "s-note",
+            patientId = "p-v2-1",
+            date = "2026-09-01",
+            linkedVisitId = "v-note",
+            gestationalAgeWeeks = 24,
+            gestationalAgeDays = 0,
+            fetalNumber = "Singleton",
+            presentation = "Cephalic",
+            placentalSite = null,
+            amnioticFluid = null,
+            fetalHeartRate = null,
+            biometryBpd = null,
+            biometryHc = null,
+            biometryAc = null,
+            biometryFl = null,
+            estimatedFetalWeight = null,
+            impression = "Adequate fetal growth",
+        )
+        val visitBlankNote = DemoVisit(
+            id = "v-blank",
+            date = "2026-09-15",
+            bloodPressure = "118/76",
+            weight = "66",
+            findings = null,
+            notes = "   ",
+            revision = 1,
+            isSyntheticEdit = false,
+        )
+        val visitNullNote = DemoVisit(
+            id = "v-null",
+            date = "2026-09-29",
+            bloodPressure = "122/80",
+            weight = "67",
+            findings = null,
+            notes = null,
+            revision = 1,
+            isSyntheticEdit = false,
+        )
+
+        val html = PatientPrintHtmlGenerator.generateHtml(
+            patient = testPatient(
+                visits = listOf(visitWithNote, visitBlankNote, visitNullNote),
+                scans = listOf(scanWithNote),
+            ),
+            asOfDate = asOfDate,
+        )
+        val visitsSection = html.substringAfter("Antenatal care visits log").substringBefore("</section>")
+
+        // 1. Visit with note prints once under scan outcome
+        val noteSubtext = """<span class="subtext">Note: Patient complains of mild heartburn, advised antacids</span>"""
+        assertTrue("Visit note is printed under scan outcome", visitsSection.contains(noteSubtext))
+        assertEquals("Visit note appears exactly once in the table", 1, visitsSection.split("Note: Patient complains of mild heartburn").size - 1)
+
+        // 2. Visits with blank or null notes do not print Note:
+        assertEquals("Only one Note: line is printed across the entire visits table", 1, visitsSection.split("Note:").size - 1)
+    }
+
+    @Test
+    fun visitsTable_visitWithNoteAndNoScan_printsDashPlusNote() {
+        val visitNoScanWithNote = DemoVisit(
+            id = "v-noscan-note",
+            date = "2026-09-01",
+            bloodPressure = "120/80",
+            weight = "65",
+            findings = null,
+            notes = "Blood glucose profile reviewed, target HbA1c achieved",
+            revision = 1,
+            isSyntheticEdit = false,
+        )
+        val html = PatientPrintHtmlGenerator.generateHtml(
+            patient = testPatient(visits = listOf(visitNoScanWithNote)),
+            asOfDate = asOfDate,
+        )
+        val visitsSection = html.substringAfter("Antenatal care visits log").substringBefore("</section>")
+        val visitRow = visitsSection.substringAfter("<tbody>").substringBefore("</tbody>")
+
+        assertTrue(
+            "Dash plus note line when visit has note but no scan",
+            visitRow.contains("<td>-\n<span class=\"subtext\">Note: Blood glucose profile reviewed, target HbA1c achieved</span></td>"),
+        )
+    }
+
+    @Test
+    fun dynamicValuesEscaped_visitAndLabNotesWithScriptTags() {
+        val scriptNote = "<script>alert('xss-note')</script>"
+        val visit = DemoVisit(
+            id = "v-xss",
+            date = "2026-09-01",
+            bloodPressure = "120/80",
+            weight = "60",
+            findings = null,
+            notes = scriptNote,
+            revision = 1,
+            isSyntheticEdit = false,
+        )
+        val lab = DemoLabInvestigation(
+            id = "l-xss-note",
+            patientId = "p-v2-1",
+            date = "2026-09-01",
+            testCategory = "Biochemistry",
+            testName = "Serum Ferritin",
+            result = "30",
+            unit = "ng/mL",
+            referenceRange = null,
+            isAbnormal = false,
+            notes = scriptNote,
+            labName = "<b>CleanLab</b>",
+        )
+        val patient = testPatient(visits = listOf(visit), labs = listOf(lab))
+        val html = PatientPrintHtmlGenerator.generateHtml(patient = patient, asOfDate = asOfDate)
+
+        assertFalse("Raw <script> must never exist", html.contains("<script>"))
+        assertFalse("Raw </script> must never exist", html.contains("</script>"))
+        assertTrue("Visit note script escaped", html.contains("&lt;script&gt;alert(&#39;xss-note&#39;)&lt;/script&gt;"))
+        assertTrue("Lab note script escaped", html.contains("&lt;script&gt;alert(&#39;xss-note&#39;)&lt;/script&gt;"))
+        assertTrue("Lab name escaped", html.contains("&lt;b&gt;CleanLab&lt;/b&gt;"))
+    }
+
+    @Test
+    fun labComparisonTable_labNoteWithLabNameUnderCorrectTable() {
+        val hema1 = DemoLabInvestigation(
+            id = "l-h1",
+            patientId = "p-v2-1",
+            date = "2026-09-01",
+            testCategory = "Hematology",
+            testName = "Hemoglobin",
+            result = "11.0",
+            unit = "g/dL",
+            referenceRange = "11.5-15.5",
+            isAbnormal = false,
+            notes = "Specimen slightly hemolyzed",
+            labName = "Alpha Diagnostics",
+        )
+        val hema2 = DemoLabInvestigation(
+            id = "l-h2",
+            patientId = "p-v2-1",
+            date = "2026-09-15",
+            testCategory = "Hematology",
+            testName = "Hemoglobin",
+            result = "11.8",
+            unit = "g/dL",
+            referenceRange = "11.5-15.5",
+            isAbnormal = false,
+            notes = null,
+            labName = null,
+        )
+        val bio1 = DemoLabInvestigation(
+            id = "l-b1",
+            patientId = "p-v2-1",
+            date = "2026-09-01",
+            testCategory = "Biochemistry",
+            testName = "ALT",
+            result = "22",
+            unit = "U/L",
+            referenceRange = "7-35",
+            isAbnormal = false,
+            notes = null,
+            labName = null,
+        )
+        val bio2 = DemoLabInvestigation(
+            id = "l-b2",
+            patientId = "p-v2-1",
+            date = "2026-09-15",
+            testCategory = "Biochemistry",
+            testName = "ALT",
+            result = "25",
+            unit = "U/L",
+            referenceRange = "7-35",
+            isAbnormal = false,
+            notes = null,
+            labName = null,
+        )
+        val html = PatientPrintHtmlGenerator.generateHtml(
+            patient = testPatient(labs = listOf(hema1, hema2, bio1, bio2)),
+            asOfDate = asOfDate,
+        )
+
+        val labsSection = html.substringAfter("Laboratory investigations").substringBefore("</section>")
+        val hemaTable = labsSection.substringAfter("Hematology").substringBefore("Biochemistry")
+        val bioTable = labsSection.substringAfter("Biochemistry")
+
+        assertTrue("Hematology has notes block", hemaTable.contains("""<div class="lab-notes">"""))
+        assertTrue("Notes title is Notes", hemaTable.contains("""<div class="lab-notes-title">Notes</div>"""))
+        assertTrue(
+            "Note line with date, test, text and lab name in parentheses",
+            hemaTable.contains("""<div class="lab-note-line">01/09/2026, Hemoglobin: Specimen slightly hemolyzed (Alpha Diagnostics)</div>"""),
+        )
+
+        assertFalse("Biochemistry has no notes block", bioTable.contains("""<div class="lab-notes">"""))
+    }
+
+    @Test
+    fun labComparisonTable_twoNotesSortedByDate() {
+        val hemaLater = DemoLabInvestigation(
+            id = "l-h-later",
+            patientId = "p-v2-1",
+            date = "2026-09-20",
+            testCategory = "Hematology",
+            testName = "Hemoglobin",
+            result = "12.0",
+            unit = "g/dL",
+            referenceRange = "11.5-15.5",
+            isAbnormal = false,
+            notes = "Second sample post-infusion",
+            labName = "Central Hospital",
+        )
+        val hemaEarlier = DemoLabInvestigation(
+            id = "l-h-earlier",
+            patientId = "p-v2-1",
+            date = "2026-09-05",
+            testCategory = "Hematology",
+            testName = "Hemoglobin",
+            result = "10.5",
+            unit = "g/dL",
+            referenceRange = "11.5-15.5",
+            isAbnormal = true,
+            notes = "Initial baseline sample",
+            labName = "Central Hospital",
+        )
+        val html = PatientPrintHtmlGenerator.generateHtml(
+            patient = testPatient(labs = listOf(hemaLater, hemaEarlier)),
+            asOfDate = asOfDate,
+        )
+
+        val labsSection = html.substringAfter("Laboratory investigations").substringBefore("</section>")
+        val earlierPos = labsSection.indexOf("05/09/2026, Hemoglobin: Initial baseline sample (Central Hospital)")
+        val laterPos = labsSection.indexOf("20/09/2026, Hemoglobin: Second sample post-infusion (Central Hospital)")
+
+        assertTrue("Earlier note is present", earlierPos >= 0)
+        assertTrue("Later note is present", laterPos >= 0)
+        assertTrue("Earlier note appears before later note in notes block", earlierPos < laterPos)
+    }
+
+    @Test
+    fun labComparisonTable_noNotesBlockWithoutNotes() {
+        val hema1 = DemoLabInvestigation(
+            id = "l-1",
+            patientId = "p-v2-1",
+            date = "2026-09-01",
+            testCategory = "Hematology",
+            testName = "Hemoglobin",
+            result = "12.0",
+            unit = "g/dL",
+            referenceRange = "11.5-15.5",
+            isAbnormal = false,
+            notes = null,
+        )
+        val hema2 = DemoLabInvestigation(
+            id = "l-2",
+            patientId = "p-v2-1",
+            date = "2026-09-15",
+            testCategory = "Hematology",
+            testName = "Hemoglobin",
+            result = "12.5",
+            unit = "g/dL",
+            referenceRange = "11.5-15.5",
+            isAbnormal = false,
+            notes = "   ",
+        )
+        val single = DemoLabInvestigation(
+            id = "l-3",
+            patientId = "p-v2-1",
+            date = "2026-09-01",
+            testCategory = "Serology",
+            testName = "Rubella IgG",
+            result = "Positive",
+            unit = null,
+            referenceRange = null,
+            isAbnormal = false,
+            notes = null,
+        )
+        val html = PatientPrintHtmlGenerator.generateHtml(
+            patient = testPatient(labs = listOf(hema1, hema2, single)),
+            asOfDate = asOfDate,
+        )
+        val labsSection = html.substringAfter("Laboratory investigations").substringBefore("</section>")
+        assertFalse("No notes block rendered when all notes are null or blank", labsSection.contains("""class="lab-notes""""))
+        assertFalse("No notes title rendered when all notes are null or blank", labsSection.contains("""class="lab-notes-title""""))
+    }
+
+    @Test
+    fun labSinglesTable_singleTestNotes() {
+        val singleWithNote = DemoLabInvestigation(
+            id = "l-single",
+            patientId = "p-v2-1",
+            date = "2026-09-01",
+            testCategory = "Biochemistry",
+            testName = "Serum Ferritin",
+            result = "15",
+            unit = "ng/mL",
+            referenceRange = "20-200",
+            isAbnormal = true,
+            notes = "Low ferritin, oral iron therapy prescribed",
+            labName = "Metropolis Lab",
+        )
+        val html = PatientPrintHtmlGenerator.generateHtml(
+            patient = testPatient(labs = listOf(singleWithNote)),
+            asOfDate = asOfDate,
+        )
+        val labsSection = html.substringAfter("Laboratory investigations").substringBefore("</section>")
+        val singlesSection = labsSection.substringAfter("Single tests")
+
+        assertTrue("Singles table has notes block", singlesSection.contains("""<div class="lab-notes">"""))
+        assertTrue("Notes title present", singlesSection.contains("""<div class="lab-notes-title">Notes</div>"""))
+        assertTrue(
+            "Note line for single test formatted correctly",
+            singlesSection.contains("""<div class="lab-note-line">01/09/2026, Serum Ferritin: Low ferritin, oral iron therapy prescribed (Metropolis Lab)</div>"""),
+        )
+    }
 }

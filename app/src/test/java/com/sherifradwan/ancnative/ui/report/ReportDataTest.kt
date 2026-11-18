@@ -92,6 +92,8 @@ class ReportDataTest {
         unit: String? = "g/dL",
         referenceRange: String? = "11.0 - 15.0",
         isAbnormal: Boolean = false,
+        notes: String? = null,
+        labName: String? = null,
     ): DemoLabInvestigation = DemoLabInvestigation(
         id = id,
         patientId = "patient-1",
@@ -102,7 +104,8 @@ class ReportDataTest {
         unit = unit,
         referenceRange = referenceRange,
         isAbnormal = isAbnormal,
-        notes = null,
+        notes = notes,
+        labName = labName,
     )
 
     private fun attachment(
@@ -304,7 +307,7 @@ class ReportDataTest {
     }
 
     @Test
-    fun scanOutcome_extras_onlyWhenPresentAndAmnioticFluidNotNormal() {
+    fun scanOutcome_extras_includesAmnioticFluidEvenWhenNormal() {
         val normalScan = scan(
             id = "s-norm",
             amnioticFluid = "Normal",
@@ -312,7 +315,7 @@ class ReportDataTest {
             fetalHeartRate = null,
             impression = null,
         )
-        assertTrue(scanOutcomeFor(normalScan).extras.isEmpty())
+        assertEquals(listOf("Fluid: Normal"), scanOutcomeFor(normalScan).extras)
 
         val abnormalFluidScan = scan(
             id = "s-fluid",
@@ -333,7 +336,37 @@ class ReportDataTest {
             fetalHeartRate = null,
             impression = null,
         )
-        assertEquals(listOf("Placenta: Fundal"), scanOutcomeFor(fluidCaseInsensitive).extras)
+        assertEquals(listOf("Fluid: normal", "Placenta: Fundal"), scanOutcomeFor(fluidCaseInsensitive).extras)
+
+        val noFluidScan = scan(
+            id = "s-none",
+            amnioticFluid = null,
+            placentalSite = null,
+            fetalHeartRate = null,
+            impression = null,
+        )
+        assertTrue(scanOutcomeFor(noFluidScan).extras.isEmpty())
+
+        val blankFluidScan = scan(
+            id = "s-blank",
+            amnioticFluid = "   ",
+            placentalSite = null,
+            fetalHeartRate = null,
+            impression = null,
+        )
+        assertTrue(scanOutcomeFor(blankFluidScan).extras.isEmpty())
+    }
+
+    @Test
+    fun visitNote_returnsTrimmedText_orNullWhenBlank() {
+        val v1 = visit(id = "v-1").copy(notes = "  Routine visit note  ")
+        assertEquals("Routine visit note", visitNote(v1))
+
+        val vBlank = visit(id = "v-2").copy(notes = "   ")
+        assertNull(visitNote(vBlank))
+
+        val vNull = visit(id = "v-3").copy(notes = null)
+        assertNull(visitNote(vNull))
     }
 
     // --- RULE 4: Labs grouping, comparison vs singles, chunking, and flags ---
@@ -578,6 +611,34 @@ class ReportDataTest {
             assertFalse(single.unit?.contains("secret-range") == true)
             assertFalse(single.date.contains("secret-range"))
         }
+    }
+
+    @Test
+    fun labReport_collectsNotesOnComparisonTablesAndSingles() {
+        val labRep1 = lab("l-1", date = "2026-01-01", testName = "Hemoglobin", result = "12.0", notes = "Initial test", labName = "Central Lab")
+        val labRep2 = lab("l-2", date = "2026-02-01", testName = "Hemoglobin", result = "11.5", notes = "Follow up", labName = null)
+        val labSingle = lab("l-3", date = "2026-01-01", testName = "Blood Group", result = "A+", notes = "Confirmatory", labName = "Blood Bank")
+        val p = patient(labs = listOf(labRep1, labRep2, labSingle))
+        val report = labReport(p)
+
+        assertEquals(1, report.comparisons.size)
+        val compTable = report.comparisons.first()
+        assertEquals(2, compTable.notes.size)
+        assertEquals(LabNote(date = "01/01/2026", test = "Hemoglobin", text = "Initial test", labName = "Central Lab"), compTable.notes[0])
+        assertEquals(LabNote(date = "01/02/2026", test = "Hemoglobin", text = "Follow up", labName = null), compTable.notes[1])
+
+        assertEquals(1, report.notes.size)
+        assertEquals(LabNote(date = "01/01/2026", test = "Blood Group", text = "Confirmatory", labName = "Blood Bank"), report.notes[0])
+    }
+
+    @Test
+    fun labReport_blankNotesAreOmittedFromNotesList() {
+        val l1 = lab("l-1", date = "2026-01-01", testName = "Hemoglobin", result = "12.0", notes = "   ")
+        val l2 = lab("l-2", date = "2026-02-01", testName = "Hemoglobin", result = "11.5", notes = null)
+        val p = patient(labs = listOf(l1, l2))
+        val report = labReport(p)
+        assertTrue(report.comparisons.first().notes.isEmpty())
+        assertTrue(report.notes.isEmpty())
     }
 
     // --- RULE 5: Picture candidates & figure numbering ---

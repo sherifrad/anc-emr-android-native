@@ -26,11 +26,15 @@ import com.sherifradwan.ancnative.ui.formatWeightKg
 import com.sherifradwan.ancnative.ui.isRhNegative
 import java.io.ByteArrayOutputStream
 import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 object PatientPrintHtmlGenerator {
 
     private const val MAX_PRINT_VISITS = 12
     private const val LOGO_PRINT_HEIGHT_PX = 360
+    private val LAB_NOTE_DMY_FORMATTER: DateTimeFormatter =
+        DateTimeFormatter.ofPattern("dd/MM/yyyy", Locale.ROOT)
 
     private const val BP_ALERT_RAISED = "Raised BP - recheck"
     private const val BP_ALERT_SEVERE = "Severe-range BP - urgent assessment"
@@ -417,7 +421,7 @@ ${buildCss(bpAlertCss)}
                 val scanFigRefs = linkedScan?.let { figureRefsFor(it.id, figures) }.orEmpty()
                 val visitFigRefs = figureRefsFor(v.id, figures)
                 val combinedFigRefs = (scanFigRefs + visitFigRefs).distinct().sorted()
-                val scanOutcomeHtml = renderScanOutcomeCell(linkedScan, combinedFigRefs)
+                val scanOutcomeHtml = renderScanOutcomeCell(linkedScan, combinedFigRefs, visitNote(v))
 
                 """
                 <tr>
@@ -494,36 +498,43 @@ ${buildCss(bpAlertCss)}
     private fun renderScanOutcomeCell(
         scan: DemoUltrasoundScan?,
         figRefs: List<Int>,
+        visitNote: String? = null,
     ): String {
         val figHtml = if (figRefs.isNotEmpty()) {
             """<span class="fig-ref">${escapeHtml(figRefs.joinToString(", ") { "Fig $it" })}</span>"""
         } else {
             null
         }
-        if (scan == null) {
-            return if (figHtml != null) """<span class="scan-primary">$figHtml</span>""" else "-"
-        }
-        val outcome = scanOutcomeFor(scan)
-        val typePart = outcome.typeLabel?.let { "<strong>${escapeHtml(it)}</strong>" }
-        val presPart = outcome.presentation?.let { escapeHtml(it) }
-        val labelAndPres = listOfNotNull(typePart, presPart).joinToString(", ").ifEmpty { null }
-        val primaryInner = listOfNotNull(labelAndPres, figHtml).joinToString(" · ")
+        val outcomeLines = if (scan == null) {
+            if (figHtml != null) listOf("""<span class="scan-primary">$figHtml</span>""") else emptyList()
+        } else {
+            val outcome = scanOutcomeFor(scan)
+            val typePart = outcome.typeLabel?.let { "<strong>${escapeHtml(it)}</strong>" }
+            val presPart = outcome.presentation?.let { escapeHtml(it) }
+            val labelAndPres = listOfNotNull(typePart, presPart).joinToString(", ").ifEmpty { null }
+            val primaryInner = listOfNotNull(labelAndPres, figHtml).joinToString(" · ")
 
-        val lines = buildList {
-            if (primaryInner.isNotEmpty()) {
-                add("""<span class="scan-primary">$primaryInner</span>""")
-            }
-            if (outcome.measurements.isNotEmpty()) {
-                val measurementsContent = outcome.measurements.joinToString(", ") { (label, value) ->
-                    """<span class="u">${escapeHtml(label)} ${escapeHtml(value)}</span>"""
+            buildList {
+                if (primaryInner.isNotEmpty()) {
+                    add("""<span class="scan-primary">$primaryInner</span>""")
                 }
-                add("""<span class="scan-measurements">$measurementsContent</span>""")
-            }
-            if (outcome.extras.isNotEmpty()) {
-                add("""<span class="subtext">${escapeHtml(outcome.extras.joinToString(" · "))}</span>""")
+                if (outcome.measurements.isNotEmpty()) {
+                    val measurementsContent = outcome.measurements.joinToString(", ") { (label, value) ->
+                        """<span class="u">${escapeHtml(label)} ${escapeHtml(value)}</span>"""
+                    }
+                    add("""<span class="scan-measurements">$measurementsContent</span>""")
+                }
+                if (outcome.extras.isNotEmpty()) {
+                    add("""<span class="subtext">${escapeHtml(outcome.extras.joinToString(" · "))}</span>""")
+                }
             }
         }
-        return if (lines.isEmpty()) "-" else lines.joinToString("\n")
+        val noteHtml = visitNote?.let { """<span class="subtext">Note: ${escapeHtml(it)}</span>""" }
+        if (outcomeLines.isEmpty()) {
+            return if (noteHtml != null) "-\n$noteHtml" else "-"
+        }
+        val allLines = if (noteHtml != null) outcomeLines + noteHtml else outcomeLines
+        return allLines.joinToString("\n")
     }
 
     private fun renderLabsSection(report: LabReport): String {
@@ -575,7 +586,8 @@ ${buildCss(bpAlertCss)}
                 """.trimIndent()
             }
 
-            """
+            val tableNotesHtml = renderLabNotesHtml(table.notes)
+            val tableHtml = """
             <h3 class="lab-panel-title">${escapeHtml(table.category)}</h3>
             <div class="table-wrap">
                 <table class="clinical-table">
@@ -591,6 +603,7 @@ ${buildCss(bpAlertCss)}
                 </table>
             </div>
             """.trimIndent()
+            if (tableNotesHtml.isNotEmpty()) "$tableHtml\n$tableNotesHtml" else tableHtml
         }
 
         val singlesHtml = if (report.singles.isEmpty()) {
@@ -616,7 +629,8 @@ ${buildCss(bpAlertCss)}
                 </tr>
                 """.trimIndent()
             }
-            """
+            val singleNotesHtml = renderLabNotesHtml(report.notes)
+            val singlesTableHtml = """
             <h3 class="lab-panel-title">Single tests</h3>
             <div class="table-wrap">
                 <table class="clinical-table">
@@ -633,6 +647,7 @@ ${buildCss(bpAlertCss)}
                 </table>
             </div>
             """.trimIndent()
+            if (singleNotesHtml.isNotEmpty()) "$singlesTableHtml\n$singleNotesHtml" else singlesTableHtml
         }
 
         return """
@@ -643,6 +658,40 @@ ${buildCss(bpAlertCss)}
             <div class="lab-footnote">H: above the usual range. L: below the usual range. *: abnormal.</div>
         </section>
         """.trimIndent()
+    }
+
+    private fun renderLabNotesHtml(notes: List<LabNote>): String {
+        val validNotes = notes.filter { it.text.isNotBlank() }
+        if (validNotes.isEmpty()) return ""
+        val linesHtml = validNotes
+            .sortedBy { labNoteSortKey(it.date) }
+            .joinToString("\n") { note ->
+                val datePart = note.date.trim()
+                val lineText = buildString {
+                    if (datePart.isNotEmpty()) {
+                        append(escapeHtml(datePart)).append(", ")
+                    }
+                    append(escapeHtml(note.test.trim()))
+                    append(": ")
+                    append(escapeHtml(note.text.trim()))
+                    note.labName?.trim()?.takeIf { it.isNotEmpty() }?.let { labName ->
+                        append(" (").append(escapeHtml(labName)).append(")")
+                    }
+                }
+                """    <div class="lab-note-line">$lineText</div>"""
+            }
+        return "<div class=\"lab-notes\">\n    <div class=\"lab-notes-title\">Notes</div>\n$linesHtml\n</div>"
+    }
+
+    private fun labNoteSortKey(date: String): LocalDate {
+        val trimmed = date.trim()
+        if (trimmed.isEmpty()) return LocalDate.MAX
+        return parseIsoDateOrNull(trimmed)
+            ?: try {
+                LocalDate.parse(trimmed, LAB_NOTE_DMY_FORMATTER)
+            } catch (_: Exception) {
+                LocalDate.MAX
+            }
     }
 
     private fun renderLabEntryHtml(
@@ -786,7 +835,7 @@ ${buildCss(bpAlertCss)}
             .page-footer { position: fixed; bottom: 0; left: 0; right: 0; background: #ffffff; margin-top: 0; }
             table.clinical-table, table.clinical-table th, table.clinical-table td,
             .scan-measurements, .subtext, .empty-prior-row td, .bp-alert, .abnormal-val,
-            .lab-abnormal, .lab-footnote, .figure-meta, .image-count-line, .med-line, .med-date, .page-footer { color: #000000 !important; }
+            .lab-abnormal, .lab-footnote, .lab-notes, .lab-notes-title, .figure-meta, .image-count-line, .med-line, .med-date, .page-footer { color: #000000 !important; }
             .image-placeholder { background-color: #f8fafc; border: 1px solid #94a3b8; color: #334155; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         }
         .clinic-header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid var(--color-text-primary); padding-bottom: 4px; margin-bottom: 6px; }
@@ -851,6 +900,9 @@ ${buildCss(bpAlertCss)}
         .lab-panel-title { font-size: 9.5pt; font-weight: 700; color: var(--color-text-primary); margin-top: 6px; margin-bottom: 3px; }
         .lab-abnormal { font-weight: 700; color: var(--color-alert-text); }
         .lab-footnote { font-size: 9pt; color: var(--color-text-secondary); margin-top: 4px; line-height: 1.35; }
+        .lab-notes { font-size: 9pt; color: var(--color-text-secondary); margin: 0 0 6px 0; line-height: 1.3; }
+        .lab-notes-title { font-weight: 700; color: var(--color-text-primary); }
+        .lab-note-line { display: block; overflow-wrap: anywhere; }
         .med-grid { list-style: none; display: grid; grid-template-columns: 1fr 1fr; column-gap: 14px; margin: 0; padding: 0; }
         .med-grid li { font-size: 9pt; line-height: 1.3; padding: 1.5px 2px; border-bottom: 1px solid var(--color-rule-subtle); break-inside: avoid; page-break-inside: avoid; overflow-wrap: anywhere; }
         .med-line { color: #334155; }

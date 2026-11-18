@@ -5,7 +5,6 @@ import com.sherifradwan.ancnative.model.DemoPatient
 import com.sherifradwan.ancnative.model.DemoUltrasoundScan
 import com.sherifradwan.ancnative.model.DemoVisit
 import com.sherifradwan.ancnative.model.LabResultFlag
-import com.sherifradwan.ancnative.model.NORMAL_AMNIOTIC_FLUID
 import com.sherifradwan.ancnative.model.NORMAL_FETAL_NUMBER
 import com.sherifradwan.ancnative.model.formatDmy
 import com.sherifradwan.ancnative.model.labResultFlag
@@ -40,11 +39,20 @@ data class LabCell(
     ),
 )
 
+/** Clinical note attached to a lab result, optionally with the performing laboratory name. */
+data class LabNote(
+    val date: String,
+    val test: String,
+    val text: String,
+    val labName: String?,
+)
+
 /** Grouped comparison table of repeated lab tests within one category across up to six dates. */
 data class LabComparisonTable(
     val category: String,
     val dates: List<String>,
     val rows: List<LabRow>,
+    val notes: List<LabNote> = emptyList(),
 )
 
 /** One test row inside a [LabComparisonTable], aligned column-by-column with its table dates. */
@@ -66,6 +74,7 @@ data class SingleLab(
 data class LabReport(
     val comparisons: List<LabComparisonTable>,
     val singles: List<SingleLab>,
+    val notes: List<LabNote> = emptyList(),
 )
 
 /** Selectable clinical picture candidate derived from a scan image or patient attachment. */
@@ -104,9 +113,7 @@ fun scanOutcomeFor(scan: DemoUltrasoundScan): ScanOutcome {
         }
     }
     val extras = buildList {
-        scan.amnioticFluid?.trim()?.takeIf {
-            it.isNotEmpty() && !it.equals(NORMAL_AMNIOTIC_FLUID, ignoreCase = true)
-        }?.let { add("Fluid: $it") }
+        scan.amnioticFluid?.trim()?.takeIf { it.isNotEmpty() }?.let { add("Fluid: $it") }
         scan.placentalSite?.trim()?.takeIf { it.isNotEmpty() }?.let { add("Placenta: $it") }
         scan.fetalHeartRate?.trim()?.takeIf { it.isNotEmpty() }?.let { add("FHR: $it") }
         scan.impression?.trim()?.takeIf { it.isNotEmpty() }?.let { add(it) }
@@ -118,6 +125,10 @@ fun scanOutcomeFor(scan: DemoUltrasoundScan): ScanOutcome {
         extras = extras,
     )
 }
+
+/** Returns trimmed visit note text, or null when blank. */
+fun visitNote(visit: DemoVisit): String? =
+    visit.notes?.trim()?.takeIf { it.isNotEmpty() }
 
 /** Returns the latest ultrasound scan linked to [visit] by date then id, or null if none match. */
 fun latestScanForVisit(patient: DemoPatient, visit: DemoVisit): DemoUltrasoundScan? {
@@ -149,7 +160,7 @@ fun labReport(patient: DemoPatient): LabReport {
     val validLabs = patient.labInvestigations.filter {
         it.testName.isNotBlank() && it.result.isNotBlank()
     }
-    if (validLabs.isEmpty()) return LabReport(emptyList(), emptyList())
+    if (validLabs.isEmpty()) return LabReport(emptyList(), emptyList(), emptyList())
 
     val testGroups = validLabs.groupBy { lab ->
         LabTestKey(
@@ -214,26 +225,38 @@ fun labReport(patient: DemoPatient): LabReport {
                         LabRow(label = rowLabel, cells = cells)
                     }
                 }
-                add(LabComparisonTable(category = categoryTitle, dates = formattedDates, rows = rows))
+                val tableNotes = dateChunk.flatMap { dateKey ->
+                    seriesList.flatMap { series ->
+                        series.byDate[dateKey].orEmpty().mapNotNull(::toLabNote)
+                    }
+                }
+                add(
+                    LabComparisonTable(
+                        category = categoryTitle,
+                        dates = formattedDates,
+                        rows = rows,
+                        notes = tableNotes,
+                    ),
+                )
             }
         }
     }
 
-    val singles = singleItems
-        .sortedBy { reportSortKey(normalizedDateInput(it.date)) }
-        .map { lab ->
-            val (_, _, flagMark) = resolveLabFlags(lab)
-            val dateInput = normalizedDateInput(lab.date)
-            SingleLab(
-                test = lab.testName.trim(),
-                date = formatDmy(dateInput).orEmpty(),
-                result = lab.result.trim(),
-                unit = cleanUnit(lab),
-                flagMark = flagMark,
-            )
-        }
+    val sortedSingles = singleItems.sortedBy { reportSortKey(normalizedDateInput(it.date)) }
+    val singles = sortedSingles.map { lab ->
+        val (_, _, flagMark) = resolveLabFlags(lab)
+        val dateInput = normalizedDateInput(lab.date)
+        SingleLab(
+            test = lab.testName.trim(),
+            date = formatDmy(dateInput).orEmpty(),
+            result = lab.result.trim(),
+            unit = cleanUnit(lab),
+            flagMark = flagMark,
+        )
+    }
+    val singleNotes = sortedSingles.mapNotNull(::toLabNote)
 
-    return LabReport(comparisons = comparisons, singles = singles)
+    return LabReport(comparisons = comparisons, singles = singles, notes = singleNotes)
 }
 
 /** Collects selectable picture candidates from scan images and patient attachments in date order. */
@@ -351,6 +374,17 @@ private data class RawPictureCandidate(
 
 private fun cleanUnit(lab: DemoLabInvestigation): String? =
     lab.unit?.trim()?.takeIf { it.isNotEmpty() }
+
+private fun toLabNote(lab: DemoLabInvestigation): LabNote? {
+    val text = lab.notes?.trim()?.takeIf { it.isNotEmpty() } ?: return null
+    val dateInput = normalizedDateInput(lab.date)
+    return LabNote(
+        date = formatDmy(dateInput).orEmpty(),
+        test = lab.testName.trim(),
+        text = text,
+        labName = lab.labName?.trim()?.takeIf { it.isNotEmpty() },
+    )
+}
 
 private fun labCategory(lab: DemoLabInvestigation): String =
     lab.testCategory.trim().ifEmpty { DEFAULT_LAB_CATEGORY }
