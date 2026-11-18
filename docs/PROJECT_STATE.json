@@ -1942,9 +1942,113 @@
    "detail": "Layout B3 does not print the free-text visit findings or Not recorded for missing scan measurements; the short share text lists medication names only and shows only GA and EDD for dating. Confirm with the owner after the phone check.",
    "owner": "",
    "updated": "2026-11-19"
+  },
+  "rd47": {
+   "phase": "p2",
+   "order": 29,
+   "status": "todo",
+   "title": "BUG: Print shows 'Printing is not available right now' on the phone (Share PDF works)",
+   "ref": "",
+   "detail": "Owner 2026-11-19. Every onUnavailable path in PatientPrintManager.kt is silent (no log). First add Log.w with the throwable at each path (no patient data), then reproduce on the phone with adb logcat while the owner taps Print. Suspects: printManager.print or createPrintDocumentAdapter throwing, WebView released before the print adapter finishes (activeWebViews.remove runs before print), timeout or main-frame error. Fallback: print from the exported PDF file (file-backed PrintDocumentAdapter reusing exportReportPdf). Tests: null activity, null PrintManager, recording PrintManager. Study: docs/qa/study/STUDY_print.md",
+   "owner": "",
+   "updated": "2026-11-19"
+  },
+  "rd48": {
+   "phase": "p2",
+   "order": 30,
+   "status": "todo",
+   "title": "PDF: label the patient name and fix the age, blood group, risk alignment",
+   "ref": "",
+   "detail": "Owner 2026-11-19. PatientPrintHtmlGenerator.kt (protected, owner sign-off needed per task): add a 'Patient' tag before the name (keep dir=rtl for Arabic), baseline-align the strip (flex, column cells, risk pill inside a value cell). Study: docs/qa/study/STUDY_pdflayout.md",
+   "owner": "",
+   "updated": "2026-11-19"
+  },
+  "rd49": {
+   "phase": "p2",
+   "order": 31,
+   "status": "todo",
+   "title": "PDF: compact lab tables and lab notes inline in the saved space",
+   "ref": "",
+   "detail": "Owner 2026-11-19: wasted space around lab results and dates. Table layout auto instead of fixed percentage widths, tight padding (1px 3px), dates and values nowrap, test column wraps; put each lab note inside its date cell or next to its result instead of a block under the table (keep 9pt minimum, black and white readable). Tests for notes placement. Study: docs/qa/study/STUDY_pdflayout.md",
+   "owner": "",
+   "updated": "2026-11-19"
+  },
+  "rd50": {
+   "phase": "p2",
+   "order": 32,
+   "status": "todo",
+   "title": "PDF: use the clinic Arabic font for the doctor name and title",
+   "ref": "",
+   "detail": "Owner 2026-11-19. app/src/main/assets/fonts/ArslanWessamB.ttf ('A Arslan Wessam B') was supplied but nothing references it. Add @font-face url(fonts/ArslanWessamB.ttf) (base URL is file:///android_asset/) and apply it to the Arabic doctor name and title (.doc-ar-name, .doc-ar-title) with a safe fallback; test the CSS and check the real PDF on the phone. Study: docs/qa/study/STUDY_pdflayout.md",
+   "owner": "",
+   "updated": "2026-11-19"
+  },
+  "rd51": {
+   "phase": "p2",
+   "order": 33,
+   "status": "todo",
+   "title": "Labs: attach photos or files to a lab result or lab group",
+   "ref": "",
+   "detail": "Owner 2026-11-19. Reuse DemoAttachment.linkedRecordId with category LAB (no schema change); show matching thumbnails in LabReportItem; they already reach the report picture picker through pictureCandidates. Decide with the owner: link to one result or to the whole report (date plus lab). Study: docs/qa/study/STUDY_labstab.md",
+   "owner": "",
+   "updated": "2026-11-19"
+  },
+  "rd52": {
+   "phase": "p2",
+   "order": 34,
+   "status": "todo",
+   "title": "Labs tab: collapsible report cards",
+   "ref": "",
+   "detail": "Owner 2026-11-19: the tab is very long. Collapse state per patient, date and lab (rememberSaveable), newest expanded by default, 48dp header target, accessible expand and collapse; today only composite panels collapse and their state is keyed by title only. Study: docs/qa/study/STUDY_labstab.md",
+   "owner": "",
+   "updated": "2026-11-19"
+  },
+  "rd53": {
+   "phase": "p2",
+   "order": 35,
+   "status": "todo",
+   "title": "Labs tab: comparison view of the same test across dates",
+   "ref": "",
+   "detail": "Owner 2026-11-19: rows are tests, columns dates, H and L marks, like the printed report. Reuse labReport and groupLabComparisonsByCategory from ui/report/ReportData.kt behind a toggle (no second grouping rule); keep the per-visit cards for editing. 360dp: wrap or chunk dates. Study: docs/qa/study/STUDY_labstab.md",
+   "owner": "",
+   "updated": "2026-11-19"
+  },
+  "rd54": {
+   "phase": "p2",
+   "order": 36,
+   "status": "todo",
+   "title": "Lab results: allow less-than, more-than and text (urine culture)",
+   "ref": "",
+   "detail": "Owner 2026-11-19: urine culture accepts only numbers. LabEditor.kt (result field, about line 483) uses KeyboardType.Decimal and LabResultFlag.kt accepts only plain numbers. Add a result kind per catalog test (numeric, comparison with qualifier chip, qualitative text), store in the existing string result column (schema frozen), extend labResultFlag to parse <, >, <=, >= and return UNKNOWN for text, apply the same input rules in LabBatchScreen.kt, check the comparison table and report. Owner to list which tests are comparison or text. Study: docs/qa/study/STUDY_labvalue.md",
+   "owner": "",
+   "updated": "2026-11-19"
+  },
+  "rd55": {
+   "phase": "p2",
+   "order": 37,
+   "status": "blocked",
+   "title": "DECISION: the automatic 'Blood bank precautions' note in the report",
+   "ref": "",
+   "detail": "Owner asked 2026-11-19 if the app has an engine that decides what to do. Verified answer: no general engine, only fixed rules. This note is one hard-coded rule (ReportSections.kt reportDeliveryRows, since commit 5c272ef 2026-10-27): shown for EVERY Rh-negative blood group (isRhNegative in ui/ClinicalFormat.kt), text 'Anti-D Prophylaxis + Matched Packed RBCs Cross-match', in the app, print and share, not editable, ignores antibodies, sensitisation and delivery already done. Needs an owner decision: remove, make it editable per patient, or condition it (not delivered, antibody status). Also inventory all automatic rules. Study: docs/qa/study/STUDY_rules.md",
+   "owner": "",
+   "updated": "2026-11-19"
+  },
+  "rd56": {
+   "phase": "p2",
+   "order": 38,
+   "status": "blocked",
+   "title": "DECISION: Overview without active medications and labs (documented, confirm)",
+   "ref": "",
+   "detail": "Owner asked 2026-11-19. It is intended: docs/designs/redesign/PLAN.md section 6 item 1 records 'Identity and Medications are not added to Overview: accepted' and the optimization note lists 'No cross-tab content' (labs keep their tab). No code change unless the owner reverses it; then add a compact current-medications line and abnormal labs with a link to the full tab. Study: docs/qa/study/STUDY_overview.md",
+   "owner": "",
+   "updated": "2026-11-19"
   }
  },
  "log": [
+  {
+   "date": "2026-11-19",
+   "text": "2026-11-19 owner phone review of print v2: 10 follow-up tasks written (rd47 to rd56) from six read-only lane studies in docs/qa/study/."
+  },
   {
    "date": "2026-11-19",
    "text": "2026-11-19: print v2 pushed (86c6259) and QA installed on the phone; docs and logs deep clean (superseded run logs, prompts, patches, screenshots and old specs removed from git, recoverable from history); docs/HANDOFF.md added as the start-here file; open follow-ups rd44 to rd46."

@@ -1,6 +1,6 @@
 # Roadmap (generated from docs/PROJECT_STATE.json; do not edit by hand)
 
-Updated 2026-11-19. 132 of 189 tasks done.
+Updated 2026-11-19. 132 of 199 tasks done.
 
 Working on now: Large font: filter chip clipped; header subtitle truncated; Phone testing: Block A and B run by the agy lane (self-reported PASS); Block C, D and two hand checks still need you; Remove duplicates found in the audit (removal only); Go-live checklist: draft written, needs your review; Arabic-name cards mirror the whole card; chips touch; Backup, restore, camera and print-to-PDF end to end on the phone; Screen-capture block removed in release builds (done); release-build device check still open; Medication screen: multi-drug 'Today's list', one-tap add, Stop (next; two statuses only); Light theme: high-risk card frame; Workspace opens with first tab cut; Device pass 2: PIN lock, TalkBack, Keystore, missing-pointer recovery; Backups lose data: ultrasound EDD merged, attachments missing; Decode photos off the main thread; respect camera rotation; Printed report does not show the blood-pressure alert; Should a severe blood pressure also raise the patient's attention banner or list badge?
 
@@ -144,7 +144,7 @@ What the app shows and prints must match what was recorded. Nothing invented, no
 | c20 | active | Should a severe blood pressure also raise the patient's attention banner or list badge? | 3m review |
 | w05 | done | Lab panels give wrong tests (preeclampsia panel gave only TSH) | your phone feedback 2026-11-01 |
 
-## Data safety and security (25/34)
+## Data safety and security (25/44)
 
 No record can be lost, locked away, or read by someone who picks up the phone.
 
@@ -184,6 +184,16 @@ No record can be lost, locked away, or read by someone who picks up the phone.
 | rd44 | todo | Owner phone check of print v2 (Print, Share PDF, Share text, picture picker) | docs/designs/reviews/export_print_v2/BUILD_PLAN.md |
 | rd45 | todo | Owner approval: new reports/ cache path for PDF sharing |  |
 | rd46 | todo | Print layout follow-ups chosen by the owner |  |
+| rd47 | todo | BUG: Print shows 'Printing is not available right now' on the phone (Share PDF works) |  |
+| rd48 | todo | PDF: label the patient name and fix the age, blood group, risk alignment |  |
+| rd49 | todo | PDF: compact lab tables and lab notes inline in the saved space |  |
+| rd50 | todo | PDF: use the clinic Arabic font for the doctor name and title |  |
+| rd51 | todo | Labs: attach photos or files to a lab result or lab group |  |
+| rd52 | todo | Labs tab: collapsible report cards |  |
+| rd53 | todo | Labs tab: comparison view of the same test across dates |  |
+| rd54 | todo | Lab results: allow less-than, more-than and text (urine culture) |  |
+| rd55 | blocked | DECISION: the automatic 'Blood bank precautions' note in the report |  |
+| rd56 | blocked | DECISION: Overview without active medications and labs (documented, confirm) |  |
 
 ## Device testing (6/8)
 
@@ -265,6 +275,7 @@ Build, sign and roll out without disturbing the records already on your phone.
 
 ## Recent log
 
+- 2026-11-19: 2026-11-19 owner phone review of print v2: 10 follow-up tasks written (rd47 to rd56) from six read-only lane studies in docs/qa/study/.
 - 2026-11-19: 2026-11-19: print v2 pushed (86c6259) and QA installed on the phone; docs and logs deep clean (superseded run logs, prompts, patches, screenshots and old specs removed from git, recoverable from history); docs/HANDOFF.md added as the start-here file; open follow-ups rd44 to rd46.
 - 2026-11-18: Full push gate on print v2: unit 1707 pass, lint 0 errors after one fix, androidTest compile pass, emulator suite 975 of 977 first run, the 2 failures pass when rerun alone (2 of 2 each). Protected files changed since the last push: only the print generator and its test (owner approved).
 - 2026-11-18: Print v2 slice 5 (share PDF and short text) done and reviewed; local only.
@@ -289,4 +300,3 @@ Build, sign and roll out without disturbing the records already on your phone.
 - 2026-11-16: Slice 14 (visit editor) built, reviewed, tested, committed locally.
 - 2026-11-16: Mocks for slices 14, 15, 16 approved by the owner as drawn.
 - 2026-11-16: Docs cleanup done locally: 74,284 tracked files down to 1,512; progress now only in docs/PROJECT_STATE.json. Not pushed.
-- 2026-11-16: Slices 12 and 13 built, reviewed, tested and committed locally; QA copy installed on the phone.
