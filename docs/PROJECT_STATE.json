@@ -1799,7 +1799,7 @@
    "status": "active",
    "title": "Export and print v2 (print crash fix, new layout)",
    "ref": "",
-   "detail": "Print v2 built through slice 4 (local commits, not pushed): data layer, print HTML in the approved layout, native report from the same data, picture selection before print, print crash fix. Unit tests pass (all), report instrumented classes pass on the emulator (34, 11, 7). Open: real print and share on the phone (the emulator WebView cannot render), slice 5 share PDF and text, full push gate, frontier review of slices 3 and 4 for level 3 if required. Plan: docs/designs/reviews/export_print_v2/BUILD_PLAN.md",
+   "detail": "Print v2 built through slice 5 (all local, not pushed): crash fix, data layer, print layout, native report, picture selection, share PDF and short text. Unit tests pass (1707); report, picker, share and print hand-off classes pass on the emulator. Open: real print and PDF share on the phone (emulator WebView cannot render), full emulator push gate, owner check of the cache folder addition in file_paths.xml. Plan: docs/designs/reviews/export_print_v2/BUILD_PLAN.md",
    "owner": "",
    "updated": "2026-11-18"
   },
@@ -1915,6 +1915,10 @@
   }
  },
  "log": [
+  {
+   "date": "2026-11-18",
+   "text": "Print v2 slice 5 (share PDF and short text) done and reviewed; local only."
+  },
   {
    "date": "2026-11-18",
    "text": "Print v2 slices 1 to 4 done and reviewed; report tests green on the emulator; real print still to be checked on the phone."

@@ -262,6 +262,7 @@ Build, sign and roll out without disturbing the records already on your phone.
 
 ## Recent log
 
+- 2026-11-18: Print v2 slice 5 (share PDF and short text) done and reviewed; local only.
 - 2026-11-18: Print v2 slices 1 to 4 done and reviewed; report tests green on the emulator; real print still to be checked on the phone.
 - 2026-11-18: Print v2 slices 1 and 2 done and reviewed (local, not pushed).
 - 2026-11-18: Print v2 slice 1 done: pure report data layer (scan outcome, unlinked scans, lab comparison, picture figures), 25 unit tests, independent review fixed (local, not pushed).

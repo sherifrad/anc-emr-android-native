@@ -845,6 +845,11 @@ class ReportDialogRedesignTest {
             node("shareReportButton").performClick()
             compose.waitForIdle()
 
+            node("shareReportPdfItem").assertIsDisplayed()
+            node("shareReportTextItem").assertIsDisplayed()
+            node("shareReportTextItem").performClick()
+            compose.waitForIdle()
+
             assertEquals("Share action must trigger activity monitor", 1, monitor.hits)
             val chooserIntent = capturedIntent
             assertNotNull("Chooser intent must not be null", chooserIntent)
@@ -860,7 +865,12 @@ class ReportDialogRedesignTest {
                 str(R.string.report_share_subject_format, basePatient.displayName),
                 sendIntent.getStringExtra(Intent.EXTRA_SUBJECT),
             )
-            assertEquals(patientShareText(basePatient), sendIntent.getStringExtra(Intent.EXTRA_TEXT))
+            val shareText = sendIntent.getStringExtra(Intent.EXTRA_TEXT)
+            assertNotNull("Share text must not be null", shareText)
+            assertEquals(patientShareText(basePatient), shareText)
+            assertTrue("Share text must contain patient name", shareText!!.contains(basePatient.displayName))
+            assertTrue("Share text must be at most 15 lines", shareText.lines().size <= 15)
+            assertFalse("Share text must not contain old sections", shareText.contains("ANTENATAL CARE SUMMARY"))
         } finally {
             instrumentation.removeMonitor(monitor)
         }
