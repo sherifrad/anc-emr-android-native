@@ -1917,6 +1917,10 @@
  "log": [
   {
    "date": "2026-11-18",
+   "text": "Print v2 slice 1 done: pure report data layer (scan outcome, unlinked scans, lab comparison, picture figures), 25 unit tests, independent review fixed (local, not pushed)."
+  },
+  {
+   "date": "2026-11-18",
    "text": "Print v2 step 1: crash fix built, unit tested, reviewed (local commit, not pushed)."
   },
   {

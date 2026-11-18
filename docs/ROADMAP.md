@@ -262,6 +262,7 @@ Build, sign and roll out without disturbing the records already on your phone.
 
 ## Recent log
 
+- 2026-11-18: Print v2 slice 1 done: pure report data layer (scan outcome, unlinked scans, lab comparison, picture figures), 25 unit tests, independent review fixed (local, not pushed).
 - 2026-11-18: Print v2 step 1: crash fix built, unit tested, reviewed (local commit, not pushed).
 - 2026-11-18: Roadmap cleanup 2026-11-18: 16 tasks closed (covered by the redesign, or duplicates merged), 3 marked for a phone check, rd34 reworded per owner.
 - 2026-11-18: Redesign merged and pushed: origin/main 4b905d1 (slices 0 to 21, polish, rd40).
