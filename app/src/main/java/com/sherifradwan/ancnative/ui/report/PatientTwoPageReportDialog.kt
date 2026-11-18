@@ -1,6 +1,7 @@
 package com.sherifradwan.ancnative.ui.report
 
 import android.content.Intent
+import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -151,6 +152,13 @@ fun PatientTwoPageReportDialog(
                                             context = context,
                                             patient = patient,
                                             settings = securitySettings,
+                                            onUnavailable = {
+                                                Toast.makeText(
+                                                    context,
+                                                    context.getString(R.string.report_print_unavailable),
+                                                    Toast.LENGTH_LONG,
+                                                ).show()
+                                            },
                                         )
                                     },
                                     shape = RecordShapes.Small,

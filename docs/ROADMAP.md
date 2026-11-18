@@ -2,7 +2,7 @@
 
 Updated 2026-11-18. 131 of 186 tasks done.
 
-Working on now: Large font: filter chip clipped; header subtitle truncated; Phone testing: Block A and B run by the agy lane (self-reported PASS); Block C, D and two hand checks still need you; Remove duplicates found in the audit (removal only); Go-live checklist: draft written, needs your review; Arabic-name cards mirror the whole card; chips touch; Backup, restore, camera and print-to-PDF end to end on the phone; Screen-capture block removed in release builds (done); release-build device check still open; Medication screen: multi-drug 'Today's list', one-tap add, Stop (next; two statuses only); Light theme: high-risk card frame; Workspace opens with first tab cut; Device pass 2: PIN lock, TalkBack, Keystore, missing-pointer recovery; Backups lose data: ultrasound EDD merged, attachments missing; Decode photos off the main thread; respect camera rotation; Printed report does not show the blood-pressure alert; Should a severe blood pressure also raise the patient's attention banner or list badge?
+Working on now: Large font: filter chip clipped; header subtitle truncated; Phone testing: Block A and B run by the agy lane (self-reported PASS); Block C, D and two hand checks still need you; Remove duplicates found in the audit (removal only); Go-live checklist: draft written, needs your review; Arabic-name cards mirror the whole card; chips touch; Backup, restore, camera and print-to-PDF end to end on the phone; Screen-capture block removed in release builds (done); release-build device check still open; Medication screen: multi-drug 'Today's list', one-tap add, Stop (next; two statuses only); Light theme: high-risk card frame; Workspace opens with first tab cut; Device pass 2: PIN lock, TalkBack, Keystore, missing-pointer recovery; Backups lose data: ultrasound EDD merged, attachments missing; Decode photos off the main thread; respect camera rotation; Printed report does not show the blood-pressure alert; Should a severe blood pressure also raise the patient's attention banner or list badge?; Export and print v2 (print crash fix, new layout)
 
 ## Whole-app redesign (current work) (28/36)
 
@@ -34,7 +34,7 @@ Working on now: Large font: filter chip clipped; header subtitle truncated; Phon
 | rd21 | done | Slice 21: Cleanup of unused code | slice 21 |
 | rd30 | done | Full emulator push gate on the redesign branch (about 85 min) |  |
 | rd31 | done | Merge and push the redesign |  |
-| rd32 | todo | Export and print v2 (print crash fix, new layout) |  |
+| rd32 | active | Export and print v2 (print crash fix, new layout) |  |
 | rd33 | todo | Meds stage 2 |  |
 | rd34 | todo | Delivery outcome follow-ups |  |
 | rd35 | todo | Deep clean: antislop, duplicates, unused code |  |
@@ -262,6 +262,7 @@ Build, sign and roll out without disturbing the records already on your phone.
 
 ## Recent log
 
+- 2026-11-18: Print v2 step 1: crash fix built, unit tested, reviewed (local commit, not pushed).
 - 2026-11-18: Roadmap cleanup 2026-11-18: 16 tasks closed (covered by the redesign, or duplicates merged), 3 marked for a phone check, rd34 reworded per owner.
 - 2026-11-18: Redesign merged and pushed: origin/main 4b905d1 (slices 0 to 21, polish, rd40).
 - 2026-11-18: Polish batch and rd40 done (attestation from clinic settings). Final gate and merge next.

@@ -923,6 +923,7 @@
     <string name="report_share_cd">Share clinical record</string>
     <string name="report_share_chooser_title">Share Clinical Record</string>
     <string name="report_share_subject_format">Clinical Record - %1$s</string>
+    <string name="report_print_unavailable">Printing is not available right now. Close this window and try again.</string>
 
     <string name="report_badge_clinical_record">Clinical record</string>
     <string name="report_badge_continued">Continued</string>

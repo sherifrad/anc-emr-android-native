@@ -1796,12 +1796,12 @@
   "rd32": {
    "phase": "pRD",
    "order": 32,
-   "status": "todo",
+   "status": "active",
    "title": "Export and print v2 (print crash fix, new layout)",
    "ref": "",
-   "detail": "PrintManager needs an Activity; protected PatientPrintHtmlGenerator.kt needs owner sign-off. Plan: docs/designs/reviews/export_print_v2/BRIEF.md",
+   "detail": "Step 1 (print crash fix) built: Activity unwrap, WebView kept and released, safe job name, unavailable message; 8 unit tests, independent review done and its 2 findings fixed. Not yet run on a real print (needs phone or emulator). Next: three layout mocks for your pick, then preview and share. Plan: docs/designs/reviews/export_print_v2/BRIEF.md",
    "owner": "",
-   "updated": "2026-11-16"
+   "updated": "2026-11-18"
   },
   "rd33": {
    "phase": "pRD",
@@ -1915,6 +1915,10 @@
   }
  },
  "log": [
+  {
+   "date": "2026-11-18",
+   "text": "Print v2 step 1: crash fix built, unit tested, reviewed (local commit, not pushed)."
+  },
   {
    "date": "2026-11-18",
    "text": "Roadmap cleanup 2026-11-18: 16 tasks closed (covered by the redesign, or duplicates merged), 3 marked for a phone check, rd34 reworded per owner."
