@@ -4,6 +4,9 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.platform.LocalDensity
@@ -23,6 +26,7 @@ import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.style.ResolvedTextDirection
@@ -169,10 +173,22 @@ class PolishBatchRedesignTest {
             )
         }
 
+        // Switch to Page 2 where Ultrasound scans are presented
+        compose.onNodeWithTag("reportPage2Chip", useUnmergedTree = true).performClick()
+        compose.waitForIdle()
+
         val notRecordedStr = str(R.string.not_recorded)
 
         // Section header
         compose.onNodeWithText(str(R.string.report_section_scans), useUnmergedTree = true)
+            .performScrollTo().assertIsDisplayed()
+
+        // Scan 1 (with GA and EFW): date 15/03/2026
+        compose.onNodeWithText("15/03/2026", substring = true, useUnmergedTree = true)
+            .performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText(ltrIsolate("32w + 4d"), substring = true, useUnmergedTree = true)
+            .performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText(ltrIsolate("1950 g"), substring = true, useUnmergedTree = true)
             .performScrollTo().assertIsDisplayed()
 
         // Scan 2 (empty GA and EFW): date 01/03/2026
@@ -184,14 +200,6 @@ class PolishBatchRedesignTest {
             .fetchSemanticsNodes().let { nodes ->
                 assertTrue("Expected at least 2 'Not recorded' occurrences in ultrasound card", nodes.size >= 2)
             }
-
-        // Scan 1 (with GA and EFW): date 15/03/2026
-        compose.onNodeWithText("15/03/2026", substring = true, useUnmergedTree = true)
-            .performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText(ltrIsolate("32w + 4d"), substring = true, useUnmergedTree = true)
-            .performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText(ltrIsolate("1950 g"), substring = true, useUnmergedTree = true)
-            .performScrollTo().assertIsDisplayed()
     }
 
     // =========================================================================
@@ -279,16 +287,18 @@ class PolishBatchRedesignTest {
         val arabicPatient = basePatient.copy(displayName = "منى رجب")
         val englishPatient = basePatient.copy(displayName = "Mona Ragab")
 
-        // Collapsed state: offset fully collapsed so sticky top bar is visible
-        val arabicHeaderState = PatientHubHeaderState(56f).apply {
-            expandedHeightPx = 300f
-            offsetPx = -244f
+        var currentPatient by mutableStateOf(arabicPatient)
+        val base = compose.activity.resources.displayMetrics.density
+        val collapsedPx = 56f * base
+        val headerState = PatientHubHeaderState(collapsedHeightPx = collapsedPx).apply {
+            expandedHeightPx = 400f * base
+            offsetPx = -10_000f
         }
 
         host360dp {
             PatientHubHeader(
-                patient = arabicPatient,
-                headerState = arabicHeaderState,
+                patient = currentPatient,
+                headerState = headerState,
                 selectedTab = PatientHubTab.OVERVIEW,
                 onTabSelected = {},
                 severeBp = null,
@@ -300,12 +310,28 @@ class PolishBatchRedesignTest {
         }
 
         compose.onNodeWithTag("stickyBackButton", useUnmergedTree = true).assertIsDisplayed()
-        val arabicStickyLayout = textLayoutOf(hasText("منى رجب"))
+        val arabicStickyLayout = textLayoutOf(hasText("منى رجب") and !hasTestTag("hubPatientName"))
         assertEquals(TextAlign.Right, arabicStickyLayout.layoutInput.style.textAlign)
         assertEquals(TextDirection.Rtl, arabicStickyLayout.layoutInput.style.textDirection)
+        assertEquals(ResolvedTextDirection.Rtl, arabicStickyLayout.getParagraphDirection(0))
         assertTrue(
             "Collapsed Arabic text right edge near width (${arabicStickyLayout.getLineRight(0)} vs ${arabicStickyLayout.size.width})",
             abs(arabicStickyLayout.size.width - arabicStickyLayout.getLineRight(0)) <= 4f,
+        )
+
+        compose.activity.runOnUiThread {
+            currentPatient = englishPatient
+        }
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("stickyBackButton", useUnmergedTree = true).assertIsDisplayed()
+        val englishStickyLayout = textLayoutOf(hasText("Mona Ragab") and !hasTestTag("hubPatientName"))
+        assertEquals(TextAlign.Left, englishStickyLayout.layoutInput.style.textAlign)
+        assertEquals(TextDirection.Ltr, englishStickyLayout.layoutInput.style.textDirection)
+        assertEquals(ResolvedTextDirection.Ltr, englishStickyLayout.getParagraphDirection(0))
+        assertTrue(
+            "Collapsed English text left edge near 0: ${englishStickyLayout.getLineLeft(0)}",
+            englishStickyLayout.getLineLeft(0) <= 4f,
         )
     }
 

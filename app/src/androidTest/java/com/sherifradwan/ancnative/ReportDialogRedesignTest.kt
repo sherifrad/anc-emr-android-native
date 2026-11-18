@@ -32,6 +32,7 @@ import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onFirst
+import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -1036,8 +1037,8 @@ class ReportDialogRedesignTest {
             .performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("01/03/2026", substring = true, useUnmergedTree = true)
             .performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText(str(R.string.not_recorded), useUnmergedTree = true)
-            .performScrollTo().assertIsDisplayed()
+        compose.onAllNodesWithText(str(R.string.not_recorded), useUnmergedTree = true)
+            .onLast().performScrollTo().assertIsDisplayed()
     }
 
     // =========================================================================
