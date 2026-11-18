@@ -58,6 +58,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -107,6 +108,7 @@ fun PatientTwoPageReportDialog(
     onDismiss: () -> Unit,
 ) {
     val context = LocalContext.current
+    val resources = LocalResources.current
     LaunchedEffect(Unit) {
         try {
             purgeStaleReportExports(context.cacheDir)
@@ -139,14 +141,14 @@ fun PatientTwoPageReportDialog(
     val showPrintUnavailable: () -> Unit = {
         Toast.makeText(
             context,
-            context.getString(R.string.report_print_unavailable),
+            resources.getString(R.string.report_print_unavailable),
             Toast.LENGTH_LONG,
         ).show()
     }
     val showPdfExportFailed: () -> Unit = {
         Toast.makeText(
             context,
-            context.getString(R.string.report_share_pdf_failed),
+            resources.getString(R.string.report_share_pdf_failed),
             Toast.LENGTH_LONG,
         ).show()
     }
