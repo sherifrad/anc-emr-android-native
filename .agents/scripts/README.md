@@ -5,7 +5,6 @@ Rule (owner, 2026-11-02): any command sequence run twice becomes a script here, 
 | Script | Does |
 |---|---|
 | run_build_gate.sh | unit tests, lint, release compile, androidTest compile |
-| run_static_checks.sh | all .agents/checks/check_r*.py, FAIL lines only |
 | run_emulator_all_tests.sh `[serial]` | whole instrumented suite on the .qa package at 360 dp (size and density restored on exit), per-class counts and failing names |
 | run_emulator_test_class.sh `<class>` `[serial]` | one instrumented class on the .qa package, prints counts |
 | install_qa_build_on_device.sh `<serial>` | installs com.sherifradwan.anc.qa only |
@@ -24,3 +23,12 @@ Rule (owner, 2026-11-02): any command sequence run twice becomes a script here, 
 | screenshot_mock_html.sh `<html_path>` `<output_png_path>` `[w]` `[h]` | screenshots an HTML mock file at a given window size using headless Chrome |
 | verify_pure_move.py `--old <rev:path or file>` `--new <files...>` `[--ignore-visibility]` | proves a file split was a pure move: equal sorted line multisets (package/import/blank lines and indentation ignored) and equal declaration names; `--ignore-visibility` ignores only a leading private/internal and prints each change |
 | antislop_mechanical_scan.sh `[root]` | ripgrep sweep for em dashes, emoji, unnamed icons, hardcoded UI text, oversized files |
+| lane_build.sh `<agy-model>` `<prompt>` `<out>` `<allowed-path-regex>` | one agy WRITING lane; afterwards reverts or deletes every changed or new path outside the regex (a new untracked folder shows as one directory, allow it explicitly); never run two at once |
+| lane_ask.sh `alphacode|agy:<model>` `<prompt>` `<out>` `[files]` | read-only lane (sees only the files passed) |
+| probe_lanes.sh | one-line availability probe of every lane |
+| push_gate.sh `pre|post` | before a push: tree clean, protected files, unit gate, lint, androidTest compile, full emulator suite (about 85 minutes); after a push: remote equals HEAD (`STAGE_BASE=<ref>` limits the protected-files check) |
+| git_audit.sh | unmerged branches, dirty trees, stashes, stray files, unreachable commits |
+| project_state.py `validate|render|set|add|log|artifact-doc` | the only progress tracker (docs/PROJECT_STATE.json, docs/ROADMAP.md) |
+| emulator_failures.py | failing test names and messages from the last emulator run |
+| device_qa_prepush.sh `<serial>` `<out_dir>` | read-only phone smoke test (exit 0 pass, 1 fail, 3 locked); never taps destructive controls |
+| find_unused.py / find_duplicates.py / doc_inventory.py | unused code, duplicate code, document inventory |

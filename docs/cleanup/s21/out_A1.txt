@@ -1,5 +1,0 @@
-Report written to [findings_A1.md](file:///Users/sherifgamalradwan/anc-emr-android-native/docs/cleanup/s21/findings_A1.md) (156 lines; 57 CONFIRMED / 5 UNCERTAIN actionable rows + 14 CONFIRMED protected report-only rows).
-Cat 1 (Unused imports/decls): 14 CONFIRMED / 0 UNCERTAIN (+7 protected; 56 `getValue`/`setValue` false positives rejected) — Cat 2 (Old UI/one-offs): 11 CONFIRMED / 3 UNCERTAIN.
-Cat 3 (Duplicates): 6 CONFIRMED / 1 UNCERTAIN (+6 protected rows / 18 clusters) — Cat 4 (Unused res): 10 CONFIRMED / 1 UNCERTAIN (124 strings, 1 plural, 1 drawable XML, 5 mipmap PNGs).
-Cat 5 (Comment slop): 7 CONFIRMED / 0 UNCERTAIN (+1 protected row) — Cat 6 (Dead tests/helpers): 9 CONFIRMED / 0 UNCERTAIN (incl. 100 unused test imports and coupled contrast tests).
-Not verified by build/runtime execution per READ-ONLY rules (no Gradle tests run, no AAPT2 density merge dump for `clinic_logo_foreground`, no protected-module refactoring audit).

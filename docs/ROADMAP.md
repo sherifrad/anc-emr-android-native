@@ -1,10 +1,10 @@
 # Roadmap (generated from docs/PROJECT_STATE.json; do not edit by hand)
 
-Updated 2026-11-18. 131 of 186 tasks done.
+Updated 2026-11-19. 132 of 189 tasks done.
 
-Working on now: Large font: filter chip clipped; header subtitle truncated; Phone testing: Block A and B run by the agy lane (self-reported PASS); Block C, D and two hand checks still need you; Remove duplicates found in the audit (removal only); Go-live checklist: draft written, needs your review; Arabic-name cards mirror the whole card; chips touch; Backup, restore, camera and print-to-PDF end to end on the phone; Screen-capture block removed in release builds (done); release-build device check still open; Medication screen: multi-drug 'Today's list', one-tap add, Stop (next; two statuses only); Light theme: high-risk card frame; Workspace opens with first tab cut; Device pass 2: PIN lock, TalkBack, Keystore, missing-pointer recovery; Backups lose data: ultrasound EDD merged, attachments missing; Decode photos off the main thread; respect camera rotation; Printed report does not show the blood-pressure alert; Should a severe blood pressure also raise the patient's attention banner or list badge?; Export and print v2 (print crash fix, new layout)
+Working on now: Large font: filter chip clipped; header subtitle truncated; Phone testing: Block A and B run by the agy lane (self-reported PASS); Block C, D and two hand checks still need you; Remove duplicates found in the audit (removal only); Go-live checklist: draft written, needs your review; Arabic-name cards mirror the whole card; chips touch; Backup, restore, camera and print-to-PDF end to end on the phone; Screen-capture block removed in release builds (done); release-build device check still open; Medication screen: multi-drug 'Today's list', one-tap add, Stop (next; two statuses only); Light theme: high-risk card frame; Workspace opens with first tab cut; Device pass 2: PIN lock, TalkBack, Keystore, missing-pointer recovery; Backups lose data: ultrasound EDD merged, attachments missing; Decode photos off the main thread; respect camera rotation; Printed report does not show the blood-pressure alert; Should a severe blood pressure also raise the patient's attention banner or list badge?
 
-## Whole-app redesign (current work) (28/36)
+## Whole-app redesign (current work) (29/36)
 
 22 slices on branch redesign-2026-11-15, mock first, owner approves, lane models build, review and test. Plan: docs/designs/redesign/PLAN.md. Nothing is pushed until the owner says so.
 
@@ -34,7 +34,7 @@ Working on now: Large font: filter chip clipped; header subtitle truncated; Phon
 | rd21 | done | Slice 21: Cleanup of unused code | slice 21 |
 | rd30 | done | Full emulator push gate on the redesign branch (about 85 min) |  |
 | rd31 | done | Merge and push the redesign |  |
-| rd32 | active | Export and print v2 (print crash fix, new layout) |  |
+| rd32 | done | Export and print v2 (print crash fix, new layout) |  |
 | rd33 | todo | Meds stage 2 |  |
 | rd34 | todo | Delivery outcome follow-ups |  |
 | rd35 | todo | Deep clean: antislop, duplicates, unused code |  |
@@ -49,7 +49,7 @@ Working on now: Large font: filter chip clipped; header subtitle truncated; Phon
 
 ## Working rules for every round (4/4)
 
-A round is logic OR design, never both. One function per rule, defined once and called everywhere. Shared screen pieces live in one design-system file. Every change under app/src needs a stronger-model review and an independent test review. Full plan: .agents/pipeline/PLAN_DESIGN_VS_LOGIC.md
+A round is logic OR design, never both. One function per rule, defined once and called everywhere. Shared screen pieces live in one design-system file. Every change under app/src needs a stronger-model review and an independent test review. Full plan: (deleted 2026-11-19, in git history: .agents/pipeline/PLAN_DESIGN_VS_LOGIC.md)
 
 | Id | Status | Task | Ref |
 |---|---|---|---|
@@ -144,7 +144,7 @@ What the app shows and prints must match what was recorded. Nothing invented, no
 | c20 | active | Should a severe blood pressure also raise the patient's attention banner or list badge? | 3m review |
 | w05 | done | Lab panels give wrong tests (preeclampsia panel gave only TSH) | your phone feedback 2026-11-01 |
 
-## Data safety and security (25/31)
+## Data safety and security (25/34)
 
 No record can be lost, locked away, or read by someone who picks up the phone.
 
@@ -181,6 +181,9 @@ No record can be lost, locked away, or read by someone who picks up the phone.
 | f03 | done | Auto-save drafts from every entry screen (done; the Continue / Discard alert is the next task) | f01 |
 | f04 | done | 'Unsaved draft found' alert: Continue or Discard and start fresh (done) | f01 |
 | f05 | done | Draft recovery tests done (hand pass on the phone still on the postponed list) | f01 |
+| rd44 | todo | Owner phone check of print v2 (Print, Share PDF, Share text, picture picker) | docs/designs/reviews/export_print_v2/BUILD_PLAN.md |
+| rd45 | todo | Owner approval: new reports/ cache path for PDF sharing |  |
+| rd46 | todo | Print layout follow-ups chosen by the owner |  |
 
 ## Device testing (6/8)
 
@@ -262,6 +265,7 @@ Build, sign and roll out without disturbing the records already on your phone.
 
 ## Recent log
 
+- 2026-11-19: 2026-11-19: print v2 pushed (86c6259) and QA installed on the phone; docs and logs deep clean (superseded run logs, prompts, patches, screenshots and old specs removed from git, recoverable from history); docs/HANDOFF.md added as the start-here file; open follow-ups rd44 to rd46.
 - 2026-11-18: Full push gate on print v2: unit 1707 pass, lint 0 errors after one fix, androidTest compile pass, emulator suite 975 of 977 first run, the 2 failures pass when rerun alone (2 of 2 each). Protected files changed since the last push: only the print generator and its test (owner approved).
 - 2026-11-18: Print v2 slice 5 (share PDF and short text) done and reviewed; local only.
 - 2026-11-18: Print v2 slices 1 to 4 done and reviewed; report tests green on the emulator; real print still to be checked on the phone.
@@ -286,4 +290,3 @@ Build, sign and roll out without disturbing the records already on your phone.
 - 2026-11-16: Mocks for slices 14, 15, 16 approved by the owner as drawn.
 - 2026-11-16: Docs cleanup done locally: 74,284 tracked files down to 1,512; progress now only in docs/PROJECT_STATE.json. Not pushed.
 - 2026-11-16: Slices 12 and 13 built, reviewed, tested and committed locally; QA copy installed on the phone.
-- 2026-11-16: Documentation cleanup started: single source of truth created.

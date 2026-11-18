@@ -1,3 +1,0 @@
-Added `compose.waitForIdle()` after clicks preceding event assertions in [RegistrationRedesignTest.kt](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/androidTest/java/com/sherifradwan/ancnative/RegistrationRedesignTest.kt#L664-L671).
-Updated [VisitsTabRedesignTest.kt](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/androidTest/java/com/sherifradwan/ancnative/VisitsTabRedesignTest.kt#L121-L125) `assertMinTouchTarget` bounds checks to use `>= 47.99.dp` rounding tolerance.
-Compiled successfully with `./gradlew --offline :app:compileDebugAndroidTestKotlin -q`.

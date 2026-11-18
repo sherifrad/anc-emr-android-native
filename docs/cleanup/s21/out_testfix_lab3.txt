@@ -1,3 +1,0 @@
-Updated post-typing clicks (`labBatchTab-REVIEW`, `labBatchMarkNormal`, `labBatchSave`, `labBatchCancel`) to use `performSemanticsAction(SemanticsActions.OnClick)` in [LabEditorRedesignTest.kt](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/androidTest/java/com/sherifradwan/ancnative/LabEditorRedesignTest.kt#L1029-L1050).
-Imported `androidx.compose.ui.test.performSemanticsAction` while preserving all existing scroll actions and assertions.
-Offline compilation via `./gradlew --offline :app:compileDebugAndroidTestKotlin -q` succeeded cleanly.

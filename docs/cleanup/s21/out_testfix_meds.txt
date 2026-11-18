@@ -1,3 +1,0 @@
-Updated `withTheKeyboardOpenAt360dpTheFocusedFieldAndSaveStayVisibleAndEnterMovesOn` in [MedsTabSheetTest.kt](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/androidTest/java/com/sherifradwan/ancnative/MedsTabSheetTest.kt#L1184-L1220) so the `medDate` step asserts focus and `saveMedication.assertIsDisplayed()` without requiring `keyboard()` or calling `assertAboveKeyboard`.
-Handled `medDate -> medNotes` by invoking `performImeAction` on `medDate` if it moves focus to `medNotes`, falling back to clicking `medNotes`, and asserting the keyboard and fields remain visible above it.
-Compiled cleanly via `./gradlew --offline :app:compileDebugAndroidTestKotlin -q` with exit code 0.

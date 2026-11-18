@@ -1,5 +1,0 @@
-Report written to [findings_B1.md](file:///Users/sherifgamalradwan/anc-emr-android-native/docs/cleanup/s21/findings_B1.md) (131 lines; `antislop` + `MACA` applied, read-only).
-Cat 1 (Unused/dead): 27 CONFIRMED (16 main/L3, 11 protected) / 1 UNCERTAIN | Cat 2 (Design leftovers): 11 CONFIRMED / 1 UNCERTAIN
-Cat 3 (Duplicates): 11 CONFIRMED (5 UI, 6 protected) / 0 UNCERTAIN | Cat 4 (Unused resources): 2 CONFIRMED (125 strings/plurals + 1 drawable) / 0 UNCERTAIN
-Cat 5 (Comment slop): 6 CONFIRMED (3 UI, 3 protected) / 0 UNCERTAIN | Cat 6 (Dead tests): 4 CONFIRMED / 0 UNCERTAIN
-Total: 61 CONFIRMED (41 main/L3 + 20 protected) / 2 UNCERTAIN; 58 `getValue`/`setValue` delegate candidates and `FactRow` refuted.

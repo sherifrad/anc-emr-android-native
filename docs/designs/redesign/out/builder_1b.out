@@ -1,9 +1,0 @@
-### Files Changed
-
-- [PatientDirectoryCard.kt](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/ui/patientdirectory/PatientDirectoryCard.kt): Restyled the patient directory card according to Lane 1B specification. Dropped the 3.5 dp severity strip, intrinsic size row, card background lerp tint, and separate incomplete row. Restructured the 48 dp name row to house stacked status tags (`StatusTag(StatusKind.HighRisk | ModerateRisk | Incomplete | Delivered)` and `BpAlertChip`) right-aligned alongside the patient menu. Retained all test tags (`patient-<caseId>`, `workspace-<caseId>`, `profile-<caseId>`, `patientMenu-<caseId>`, `incompleteChipAction`, `incompleteChip`) and added `deliveredTag`.
-- [PatientDirectoryMetricsRow.kt](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/ui/patientdirectory/PatientDirectoryMetricsRow.kt): Rewrote the metrics layout to support natural bidirectional mirroring without LTR locks. Implemented modular `MetricCell` and `MetricValue` components using `RecordType` and `RecordShapes` tokens. Encapsulated coded values (`gestationalAgeText`, parity, BP, `bloodGroup`, `eddText`) with `ltrIsolate(...)`. Added FlowRow wrapping for the GA column with `GaDiscordanceMarker` and the "Post" badge. Configured separate grid row mappings for delivered and non-delivered patients.
-- [strings.xml](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/res/values/strings.xml): Updated the single string resource `high_risk` from `"HIGH RISK"` to `"High risk"` via an in-place single-line edit.
-
-### Anything Not Done
-
-None. All requirements for Lane 1B have been implemented.

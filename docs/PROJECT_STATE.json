@@ -1,5 +1,5 @@
 {
- "updated": "2026-11-18",
+ "updated": "2026-11-19",
  "phases": {
   "p1": {
    "order": 1,
@@ -9,7 +9,7 @@
   "pR": {
    "order": -3,
    "title": "Working rules for every round",
-   "note": "A round is logic OR design, never both. One function per rule, defined once and called everywhere. Shared screen pieces live in one design-system file. Every change under app/src needs a stronger-model review and an independent test review. Full plan: .agents/pipeline/PLAN_DESIGN_VS_LOGIC.md"
+   "note": "A round is logic OR design, never both. One function per rule, defined once and called everywhere. Shared screen pieces live in one design-system file. Every change under app/src needs a stronger-model review and an independent test review. Full plan: (deleted 2026-11-19, in git history: .agents/pipeline/PLAN_DESIGN_VS_LOGIC.md)"
   },
   "pL": {
    "order": -2,
@@ -559,7 +559,7 @@
    "status": "done",
    "title": "Competitive audit of all rounds so far (security, clinical, concurrency, UI/UX)",
    "ref": "audit checkpoint 1",
-   "detail": "Claude security 18 findings, Claude UI 19, GPT-6 Luna 2, Nemotron 10 (2 wrong). The style and test-quality lenses are not covered yet: NVIDIA's free tier did not respond. Reports are in .agents/pipeline/audit1/.",
+   "detail": "Claude security 18 findings, Claude UI 19, GPT-6 Luna 2, Nemotron 10 (2 wrong). The style and test-quality lenses are not covered yet: NVIDIA's free tier did not respond. Reports are in (removed 2026-11-19, in git history: .agents/pipeline/audit1/).",
    "owner": "Claude · GPT-6 Luna · Nemotron (reports); Mistral, DeepSeek, GLM gave no answer",
    "updated": "2026-10-30 18:20"
   },
@@ -679,7 +679,7 @@
    "status": "active",
    "title": "Phone testing: Block A and B run by the agy lane (self-reported PASS); Block C, D and two hand checks still need you",
    "ref": "devtests",
-   "detail": "Run on 2026-10-31 by the Gemini device lane on the QA copy (report: .agents/pipeline/devtest/REPORT.md). It reports PASS for: IVF Day 3/5/6 due dates and GA, ultrasound redating hint, raised and severe blood pressure hints, same risk badge on list and profile, singular 'Prior Miscarriage', the five medication frequencies, the draft alert (visit, medication, brand-new patient; Continue and Discard; after force-stop), the printed report (no broken words or dates, sideways-scrolling tables, 'and N more not shown', stamp once, < > & text safe), robustness (rapid Save taps, 500-character note, Arabic names, lock with an open editor, back discard dialog), no crashes, no slow frames. CAVEATS: this is a self-report by the same model family as the builders (I checked the draft alert and the report screenshots myself: both look right); tapping Save in the visit editor and backup/restore were NOT run by hand (Save sits on the right half of the screen, backup/restore open Android's share and file screens). One incident: a first attempt tapped a patient phone number and opened another app's call screen; no call was placed, I closed it with Back. One screenshot also captured a floating photo from another app on your phone; all screenshots except one were deleted. Still to do: Block C (fingerprint, TalkBack, large font: your hands), Block D (signed release build), and by hand: saving a visit, backup, restore, print to PDF. Low-priority finding: the visit editor builds its Cancel/Save row differently from the other editors (Save is on the right half) and its notes field's Done key does not save; the other editors use one shared button row.",
+   "detail": "Run on 2026-10-31 by the Gemini device lane on the QA copy (report: (removed 2026-11-19, in git history: .agents/pipeline/devtest/REPORT.md)). It reports PASS for: IVF Day 3/5/6 due dates and GA, ultrasound redating hint, raised and severe blood pressure hints, same risk badge on list and profile, singular 'Prior Miscarriage', the five medication frequencies, the draft alert (visit, medication, brand-new patient; Continue and Discard; after force-stop), the printed report (no broken words or dates, sideways-scrolling tables, 'and N more not shown', stamp once, < > & text safe), robustness (rapid Save taps, 500-character note, Arabic names, lock with an open editor, back discard dialog), no crashes, no slow frames. CAVEATS: this is a self-report by the same model family as the builders (I checked the draft alert and the report screenshots myself: both look right); tapping Save in the visit editor and backup/restore were NOT run by hand (Save sits on the right half of the screen, backup/restore open Android's share and file screens). One incident: a first attempt tapped a patient phone number and opened another app's call screen; no call was placed, I closed it with Back. One screenshot also captured a floating photo from another app on your phone; all screenshots except one were deleted. Still to do: Block C (fingerprint, TalkBack, large font: your hands), Block D (signed release build), and by hand: saving a visit, backup, restore, print to PDF. Low-priority finding: the visit editor builds its Cancel/Save row differently from the other editors (Save is on the right half) and its notes field's Done key does not save; the other editors use one shared button row.",
    "owner": "",
    "updated": "2026-10-31"
   },
@@ -719,7 +719,7 @@
    "status": "done",
    "title": "Rules agreed: logic and design are separate rounds; no duplicate functions",
    "ref": "plan 2026-11-01",
-   "detail": "Written in .agents/pipeline/PLAN_DESIGN_VS_LOGIC.md. Each round's static check asserts that its rule is defined once and called from the screens; a copy found in review blocks the round.",
+   "detail": "Written in (removed 2026-11-19, in git history: (deleted 2026-11-19, in git history: .agents/pipeline/PLAN_DESIGN_VS_LOGIC.md)). Each round's static check asserts that its rule is defined once and called from the screens; a copy found in review blocks the round.",
    "owner": "You + Claude",
    "updated": "2026-11-01"
   },
@@ -989,7 +989,7 @@
    "status": "done",
    "title": "Reuse sweep: find rules written twice",
    "ref": "reuse rule",
-   "detail": "Audit done by the Gemini lane (a single model's report: each finding is checked by the fixing round before any change). Full report: .agents/pipeline/a10/AUDIT_REUSE.md. 12 findings (R-1 to R-12) became tasks a12-a15. The recurring, bigger check is a11.",
+   "detail": "Audit done by the Gemini lane (a single model's report: each finding is checked by the fixing round before any change). Full report: (removed 2026-11-19, in git history: .agents/pipeline/a10/AUDIT_REUSE.md). 12 findings (R-1 to R-12) became tasks a12-a15. The recurring, bigger check is a11.",
    "owner": "",
    "updated": "2026-10-31"
   },
@@ -1209,7 +1209,7 @@
    "status": "done",
    "title": "Handoff to Gemini: report, start prompt and fixed redesign specs written",
    "ref": "2026-11-02",
-   "detail": "HANDOFF_AGY.md status section; .agents/pipeline/design/GEMINI_START_PROMPT.md and REDESIGN_SPECS.md (fixed rules and per-screen specs taken from the approved mock). Claude stops here; Gemini continues.",
+   "detail": "HANDOFF_AGY.md status section; (removed 2026-11-19, in git history: .agents/pipeline/design/GEMINI_START_PROMPT.md) and REDESIGN_SPECS.md (fixed rules and per-screen specs taken from the approved mock). Claude stops here; Gemini continues.",
    "owner": "Claude",
    "updated": "2026-11-02"
   },
@@ -1249,7 +1249,7 @@
    "status": "done",
    "title": "Approved mock-ups: lab/ultrasound/medication (B), five recommended screens, directory, chart, visit entry",
    "ref": "design/d4 and the Entry Mock-ups artifact",
-   "detail": "Non-approved options removed. Sized for about 360 dp (Honor 400), light default, A- / A+ text size limited to 90-130 percent with one-line labels, '+ Add other' on every list, clinical attention entry field. Handoff for Antigravity and progress log written (.agents/pipeline/HANDOFF_AGY.md, PROGRESS_LOG.md).",
+   "detail": "Non-approved options removed. Sized for about 360 dp (Honor 400), light default, A- / A+ text size limited to 90-130 percent with one-line labels, '+ Add other' on every list, clinical attention entry field. Handoff for Antigravity and progress log written ((removed 2026-11-19, in git history: .agents/pipeline/HANDOFF_AGY.md), PROGRESS_LOG.md).",
    "owner": "You approved",
    "updated": "2026-11-02"
   },
@@ -1469,7 +1469,7 @@
    "status": "done",
    "title": "Medication section simplified: name, dose, route, Active/Stopped, one note (done)",
    "ref": "commits 2fc5e1e, 4761f3f, e6642ca, 86f5fb9",
-   "detail": "Your decisions 2026-11-02: tab reads 'Meds'; editor keeps only name (presaved list), dose, route, Active/Stopped and ONE 'Note / instructions'; end date, side effects, frequency and start date are no longer edited (stored fields kept, new entry starts today); card = bold name, Active/Stopped badge, lighter line 'dose · route · note'; same on the print; a note is not required; presets no longer copy a hidden frequency; no old-record handling. Pinned Cancel / Save / Save & add another bar; Undo bar fits one line and keeps the patient name. Gate OK, static checks OK, emulator MedicationListCollapseTest 4, DeleteUndoUiTest 21, MedicationEntryDesignTest 7, AncWorkflowTest 9 (reported by the build lane, not re-run after the last 2-line edit). Not verified: printed report not rendered, Save not tapped on a device, Stopped status not screenshotted, text-size steps. Nits: long notes wrap to 3-4 lines; 'Save & add another' wraps; expanded card still lists an uneditable End date row; 'Meds' also replaced 'Medications' on the '+ Meds' button and profile. Screenshots: .agents/pipeline/design/medication-redo2/.",
+   "detail": "Your decisions 2026-11-02: tab reads 'Meds'; editor keeps only name (presaved list), dose, route, Active/Stopped and ONE 'Note / instructions'; end date, side effects, frequency and start date are no longer edited (stored fields kept, new entry starts today); card = bold name, Active/Stopped badge, lighter line 'dose · route · note'; same on the print; a note is not required; presets no longer copy a hidden frequency; no old-record handling. Pinned Cancel / Save / Save & add another bar; Undo bar fits one line and keeps the patient name. Gate OK, static checks OK, emulator MedicationListCollapseTest 4, DeleteUndoUiTest 21, MedicationEntryDesignTest 7, AncWorkflowTest 9 (reported by the build lane, not re-run after the last 2-line edit). Not verified: printed report not rendered, Save not tapped on a device, Stopped status not screenshotted, text-size steps. Nits: long notes wrap to 3-4 lines; 'Save & add another' wraps; expanded card still lists an uneditable End date row; 'Meds' also replaced 'Medications' on the '+ Meds' button and profile. Screenshots: (removed 2026-11-19, in git history: .agents/pipeline/design/medication-redo2/).",
    "owner": "Fleet (Sonnet build) · Claude checked",
    "updated": "2026-11-02"
   },
@@ -1796,12 +1796,12 @@
   "rd32": {
    "phase": "pRD",
    "order": 32,
-   "status": "active",
+   "status": "done",
    "title": "Export and print v2 (print crash fix, new layout)",
    "ref": "",
-   "detail": "Print v2 built through slice 5 (all local, not pushed): crash fix, data layer, print layout, native report, picture selection, share PDF and short text. Unit tests pass (1707); report, picker, share and print hand-off classes pass on the emulator. Open: real print and PDF share on the phone (emulator WebView cannot render), full emulator push gate, owner check of the cache folder addition in file_paths.xml. Plan: docs/designs/reviews/export_print_v2/BUILD_PLAN.md",
+   "detail": "Print v2 built, reviewed and pushed (86c6259): crash fix, report data layer, print layout B3, native report, picture picker, share PDF and text. Remaining checks are tasks rd44 to rd46.",
    "owner": "",
-   "updated": "2026-11-18"
+   "updated": "2026-11-19"
   },
   "rd33": {
    "phase": "pRD",
@@ -1829,9 +1829,9 @@
    "status": "todo",
    "title": "Deep clean: antislop, duplicates, unused code",
    "ref": "",
-   "detail": "",
+   "detail": "Code deep clean (antislop, duplicates, unused code) still open. The docs and logs clean was done 2026-11-19 (1891 to about 500 tracked files, see docs/HANDOFF.md).",
    "owner": "",
-   "updated": "2026-11-16"
+   "updated": "2026-11-19"
   },
   "rd36": {
    "phase": "pRD",
@@ -1899,7 +1899,7 @@
    "status": "todo",
    "title": "Cleanup follow-ups (refactors, not deletions): replace raw FilterChip with RecordFilterChip in attachment, delivery and medication forms; PatientNameText for raw name Text; extract shared patient banner, bottom-sheet shell and form dialog; remove dead useRecordStyle=false branches; 5 unreferenced launcher foreground PNGs need packaging proof",
    "ref": "",
-   "detail": "Listed by both teams in docs/cleanup/s21/revised_A.md and revised_B.md; each changes UI so needs its own review and tests.",
+   "detail": "Listed by both teams in (removed 2026-11-19, in git history: docs/cleanup/s21/revised_A.md) and revised_B.md; each changes UI so needs its own review and tests.",
    "owner": "",
    "updated": "2026-11-17"
   },
@@ -1912,9 +1912,43 @@
    "detail": "Cause found: freshly booted emulator had font_scale 1.3 and the soft keyboard on. set_emulator_360dp.sh now sets font 1.0, no animations, IME off. Not a code regression.",
    "owner": "",
    "updated": "2026-11-17"
+  },
+  "rd44": {
+   "phase": "p2",
+   "order": 26,
+   "status": "todo",
+   "title": "Owner phone check of print v2 (Print, Share PDF, Share text, picture picker)",
+   "ref": "docs/designs/reviews/export_print_v2/BUILD_PLAN.md",
+   "detail": "QA build 1.0.5-qa with print v2 is installed on the phone (2026-11-18). Not verified on a device: a real print, the PDF share, the picker with real photos. The emulator WebView cannot render, so PrintHandoffTest skips there. Fix what the owner reports.",
+   "owner": "",
+   "updated": "2026-11-19"
+  },
+  "rd45": {
+   "phase": "p2",
+   "order": 27,
+   "status": "todo",
+   "title": "Owner approval: new reports/ cache path for PDF sharing",
+   "ref": "",
+   "detail": "res/xml/file_paths.xml gained <cache-path name=reports path=reports/>. It exposes only that cache folder; PDFs older than 1 hour are deleted at export and when the report opens. Already in main; remove it and the PDF share if the owner declines.",
+   "owner": "",
+   "updated": "2026-11-19"
+  },
+  "rd46": {
+   "phase": "p2",
+   "order": 28,
+   "status": "todo",
+   "title": "Print layout follow-ups chosen by the owner",
+   "ref": "",
+   "detail": "Layout B3 does not print the free-text visit findings or Not recorded for missing scan measurements; the short share text lists medication names only and shows only GA and EDD for dating. Confirm with the owner after the phone check.",
+   "owner": "",
+   "updated": "2026-11-19"
   }
  },
  "log": [
+  {
+   "date": "2026-11-19",
+   "text": "2026-11-19: print v2 pushed (86c6259) and QA installed on the phone; docs and logs deep clean (superseded run logs, prompts, patches, screenshots and old specs removed from git, recoverable from history); docs/HANDOFF.md added as the start-here file; open follow-ups rd44 to rd46."
+  },
   {
    "date": "2026-11-18",
    "text": "Full push gate on print v2: unit 1707 pass, lint 0 errors after one fix, androidTest compile pass, emulator suite 975 of 977 first run, the 2 failures pass when rerun alone (2 of 2 each). Protected files changed since the last push: only the print generator and its test (owner approved)."

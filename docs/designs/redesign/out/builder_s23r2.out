@@ -1,5 +1,0 @@
-1. Constrained `PatientDirectoryCard` status-tag `FlowRow` with `Modifier.widthIn(max = 120.dp)` while preserving `Alignment.End` and all semantics test tags.
-2. Removed `maxLines` and `overflow` from `ParityCell` delivery summary `Text`, simplified to `val prevDelivery = previousDeliverySummary(patient)`, and removed unused `nulliparous` from [strings.xml](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/res/values/strings.xml).
-3. Wrapped headline and remaining count suffix in Unicode isolates inside `CompactClinicalAttentionStrip` with `bodyText = "$prefix⁨$headline⁩⁨$moreSuffix⁩"`.
-4. Moved dialog user-visible strings and content descriptions ("Delete", "Items", three level descriptions with colon notation, "Update item", "Add item") into [strings.xml](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/res/values/strings.xml) with `stringResource` and zero em/en dashes.
-5. Updated stale KDoc in [ThemeContrastTest.kt](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/ui/ThemeContrastTest.kt#L75) referencing `DeliveryTone` to `FieldDelivery` tokens.

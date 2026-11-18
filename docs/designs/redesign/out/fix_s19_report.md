@@ -1,5 +1,0 @@
-1. Added `<string name="date_field_value_cd">%1$s, %2$s</string>` in [strings.xml](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/res/values/strings.xml#L1030).
-2. Updated `ClinicalDateField` in [AncDatePicker.kt](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/ui/AncDatePicker.kt#L185-L189) so `externalLabel` sets `contentDescription` to `R.string.date_field_value_cd` (`label`, `value`) when `value.isNotBlank()`, keeping `label` alone when blank.
-3. Added `Modifier.onKeyEvent` on `OutlinedTextField` in [AncDatePicker.kt](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/ui/AncDatePicker.kt#L275-L290) handling `KeyEventType.KeyUp` for `Key.Enter`, `Key.NumPadEnter`, and `Key.DirectionCenter` when `enabled` to set `showDatePicker = true` and return `true` (`false` otherwise).
-4. Kept all `testTag` values, date mapping, stored values, and default behaviours unchanged.
-5. Compiled with `./gradlew --offline :app:compileDebugKotlin :app:compileDebugAndroidTestKotlin -q` (exited with code 0).

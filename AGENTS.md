@@ -11,6 +11,9 @@
 - Rule: an edit to a level-3 path needs a frontier-tier review and an independent test review.
 - A path missing from the map counts as level 2. Add `Risk paths` to the profile to raise more paths.
 
+## Start here
+- Read `docs/HANDOFF.md` first (state, rules, tools, open work), then `docs/ROADMAP.md`. Progress lives only in `docs/PROJECT_STATE.json`.
+
 ## Core Architectural Constitution & Engineering Rules
 
 ### 1. Rule of Reusability ("Build Once, Use Everywhere")
