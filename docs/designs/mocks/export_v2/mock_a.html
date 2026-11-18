@@ -1,0 +1,1193 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clinical record - Sample Layout Patient - Dr. Sherif Radwan Clinic</title>
+<style>
+  :root {
+    --ink: #0F172A;
+    --ink-soft: #334155;
+    --navy: #0D1B3D;
+    --teal: #0F5257;
+    --crimson: #991B1B;
+    --crimson-bg: #FEF2F2;
+    --surface: #FFFFFF;
+    --surface-tint: #F8FAFC;
+    --surface-head: #F1F5F9;
+    --border: #CBD5E1;
+    --border-hair: #E2E8F0;
+    --border-strong: #0F172A;
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-size: 9.5pt;
+    line-height: 1.42;
+    color: var(--ink);
+    background: #E2E8F0;
+    direction: ltr;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  [dir="rtl"],
+  [lang="ar"] {
+    direction: rtl;
+    text-align: right;
+    unicode-bidi: isolate;
+    letter-spacing: 0;
+    font-variant-ligatures: normal;
+    hyphens: none;
+  }
+
+  .patient-name,
+  .patient-name[dir="rtl"],
+  .patient-name[lang="ar"] {
+    word-break: keep-all;
+    overflow-wrap: break-word;
+    letter-spacing: 0;
+    hyphens: none;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .page-sheet {
+    width: 210mm;
+    background: var(--surface);
+    color: var(--ink);
+    margin: 0 auto 14px auto;
+    padding: 12mm;
+    display: block;
+  }
+
+  @media screen {
+    body {
+      padding: 12px 8px;
+    }
+    .page-sheet {
+      box-shadow: 0 2px 10px rgba(15, 23, 42, 0.14);
+      border: 1px solid var(--border);
+    }
+    .summary-page {
+      min-height: 297mm;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+  }
+
+  @media screen and (max-width: 845px) { .page-sheet { zoom: 0.87; } }
+  @media screen and (max-width: 735px) { .page-sheet { zoom: 0.76; } }
+  @media screen and (max-width: 645px) { .page-sheet { zoom: 0.66; } }
+  @media screen and (max-width: 565px) { .page-sheet { zoom: 0.57; } }
+  @media screen and (max-width: 495px) { .page-sheet { zoom: 0.49; } }
+  @media screen and (max-width: 425px) { .page-sheet { zoom: 0.41; } }
+  @media screen and (max-width: 359px) { .page-sheet { zoom: 0.36; } }
+
+  @media print {
+    @page {
+      size: A4 portrait;
+      margin: 12mm;
+    }
+    html,
+    body {
+      background: #FFFFFF;
+      margin: 0;
+      padding: 0;
+      width: auto;
+    }
+    .page-sheet {
+      width: 100%;
+      max-width: none;
+      margin: 0;
+      padding: 0;
+      border: none;
+      box-shadow: none;
+      zoom: 1;
+      display: block;
+    }
+    .summary-page {
+      min-height: 0;
+      display: block;
+      break-after: page;
+      page-break-after: always;
+    }
+    .summary-footer {
+      margin-top: 12pt;
+    }
+  }
+
+  .clinic-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    padding-bottom: 8px;
+    margin-bottom: 12px;
+    border-bottom: 2px solid var(--navy);
+  }
+
+  .clinic-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .clinic-mark {
+    width: 38px;
+    height: 38px;
+    border: 2px solid var(--navy);
+    color: var(--navy);
+    font-size: 13pt;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .clinic-title h1 {
+    font-size: 14pt;
+    font-weight: 800;
+    color: var(--navy);
+    line-height: 1.2;
+  }
+
+  .clinic-title .clinic-sub {
+    font-size: 9pt;
+    color: var(--ink-soft);
+    font-weight: 600;
+    line-height: 1.3;
+  }
+
+  .header-meta {
+    min-width: 175px;
+    border-left: 1.5px solid var(--border);
+    padding-left: 12px;
+    font-size: 9pt;
+    line-height: 1.35;
+  }
+
+  .doc-badge {
+    display: inline-block;
+    background: var(--navy);
+    color: #FFFFFF;
+    font-size: 9pt;
+    font-weight: 700;
+    padding: 2px 8px;
+    margin-bottom: 4px;
+  }
+
+  .meta-line {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    color: var(--ink-soft);
+  }
+
+  .meta-line strong {
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .identity-band {
+    padding: 8px 0 10px 0;
+    margin-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .identity-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border-hair);
+  }
+
+  .identity-primary {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .patient-name {
+    font-size: 13.5pt;
+    font-weight: 800;
+    color: var(--navy);
+    line-height: 1.25;
+  }
+
+  .patient-sub {
+    font-size: 9pt;
+    color: var(--ink-soft);
+    margin-top: 2px;
+  }
+
+  .identity-stats {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-shrink: 0;
+  }
+
+  .stat-item {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .stat-label {
+    font-size: 9pt;
+    color: var(--ink-soft);
+    line-height: 1.2;
+  }
+
+  .stat-value {
+    font-size: 10pt;
+    font-weight: 700;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .risk-badge {
+    display: inline-block;
+    padding: 2px 9px;
+    font-size: 9pt;
+    font-weight: 700;
+    background: var(--crimson-bg);
+    color: var(--crimson);
+    border: 1.5px solid var(--crimson);
+  }
+
+  .dating-strip {
+    display: grid;
+    grid-template-columns: 1.25fr 1fr 1fr 0.85fr;
+    gap: 0;
+    padding-top: 8px;
+  }
+
+  .dating-cell {
+    padding-right: 10px;
+  }
+
+  .dating-cell + .dating-cell {
+    padding-left: 12px;
+    border-left: 1px solid var(--border);
+  }
+
+  .stat-value--primary {
+    font-size: 11pt;
+    font-weight: 800;
+    color: var(--teal);
+  }
+
+  .stat-value--edd {
+    font-size: 11pt;
+    font-weight: 800;
+    color: var(--crimson);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .alert-strip {
+    background: var(--surface-tint);
+    border-left: 3.5px solid var(--crimson);
+    border-top: 1px solid var(--border-hair);
+    border-right: 1px solid var(--border-hair);
+    border-bottom: 1px solid var(--border-hair);
+    padding: 7px 10px;
+    margin-bottom: 12px;
+    font-size: 9pt;
+    line-height: 1.4;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .alert-strip-title {
+    font-size: 9.5pt;
+    font-weight: 800;
+    color: var(--crimson);
+    margin-bottom: 3px;
+  }
+
+  .alert-line + .alert-line {
+    margin-top: 2px;
+  }
+
+  .section {
+    margin-bottom: 14px;
+  }
+
+  .section-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 8px;
+    font-size: 10.5pt;
+    font-weight: 800;
+    color: var(--navy);
+    padding-bottom: 4px;
+    margin-bottom: 6px;
+    border-bottom: 1.5px solid var(--navy);
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+
+  .section-note {
+    font-size: 9pt;
+    font-weight: 400;
+    color: var(--ink-soft);
+  }
+
+  .clinical-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+    font-size: 9pt;
+    line-height: 1.38;
+  }
+
+  .clinical-table thead {
+    display: table-header-group;
+  }
+
+  .clinical-table tr {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .clinical-table th {
+    background: var(--surface-head);
+    color: var(--ink);
+    font-weight: 700;
+    font-size: 9pt;
+    text-align: left;
+    padding: 5px 6px;
+    border-top: 1px solid var(--border);
+    border-bottom: 1.5px solid var(--border-strong);
+  }
+
+  .clinical-table td {
+    padding: 5px 6px;
+    border-bottom: 1px solid var(--border-hair);
+    vertical-align: top;
+    text-align: left;
+    color: var(--ink);
+  }
+
+  .clinical-table tbody tr:nth-child(even) {
+    background: var(--surface-tint);
+  }
+
+  .clinical-table tr.more-row td {
+    background: var(--surface);
+    color: var(--ink-soft);
+    font-style: italic;
+    padding: 5px 6px;
+  }
+
+  .num-col {
+    font-variant-numeric: tabular-nums;
+  }
+
+  .cell-sub {
+    display: block;
+    font-size: 9pt;
+    color: var(--ink-soft);
+    margin-top: 1px;
+  }
+
+  .wrap-text {
+    overflow-wrap: anywhere;
+    word-break: normal;
+  }
+
+  .ga-val {
+    font-weight: 700;
+    color: var(--teal);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .bp-val {
+    font-weight: 700;
+    color: var(--navy);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .bp-alert {
+    display: block;
+    margin-top: 2px;
+    padding-left: 5px;
+    border-left: 2.5px solid var(--crimson);
+    font-size: 9pt;
+    font-weight: 700;
+    color: var(--crimson);
+    line-height: 1.25;
+  }
+
+  .val-abnormal {
+    display: inline-block;
+    padding: 1px 5px;
+    background: var(--crimson-bg);
+    color: var(--crimson);
+    border: 1px solid var(--crimson);
+    font-weight: 700;
+  }
+
+  .outcome-live {
+    font-weight: 700;
+    color: var(--teal);
+  }
+
+  .history-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: 20px;
+    border-top: 1px solid var(--border-hair);
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .history-item {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 5px 0;
+    border-bottom: 1px solid var(--border-hair);
+    font-size: 9pt;
+  }
+
+  .history-item .k {
+    color: var(--ink-soft);
+    font-weight: 600;
+  }
+
+  .history-item .v {
+    color: var(--ink);
+    font-weight: 700;
+    text-align: right;
+  }
+
+  .history-item .v.allergy {
+    color: var(--crimson);
+  }
+
+  .plan-summary {
+    font-size: 9.5pt;
+    line-height: 1.45;
+  }
+
+  .plan-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 4px 0;
+    border-bottom: 1px solid var(--border-hair);
+  }
+
+  .plan-row .k {
+    color: var(--ink-soft);
+    font-weight: 600;
+  }
+
+  .plan-row .v {
+    color: var(--ink);
+    font-weight: 700;
+    text-align: right;
+  }
+
+  .attestation-section {
+    margin-top: 14px;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .attestation-grid {
+    display: grid;
+    grid-template-columns: 1.35fr 1fr;
+    gap: 18px;
+    align-items: stretch;
+  }
+
+  .attestation-box {
+    border: 1.5px dashed var(--navy);
+    padding: 10px 12px;
+    background: var(--surface);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  .doc-name {
+    font-size: 10pt;
+    font-weight: 800;
+    color: var(--navy);
+  }
+
+  .doc-ar-name {
+    font-family: "Noto Naskh Arabic", "Droid Arabic Naskh", "Geeza Pro", "Tahoma", Arial, serif;
+    font-size: 16pt;
+    font-weight: 700;
+    line-height: 1.45;
+    color: var(--ink);
+    margin-top: 3px;
+  }
+
+  .doc-ar-title {
+    font-family: "Noto Naskh Arabic", "Droid Arabic Naskh", "Geeza Pro", "Tahoma", Arial, serif;
+    font-size: 10pt;
+    font-weight: 600;
+    line-height: 1.45;
+    color: var(--ink-soft);
+  }
+
+  .stamp-line {
+    margin-top: 10px;
+    padding-top: 4px;
+    border-top: 1px solid var(--border);
+    font-size: 9pt;
+    color: var(--ink-soft);
+    text-align: right;
+  }
+
+  .page-footer {
+    margin-top: 14px;
+    padding-top: 6px;
+    border-top: 1px solid var(--border);
+    font-size: 9pt;
+    color: var(--ink-soft);
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+  }
+</style>
+</head>
+<body>
+
+<div class="page-sheet summary-page">
+  <div class="summary-main">
+    <header class="clinic-header">
+      <div class="clinic-brand">
+        <div class="clinic-mark" aria-hidden="true">DR</div>
+        <div class="clinic-title">
+          <h1>Dr. Sherif Radwan Clinic</h1>
+          <div class="clinic-sub">Maternal-Fetal Medicine &amp; Advanced Obstetrics</div>
+          <div class="clinic-sub">Specialist of Obstetrics, Gynecology &amp; Laparoscopy</div>
+        </div>
+      </div>
+      <div class="header-meta">
+        <div class="doc-badge">Clinical record</div>
+        <div class="meta-line"><span>Patient ID:</span><strong>DUMP-1</strong></div>
+        <div class="meta-line"><span>Print date:</span><strong>31/10/2026</strong></div>
+      </div>
+    </header>
+
+    <section class="identity-band">
+      <div class="identity-top">
+        <div class="identity-primary">
+          <div class="patient-name">Sample Layout Patient</div>
+          <div class="patient-sub">Patient ID: DUMP-1 · Phone: Unspecified</div>
+        </div>
+        <div class="identity-stats">
+          <div class="stat-item">
+            <span class="stat-label">Age</span>
+            <span class="stat-value">29 yrs</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Blood group</span>
+            <span class="stat-value">O+</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Clinical risk</span>
+            <span class="risk-badge">High risk</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="dating-strip">
+        <div class="dating-cell">
+          <div class="stat-label">Gestational age today</div>
+          <div class="stat-value--primary">38w 6d</div>
+        </div>
+        <div class="dating-cell">
+          <div class="stat-label">Estimated due date (EDD)</div>
+          <div class="stat-value--edd">08/11/2026</div>
+        </div>
+        <div class="dating-cell">
+          <div class="stat-label">Last menstrual period (LMP)</div>
+          <div class="stat-value">01/02/2026</div>
+        </div>
+        <div class="dating-cell">
+          <div class="stat-label">Dating method</div>
+          <div class="stat-value">LMP</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="alert-strip">
+      <div class="alert-strip-title">Risk and attention notes</div>
+      <div class="alert-line"><strong>Allergies and history:</strong> Drug allergies: <strong>Penicillin rash</strong> · Medical: Hypothyroidism · Surgical: Appendectomy 2015 · GPA: G- P- + A- (3 Prior Pregnancies)</div>
+      <div class="alert-line"><strong>Recorded alerts:</strong> Visit #8 (03/05/2026, 13w 0d): BP 165/105 (Severe-range BP - urgent assessment) · Lab (19/03/2026): Haemoglobin 2 result 11.2 g/dL (Abnormal)</div>
+    </section>
+
+    <section class="section">
+      <div class="section-heading">
+        <span>Recent antenatal visits (last 3)</span>
+        <span class="section-note">Visits 13 to 15 shown here; full log follows</span>
+      </div>
+      <table class="clinical-table">
+        <thead>
+          <tr>
+            <th style="width: 19%;">Date and visit</th>
+            <th style="width: 11%;">GA</th>
+            <th style="width: 22%;">BP and weight</th>
+            <th style="width: 48%;">Clinical findings</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="num-col"><strong>17/06/2026</strong><span class="cell-sub">Visit #13</span></td>
+            <td class="ga-val">19w 3d</td>
+            <td><span class="bp-val">120/80</span><span class="cell-sub num-col">68.5 kg</span></td>
+            <td class="wrap-text">Fundal height appropriate, fetal movements felt</td>
+          </tr>
+          <tr>
+            <td class="num-col"><strong>26/06/2026</strong><span class="cell-sub">Visit #14</span></td>
+            <td class="ga-val">20w 5d</td>
+            <td><span class="bp-val">120/80</span><span class="cell-sub num-col">68.5 kg</span></td>
+            <td class="wrap-text">Fundal height appropriate, fetal movements felt</td>
+          </tr>
+          <tr>
+            <td class="num-col"><strong>05/07/2026</strong><span class="cell-sub">Visit #15</span></td>
+            <td class="ga-val">22w 0d</td>
+            <td><span class="bp-val">120/80</span><span class="cell-sub num-col">68.5 kg</span></td>
+            <td class="wrap-text">Fundal height appropriate, fetal movements felt</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="section">
+      <div class="section-heading">
+        <span>Current medications</span>
+        <span class="section-note">10 active entries</span>
+      </div>
+      <table class="clinical-table">
+        <thead>
+          <tr>
+            <th style="width: 21%;">Medication</th>
+            <th style="width: 60%;">Dosage and instructions</th>
+            <th style="width: 19%;">Dates</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Medication 0</strong></td>
+            <td class="wrap-text">500 mg · PO · UnbrokenverylongfindingtextwithoutanyspacesUnbrokenverylongfindingtextwithoutanyspacesUnbrokenverylongfindingtextwithoutanyspaces · Prophylaxis</td>
+            <td class="num-col">From 01/01/2026</td>
+          </tr>
+          <tr>
+            <td><strong>Medication 1</strong></td>
+            <td class="wrap-text">500 mg · PO · after meals</td>
+            <td class="num-col">From 01/01/2026</td>
+          </tr>
+          <tr>
+            <td><strong>Medication 2</strong></td>
+            <td class="wrap-text">500 mg · PO · after meals · Prophylaxis</td>
+            <td class="num-col">From 01/01/2026</td>
+          </tr>
+          <tr>
+            <td><strong>Medication 3</strong></td>
+            <td class="wrap-text">500 mg · PO · after meals</td>
+            <td class="num-col">From 01/01/2026</td>
+          </tr>
+          <tr>
+            <td><strong>Medication 4</strong></td>
+            <td class="wrap-text">500 mg · PO · after meals · Prophylaxis</td>
+            <td class="num-col">From 01/01/2026</td>
+          </tr>
+          <tr>
+            <td><strong>Medication 5</strong></td>
+            <td class="wrap-text">500 mg · PO · after meals</td>
+            <td class="num-col">From 01/01/2026</td>
+          </tr>
+          <tr>
+            <td><strong>Medication 6</strong></td>
+            <td class="wrap-text">500 mg · PO · after meals · Prophylaxis</td>
+            <td class="num-col">From 01/01/2026</td>
+          </tr>
+          <tr>
+            <td><strong>Medication 7</strong></td>
+            <td class="wrap-text">500 mg · PO · after meals</td>
+            <td class="num-col">From 01/01/2026</td>
+          </tr>
+          <tr>
+            <td><strong>Medication 8</strong></td>
+            <td class="wrap-text">500 mg · PO · after meals · Prophylaxis</td>
+            <td class="num-col">From 01/01/2026</td>
+          </tr>
+          <tr>
+            <td><strong>Medication 9</strong></td>
+            <td class="wrap-text">500 mg · PO · after meals</td>
+            <td class="num-col">From 01/01/2026</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="section" style="margin-bottom: 0;">
+      <div class="section-heading">
+        <span>Delivery plan</span>
+      </div>
+      <div class="plan-summary">
+        <div class="plan-row">
+          <span class="k">Planned delivery:</span>
+          <span class="v">Elective repeat caesarean booked at 39 weeks</span>
+        </div>
+        <div class="plan-row">
+          <span class="k">Estimated due date:</span>
+          <span class="v num-col">08/11/2026</span>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <footer class="page-footer summary-footer">
+    <span>Confidential medical record · Dr. Sherif Radwan Clinic · Specialist of Obstetrics, Gynecology &amp; Laparoscopy · Tel 01201720808</span>
+  </footer>
+</div>
+
+<div class="page-sheet details-page">
+  <header class="clinic-header">
+    <div class="clinic-brand">
+      <div class="clinic-mark" aria-hidden="true">DR</div>
+      <div class="clinic-title">
+        <h1>Dr. Sherif Radwan Clinic</h1>
+        <div class="clinic-sub">Full clinical details: visits, scans, laboratory results, medication history and delivery plan</div>
+      </div>
+    </div>
+    <div class="header-meta">
+      <div class="doc-badge">Clinical record (continued)</div>
+      <div class="meta-line"><span>Patient:</span><strong>Sample Layout Patient</strong></div>
+      <div class="meta-line"><span>Patient ID:</span><strong>DUMP-1</strong></div>
+      <div class="meta-line"><span>Print date:</span><strong>31/10/2026</strong></div>
+    </div>
+  </header>
+
+  <section class="section">
+    <div class="section-heading">
+      <span>Obstetric and medical history</span>
+    </div>
+    <div class="history-grid">
+      <div class="history-item">
+        <span class="k">GPA formula:</span>
+        <span class="v">G- P- + A- (3 Prior Pregnancies)</span>
+      </div>
+      <div class="history-item">
+        <span class="k">Drug allergies:</span>
+        <span class="v allergy">Penicillin rash</span>
+      </div>
+      <div class="history-item">
+        <span class="k">Medical history:</span>
+        <span class="v">Hypothyroidism</span>
+      </div>
+      <div class="history-item">
+        <span class="k">Surgical history:</span>
+        <span class="v">Appendectomy 2015</span>
+      </div>
+      <div class="history-item">
+        <span class="k">Family history:</span>
+        <span class="v">Not recorded</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section-heading">
+      <span>Previous pregnancies and obstetric outcomes</span>
+    </div>
+    <table class="clinical-table">
+      <thead>
+        <tr>
+          <th style="width: 10%;">Year</th>
+          <th style="width: 15%;">Delivery mode</th>
+          <th style="width: 17%;">Outcome</th>
+          <th style="width: 58%;">Hospital and clinical notes</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="num-col"><strong>2015</strong></td>
+          <td>-</td>
+          <td><span class="outcome-live">Live Birth</span></td>
+          <td class="wrap-text">City Maternity Hospital, Dr Abdelrahman · UnbrokenverylongfindingtextwithoutanyspacesUnbrokenverylongfindingtextwithoutanyspacesUnbrokenverylongfindingtextwithoutanyspaces</td>
+        </tr>
+        <tr>
+          <td class="num-col"><strong>2016</strong></td>
+          <td>-</td>
+          <td><span class="outcome-live">Live Birth</span></td>
+          <td class="wrap-text">City Maternity Hospital, Dr Abdelrahman · unremarkable</td>
+        </tr>
+        <tr>
+          <td class="num-col"><strong>2017</strong></td>
+          <td>-</td>
+          <td><span class="outcome-live">Live Birth</span></td>
+          <td class="wrap-text">City Maternity Hospital, Dr Abdelrahman · unremarkable</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="section">
+    <div class="section-heading">
+      <span>Antenatal care visits log</span>
+    </div>
+    <table class="clinical-table">
+      <thead>
+        <tr>
+          <th style="width: 19%;">Date and visit</th>
+          <th style="width: 11%;">GA</th>
+          <th style="width: 24%;">BP and weight</th>
+          <th style="width: 46%;">Clinical findings</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="more-row">
+          <td colspan="4">3 earlier visits not shown</td>
+        </tr>
+        <tr>
+          <td class="num-col"><strong>28/03/2026</strong><span class="cell-sub">Visit #4</span></td>
+          <td class="ga-val">7w 6d</td>
+          <td><span class="bp-val">120/80</span><span class="cell-sub num-col">68.5 kg</span></td>
+          <td class="wrap-text">UnbrokenverylongfindingtextwithoutanyspacesUnbrokenverylongfindingtextwithoutanyspacesUnbrokenverylongfindingtextwithoutanyspaces</td>
+        </tr>
+        <tr>
+          <td class="num-col"><strong>06/04/2026</strong><span class="cell-sub">Visit #5</span></td>
+          <td class="ga-val">9w 1d</td>
+          <td><span class="bp-val">120/80</span><span class="cell-sub num-col">68.5 kg</span></td>
+          <td class="wrap-text">Fundal height appropriate, fetal movements felt</td>
+        </tr>
+        <tr>
+          <td class="num-col"><strong>15/04/2026</strong><span class="cell-sub">Visit #6</span></td>
+          <td class="ga-val">10w 3d</td>
+          <td><span class="bp-val">120/80</span><span class="cell-sub num-col">68.5 kg</span></td>
+          <td class="wrap-text">Fundal height appropriate, fetal movements felt</td>
+        </tr>
+        <tr>
+          <td class="num-col"><strong>24/04/2026</strong><span class="cell-sub">Visit #7</span></td>
+          <td class="ga-val">11w 5d</td>
+          <td><span class="bp-val">120/80</span><span class="cell-sub num-col">68.5 kg</span></td>
+          <td class="wrap-text">Fundal height appropriate, fetal movements felt</td>
+        </tr>
+        <tr>
+          <td class="num-col"><strong>03/05/2026</strong><span class="cell-sub">Visit #8</span></td>
+          <td class="ga-val">13w 0d</td>
+          <td>
+            <span class="bp-val">165/105</span><span class="cell-sub num-col">68.5 kg</span>
+            <span class="bp-alert">Severe-range BP - urgent assessment</span>
+          </td>
+          <td class="wrap-text">Fundal height appropriate, fetal movements felt</td>
+        </tr>
+        <tr>
+          <td class="num-col"><strong>12/05/2026</strong><span class="cell-sub">Visit #9</span></td>
+          <td class="ga-val">14w 2d</td>
+          <td><span class="bp-val">120/80</span><span class="cell-sub num-col">68.5 kg</span></td>
+          <td class="wrap-text">Fundal height appropriate, fetal movements felt</td>
+        </tr>
+        <tr>
+          <td class="num-col"><strong>21/05/2026</strong><span class="cell-sub">Visit #10</span></td>
+          <td class="ga-val">15w 4d</td>
+          <td><span class="bp-val">120/80</span><span class="cell-sub num-col">68.5 kg</span></td>
+          <td class="wrap-text">Fundal height appropriate, fetal movements felt</td>
+        </tr>
+        <tr>
+          <td class="num-col"><strong>30/05/2026</strong><span class="cell-sub">Visit #11</span></td>
+          <td class="ga-val">16w 6d</td>
+          <td><span class="bp-val">120/80</span><span class="cell-sub num-col">68.5 kg</span></td>
+          <td class="wrap-text">Fundal height appropriate, fetal movements felt</td>
+        </tr>
+        <tr>
+          <td class="num-col"><strong>08/06/2026</strong><span class="cell-sub">Visit #12</span></td>
+          <td class="ga-val">18w 1d</td>
+          <td><span class="bp-val">120/80</span><span class="cell-sub num-col">68.5 kg</span></td>
+          <td class="wrap-text">Fundal height appropriate, fetal movements felt</td>
+        </tr>
+        <tr>
+          <td class="num-col"><strong>17/06/2026</strong><span class="cell-sub">Visit #13</span></td>
+          <td class="ga-val">19w 3d</td>
+          <td><span class="bp-val">120/80</span><span class="cell-sub num-col">68.5 kg</span></td>
+          <td class="wrap-text">Fundal height appropriate, fetal movements felt</td>
+        </tr>
+        <tr>
+          <td class="num-col"><strong>26/06/2026</strong><span class="cell-sub">Visit #14</span></td>
+          <td class="ga-val">20w 5d</td>
+          <td><span class="bp-val">120/80</span><span class="cell-sub num-col">68.5 kg</span></td>
+          <td class="wrap-text">Fundal height appropriate, fetal movements felt</td>
+        </tr>
+        <tr>
+          <td class="num-col"><strong>05/07/2026</strong><span class="cell-sub">Visit #15</span></td>
+          <td class="ga-val">22w 0d</td>
+          <td><span class="bp-val">120/80</span><span class="cell-sub num-col">68.5 kg</span></td>
+          <td class="wrap-text">Fundal height appropriate, fetal movements felt</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="section">
+    <div class="section-heading">
+      <span>Ultrasound biometry and fetal surveillance</span>
+    </div>
+    <table class="clinical-table">
+      <thead>
+        <tr>
+          <th style="width: 19%;">Date and GA</th>
+          <th style="width: 13%;">EFW</th>
+          <th style="width: 44%;">Fetal and placental findings</th>
+          <th style="width: 24%;">Clinical notes</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="more-row">
+          <td colspan="4">2 earlier scans not shown</td>
+        </tr>
+        <tr>
+          <td class="num-col"><strong>19/03/2026</strong><span class="cell-sub ga-val">14w + 3d</span></td>
+          <td class="num-col"><strong>1200 g</strong></td>
+          <td>Presentation: Cephalic · Placenta: Anterior · Amniotic fluid: Normal</td>
+          <td class="wrap-text">Normal growth</td>
+        </tr>
+        <tr>
+          <td class="num-col"><strong>28/03/2026</strong><span class="cell-sub ga-val">15w + 3d</span></td>
+          <td class="num-col"><strong>1300 g</strong></td>
+          <td>Presentation: Cephalic · Placenta: Anterior · Amniotic fluid: Normal</td>
+          <td class="wrap-text">Normal growth</td>
+        </tr>
+        <tr>
+          <td class="num-col"><strong>06/04/2026</strong><span class="cell-sub ga-val">16w + 3d</span></td>
+          <td class="num-col"><strong>1400 g</strong></td>
+          <td>Presentation: Cephalic · Placenta: Anterior · Amniotic fluid: Normal</td>
+          <td class="wrap-text">Normal growth</td>
+        </tr>
+        <tr>
+          <td class="num-col"><strong>15/04/2026</strong><span class="cell-sub ga-val">17w + 3d</span></td>
+          <td class="num-col"><strong>1500 g</strong></td>
+          <td>Presentation: Cephalic · Placenta: Anterior · Amniotic fluid: Normal</td>
+          <td class="wrap-text">Normal growth</td>
+        </tr>
+        <tr>
+          <td class="num-col"><strong>24/04/2026</strong><span class="cell-sub ga-val">18w + 3d</span></td>
+          <td class="num-col"><strong>1600 g</strong></td>
+          <td>Presentation: Cephalic · Placenta: Anterior · Amniotic fluid: Normal</td>
+          <td class="wrap-text">Normal growth</td>
+        </tr>
+        <tr>
+          <td class="num-col"><strong>03/05/2026</strong><span class="cell-sub ga-val">19w + 3d</span></td>
+          <td class="num-col"><strong>1700 g</strong></td>
+          <td>Presentation: Cephalic · Placenta: Anterior · Amniotic fluid: Normal</td>
+          <td class="wrap-text">Normal growth</td>
+        </tr>
+        <tr>
+          <td class="num-col"><strong>12/05/2026</strong><span class="cell-sub ga-val">20w + 3d</span></td>
+          <td class="num-col"><strong>1800 g</strong></td>
+          <td>Presentation: Cephalic · Placenta: Anterior · Amniotic fluid: Normal</td>
+          <td class="wrap-text">Normal growth</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="section">
+    <div class="section-heading">
+      <span>Laboratory investigations</span>
+    </div>
+    <table class="clinical-table">
+      <thead>
+        <tr>
+          <th style="width: 16%;">Date</th>
+          <th style="width: 32%;">Test name</th>
+          <th style="width: 30%;">Result</th>
+          <th style="width: 22%;">Reference range</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="num-col"><strong>08/06/2026</strong></td>
+          <td><strong>Haemoglobin 11</strong></td>
+          <td class="num-col"><strong>11.11 g/dL</strong></td>
+          <td class="num-col">11.0 - 15.0</td>
+        </tr>
+        <tr>
+          <td class="num-col"><strong>30/05/2026</strong></td>
+          <td><strong>Haemoglobin 10</strong></td>
+          <td class="num-col"><strong>11.10 g/dL</strong></td>
+          <td class="num-col">11.0 - 15.0</td>
+        </tr>
+        <tr>
+          <td class="num-col"><strong>21/05/2026</strong></td>
+          <td><strong>Haemoglobin 9</strong></td>
+          <td class="num-col"><strong>11.9 g/dL</strong></td>
+          <td class="num-col">11.0 - 15.0</td>
+        </tr>
+        <tr>
+          <td class="num-col"><strong>12/05/2026</strong></td>
+          <td><strong>Haemoglobin 8</strong></td>
+          <td class="num-col"><strong>11.8 g/dL</strong></td>
+          <td class="num-col">11.0 - 15.0</td>
+        </tr>
+        <tr>
+          <td class="num-col"><strong>03/05/2026</strong></td>
+          <td><strong>Haemoglobin 7</strong></td>
+          <td class="num-col"><strong>11.7 g/dL</strong></td>
+          <td class="num-col">11.0 - 15.0</td>
+        </tr>
+        <tr>
+          <td class="num-col"><strong>24/04/2026</strong></td>
+          <td><strong>Haemoglobin 6</strong></td>
+          <td class="num-col"><strong>11.6 g/dL</strong></td>
+          <td class="num-col">11.0 - 15.0</td>
+        </tr>
+        <tr>
+          <td class="num-col"><strong>15/04/2026</strong></td>
+          <td><strong>Haemoglobin 5</strong></td>
+          <td class="num-col"><strong>11.5 g/dL</strong></td>
+          <td class="num-col">11.0 - 15.0</td>
+        </tr>
+        <tr>
+          <td class="num-col"><strong>06/04/2026</strong></td>
+          <td><strong>Haemoglobin 4</strong></td>
+          <td class="num-col"><strong>11.4 g/dL</strong></td>
+          <td class="num-col">11.0 - 15.0</td>
+        </tr>
+        <tr>
+          <td class="num-col"><strong>28/03/2026</strong></td>
+          <td><strong>Haemoglobin 3</strong></td>
+          <td class="num-col"><strong>11.3 g/dL</strong></td>
+          <td class="num-col">11.0 - 15.0</td>
+        </tr>
+        <tr>
+          <td class="num-col"><strong>19/03/2026</strong></td>
+          <td><strong>Haemoglobin 2</strong></td>
+          <td class="num-col"><span class="val-abnormal">11.2 g/dL (Abnormal)</span></td>
+          <td class="num-col">11.0 - 15.0</td>
+        </tr>
+        <tr class="more-row">
+          <td colspan="4">2 older results not shown</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="section">
+    <div class="section-heading">
+      <span>Medication history</span>
+    </div>
+    <table class="clinical-table">
+      <thead>
+        <tr>
+          <th style="width: 21%;">Medication</th>
+          <th style="width: 60%;">Dosage and instructions</th>
+          <th style="width: 19%;">Dates</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Medication 0</strong></td>
+          <td class="wrap-text">500 mg · PO · UnbrokenverylongfindingtextwithoutanyspacesUnbrokenverylongfindingtextwithoutanyspacesUnbrokenverylongfindingtextwithoutanyspaces · Prophylaxis</td>
+          <td class="num-col">From 01/01/2026</td>
+        </tr>
+        <tr>
+          <td><strong>Medication 1</strong></td>
+          <td class="wrap-text">500 mg · PO · after meals</td>
+          <td class="num-col">From 01/01/2026</td>
+        </tr>
+        <tr>
+          <td><strong>Medication 2</strong></td>
+          <td class="wrap-text">500 mg · PO · after meals · Prophylaxis</td>
+          <td class="num-col">From 01/01/2026</td>
+        </tr>
+        <tr>
+          <td><strong>Medication 3</strong></td>
+          <td class="wrap-text">500 mg · PO · after meals</td>
+          <td class="num-col">From 01/01/2026</td>
+        </tr>
+        <tr>
+          <td><strong>Medication 4</strong></td>
+          <td class="wrap-text">500 mg · PO · after meals · Prophylaxis</td>
+          <td class="num-col">From 01/01/2026</td>
+        </tr>
+        <tr>
+          <td><strong>Medication 5</strong></td>
+          <td class="wrap-text">500 mg · PO · after meals</td>
+          <td class="num-col">From 01/01/2026</td>
+        </tr>
+        <tr>
+          <td><strong>Medication 6</strong></td>
+          <td class="wrap-text">500 mg · PO · after meals · Prophylaxis</td>
+          <td class="num-col">From 01/01/2026</td>
+        </tr>
+        <tr>
+          <td><strong>Medication 7</strong></td>
+          <td class="wrap-text">500 mg · PO · after meals</td>
+          <td class="num-col">From 01/01/2026</td>
+        </tr>
+        <tr>
+          <td><strong>Medication 8</strong></td>
+          <td class="wrap-text">500 mg · PO · after meals · Prophylaxis</td>
+          <td class="num-col">From 01/01/2026</td>
+        </tr>
+        <tr>
+          <td><strong>Medication 9</strong></td>
+          <td class="wrap-text">500 mg · PO · after meals</td>
+          <td class="num-col">From 01/01/2026</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="attestation-section">
+    <div class="section-heading">
+      <span>Delivery plan and clinician attestation</span>
+    </div>
+    <div class="attestation-grid">
+      <div class="plan-summary">
+        <div class="plan-row">
+          <span class="k">Planned delivery:</span>
+          <span class="v">Elective repeat caesarean booked at 39 weeks</span>
+        </div>
+        <div class="plan-row">
+          <span class="k">Estimated due date:</span>
+          <span class="v num-col">08/11/2026</span>
+        </div>
+      </div>
+
+      <div class="attestation-box">
+        <div>
+          <div class="doc-name">Dr. Sherif Radwan</div>
+          <div class="doc-ar-name" lang="ar" dir="rtl">شريف جمال رضوان</div>
+          <div class="doc-ar-title" lang="ar" dir="rtl">أخصائي التوليد وأمراض النساء وتأخر الحمل</div>
+        </div>
+        <div class="stamp-line">Stamp</div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="page-footer">
+    <span>Dr. Sherif Radwan Clinic · Specialist of Obstetrics, Gynecology &amp; Laparoscopy · Tel 01201720808</span>
+  </footer>
+</div>
+
+</body>
+</html>
