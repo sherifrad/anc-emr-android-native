@@ -33,6 +33,7 @@ import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onLast
@@ -72,6 +73,7 @@ import com.sherifradwan.ancnative.ui.AncTheme
 import com.sherifradwan.ancnative.ui.components.ltrIsolate
 import com.sherifradwan.ancnative.ui.report.PatientTwoPageReportDialog
 import com.sherifradwan.ancnative.ui.report.patientShareText
+import com.sherifradwan.ancnative.ui.report.reportMedications
 import com.sherifradwan.ancnative.ui.report.reportStatusLine
 import java.time.LocalDate
 import org.junit.After
@@ -409,10 +411,11 @@ class ReportDialogRedesignTest {
             .performScrollTo().assertIsDisplayed()
         compose.onNodeWithText(str(R.string.report_section_labs), useUnmergedTree = true)
             .performScrollTo().assertIsDisplayed()
+        val expectedActiveMedsCount = reportMedications(patientWithUnlinked).current.size
         val expectedCurrentMedsTitle = str(
             R.string.report_section_current_meds_count_format,
             str(R.string.report_section_current_meds),
-            1,
+            expectedActiveMedsCount,
         )
         compose.onNodeWithText(expectedCurrentMedsTitle, useUnmergedTree = true)
             .performScrollTo().assertIsDisplayed()
@@ -671,8 +674,8 @@ class ReportDialogRedesignTest {
         // Page 2: Abnormal lab legend and abnormal result displayed
         compose.onNodeWithText(str(R.string.report_labs_legend), useUnmergedTree = true)
             .performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText("Lupus Anticoagulant", substring = true, useUnmergedTree = true)
-            .performScrollTo().assertIsDisplayed()
+        compose.onAllNodesWithText("Lupus Anticoagulant", substring = true, useUnmergedTree = true)
+            .onFirst().performScrollTo().assertIsDisplayed()
 
         // Page 2: Stopped medications section card
         compose.onNodeWithText(str(R.string.report_section_stopped_meds), useUnmergedTree = true)
@@ -1169,8 +1172,10 @@ class ReportDialogRedesignTest {
             .performScrollTo().assertIsDisplayed()
 
         // Bold type label "Singleton" and presentation "Cephalic"
-        compose.onNodeWithText("Singleton", substring = true, useUnmergedTree = true)
-            .performScrollTo().assertIsDisplayed()
+        compose.onNode(
+            hasText("Singleton", substring = true) and inTagged("reportScanOutcome_${visitWithOutcome.id}"),
+            useUnmergedTree = true,
+        ).performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("Cephalic", substring = true, useUnmergedTree = true)
             .performScrollTo().assertIsDisplayed()
 
@@ -1331,8 +1336,8 @@ class ReportDialogRedesignTest {
         // Dates and values
         compose.onNodeWithText("01/02/2026", substring = true, useUnmergedTree = true)
             .performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText("01/03/2026", substring = true, useUnmergedTree = true)
-            .performScrollTo().assertIsDisplayed()
+        compose.onAllNodesWithText("01/03/2026", substring = true, useUnmergedTree = true)
+            .onFirst().performScrollTo().assertIsDisplayed()
 
         // H mark on high result and L mark on low result
         compose.onNodeWithText("250.0 H", substring = true, useUnmergedTree = true)
@@ -1474,7 +1479,10 @@ class ReportDialogRedesignTest {
 
         node("reportOtherScans").performScrollTo().assertIsDisplayed()
         node("reportLabComparison_Biochemistry").performScrollTo().assertIsDisplayed()
-        node("reportLabNotes").performScrollTo().assertIsDisplayed()
+        val labNotes = compose.onAllNodesWithTag("reportLabNotes", useUnmergedTree = true)
+        labNotes.assertCountEquals(2)
+        labNotes[0].performScrollTo().assertIsDisplayed()
+        labNotes[1].performScrollTo().assertIsDisplayed()
         assertNoClippingInContainer("patientTwoPageReportDialog")
     }
 
