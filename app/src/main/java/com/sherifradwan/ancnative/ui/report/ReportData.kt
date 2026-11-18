@@ -421,6 +421,43 @@ private fun toLabCellEntry(lab: DemoLabInvestigation, rowUnit: String?): LabCell
     )
 }
 
+/** Returns `"H"`, `"L"`, `"*"`, or null for a comparison cell entry. */
+fun LabCellEntry.flagMark(): String? = entryFlagMark(flag, abnormalNoDirection)
+
+/** One repeated test with all chronological `(date, cell)` pairs across table chunks. */
+data class LabComparisonSeriesRow(
+    val label: String,
+    val entries: List<Pair<String, LabCell>>,
+)
+
+/** One category's merged comparison rows and notes for narrow wrapping layouts. */
+data class LabComparisonGroup(
+    val category: String,
+    val rows: List<LabComparisonSeriesRow>,
+    val notes: List<LabNote>,
+)
+
+/** Merges 6-date comparison chunks from [labReport] into one chronological group per category. */
+fun groupLabComparisonsByCategory(comparisons: List<LabComparisonTable>): List<LabComparisonGroup> {
+    if (comparisons.isEmpty()) return emptyList()
+    return comparisons.groupBy { it.category }.map { (category, tables) ->
+        val rowsByLabel = linkedMapOf<String, MutableList<Pair<String, LabCell>>>()
+        for (table in tables) {
+            for (row in table.rows) {
+                val pairs = rowsByLabel.getOrPut(row.label) { mutableListOf() }
+                row.cells.forEachIndexed { colIndex, cell ->
+                    if (cell != null) pairs.add(table.dates.getOrNull(colIndex).orEmpty() to cell)
+                }
+            }
+        }
+        LabComparisonGroup(
+            category = category,
+            rows = rowsByLabel.map { (label, entries) -> LabComparisonSeriesRow(label = label, entries = entries) },
+            notes = tables.flatMap { it.notes }.filter { it.text.isNotBlank() },
+        )
+    }
+}
+
 private fun entryFlagMark(flag: LabResultFlag?, abnormalNoDirection: Boolean): String? = when {
     flag == LabResultFlag.HIGH -> "H"
     flag == LabResultFlag.LOW -> "L"

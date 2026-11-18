@@ -73,7 +73,6 @@ import org.junit.runner.RunWith
  * testTags, unmerged tree assertions).
  *
  * Verifies:
- * (a) Scan card GA chip and EFW in report dialog show "Not recorded" when missing, and actual values when present.
  * (b) PatientHubHeader hero and collapsed top bar draw Arabic name right-aligned near right padding, English left-aligned.
  * (c) EditorPage subtitle draws Arabic name right-aligned.
  * (d) Date labels (Visit date, Scan date, Delivery date) do not contain "YYYY".
@@ -120,87 +119,7 @@ class PolishBatchRedesignTest {
         compose.waitForIdle()
     }
 
-    // =========================================================================
-    // (a) Scan GA chip and EFW in native report dialog
-    // =========================================================================
 
-    @Test
-    fun reportDialog_scanWithoutGaAndEfw_showsNotRecorded_andScanWithGaAndEfw_showsValues() {
-        val scanEmpty = DemoUltrasoundScan(
-            id = "scan-polish-empty",
-            patientId = basePatient.id,
-            date = "2026-03-01",
-            gestationalAgeWeeks = null,
-            gestationalAgeDays = null,
-            fetalNumber = null,
-            presentation = "Cephalic",
-            placentalSite = "Anterior",
-            amnioticFluid = "Normal",
-            fetalHeartRate = null,
-            biometryBpd = null,
-            biometryHc = null,
-            biometryAc = null,
-            biometryFl = null,
-            estimatedFetalWeight = null,
-            impression = null,
-        )
-        val scanFull = DemoUltrasoundScan(
-            id = "scan-polish-full",
-            patientId = basePatient.id,
-            date = "2026-03-15",
-            gestationalAgeWeeks = 32,
-            gestationalAgeDays = 4,
-            fetalNumber = "Single",
-            presentation = "Cephalic",
-            placentalSite = "Posterior",
-            amnioticFluid = "Normal",
-            fetalHeartRate = "140",
-            biometryBpd = null,
-            biometryHc = null,
-            biometryAc = null,
-            biometryFl = null,
-            estimatedFetalWeight = "1950",
-            impression = "Appropriate for gestational age",
-        )
-        val patient = basePatient.copy(
-            ultrasoundScans = listOf(scanFull, scanEmpty),
-        )
-
-        host360dp {
-            PatientTwoPageReportDialog(
-                patient = patient,
-                onDismiss = {},
-            )
-        }
-
-        // Switch to Page 2 where Ultrasound scans are presented
-        compose.onNodeWithTag("reportPage2Chip", useUnmergedTree = true).performClick()
-        compose.waitForIdle()
-
-        val notRecordedStr = str(R.string.not_recorded)
-
-        // Section header
-        compose.onNodeWithText(str(R.string.report_section_scans), useUnmergedTree = true)
-            .performScrollTo().assertIsDisplayed()
-
-        // Scan 1 (with GA and EFW): date 15/03/2026
-        compose.onNodeWithText("15/03/2026", substring = true, useUnmergedTree = true)
-            .performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText(ltrIsolate("32w + 4d"), substring = true, useUnmergedTree = true)
-            .performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText(ltrIsolate("1950 g"), substring = true, useUnmergedTree = true)
-            .performScrollTo().assertIsDisplayed()
-
-        // Scan 2 (empty GA and EFW): date 01/03/2026
-        compose.onNodeWithText("01/03/2026", substring = true, useUnmergedTree = true)
-            .performScrollTo().assertIsDisplayed()
-
-        // Both GA chip and EFW field show "Not recorded" for the empty scan
-        compose.onAllNodes(hasText(notRecordedStr), useUnmergedTree = true)
-            .fetchSemanticsNodes().let { nodes ->
-                assertTrue("Expected at least 2 'Not recorded' occurrences in ultrasound card", nodes.size >= 2)
-            }
-    }
 
     // =========================================================================
     // (b) PatientHubHeader hero draws Arabic name right-aligned and English left-aligned

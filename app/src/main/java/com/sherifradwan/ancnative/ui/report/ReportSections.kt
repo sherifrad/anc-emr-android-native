@@ -18,11 +18,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.sherifradwan.ancnative.R
@@ -51,6 +56,8 @@ import com.sherifradwan.ancnative.model.previousDeliverySummary
 import com.sherifradwan.ancnative.security.SecuritySettingsState
 import com.sherifradwan.ancnative.ui.AllergyState
 import com.sherifradwan.ancnative.ui.PatientRiskTier
+import com.sherifradwan.ancnative.ui.StatusHighBorder
+import com.sherifradwan.ancnative.ui.StatusHighDarkBorder
 import com.sherifradwan.ancnative.ui.StatusIncompleteBg
 import com.sherifradwan.ancnative.ui.StatusIncompleteBorder
 import com.sherifradwan.ancnative.ui.StatusIncompleteDarkBg
@@ -265,8 +272,6 @@ internal fun reportDeliveryRows(patient: DemoPatient, eddText: String?): List<Re
 }
 
 internal const val MAX_REPORT_VISITS = 12
-internal const val MAX_REPORT_SCANS = 7
-internal const val MAX_REPORT_LABS = 10
 private const val ROW_STACK_FONT_SCALE = 1.3f
 
 internal data class ReportAttestationValues(
@@ -327,6 +332,7 @@ internal fun ReportPageOneSections(
     securitySettings: SecuritySettingsState?,
     asOfDate: LocalDate = LocalDate.now(),
 ) {
+    val figures = emptyList<Figure>()
     ReportClinicMetaCard(
         patient = patient,
         securitySettings = securitySettings,
@@ -336,7 +342,7 @@ internal fun ReportPageOneSections(
     ReportPregnancyDatingCard(patient = patient, asOfDate = asOfDate)
     ReportHistoryCard(patient = patient)
     ReportPreviousPregnanciesCard(patient = patient)
-    ReportVisitsCard(patient = patient)
+    ReportVisitsCard(patient = patient, figures = figures)
 }
 
 @Composable
@@ -345,8 +351,10 @@ internal fun ReportPageTwoSections(
     securitySettings: SecuritySettingsState?,
     asOfDate: LocalDate = LocalDate.now(),
 ) {
+    val figures = emptyList<Figure>()
+    val shownVisits = remember(patient) { reportVisits(patient, MAX_REPORT_VISITS).rows }
     ReportPageTwoHeaderCard(patient = patient, asOfDate = asOfDate)
-    ReportScansCard(patient = patient)
+    ReportOtherScansCard(patient = patient, shownVisits = shownVisits, figures = figures)
     ReportLabsCard(patient = patient)
     ReportMedicationSections(patient = patient)
     ReportDeliveryPlanCard(patient = patient, asOfDate = asOfDate)
@@ -686,45 +694,37 @@ private fun ReportPreviousPregnanciesCard(patient: DemoPatient) {
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun ReportVisitsCard(patient: DemoPatient) {
+private fun ReportVisitsCard(
+    patient: DemoPatient,
+    figures: List<Figure> = emptyList(),
+) {
     val visits = remember(patient) { reportVisits(patient, MAX_REPORT_VISITS) }
 
-    RecordSectionCard(
-        title = stringResource(R.string.report_section_visits),
-        family = FieldFamilies.patient(),
-    ) {
+    RecordSectionCard(title = stringResource(R.string.report_section_visits), family = FieldFamilies.patient()) {
         if (visits.rows.isEmpty()) {
-            Text(
-                text = stringResource(R.string.report_empty_visits),
-                style = RecordType.Missing,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            Text(stringResource(R.string.report_empty_visits), style = RecordType.Missing, color = MaterialTheme.colorScheme.onSurfaceVariant)
         } else {
             if (visits.hidden > 0) {
-                ReportHiddenCountNotice(
-                    text = stringResource(R.string.report_hidden_visits_format, visits.hidden),
-                )
+                ReportHiddenCountNotice(text = stringResource(R.string.report_hidden_visits_format, visits.hidden))
             }
             ReportHairlineList(items = visits.rows) { idx, visit ->
                 val visitNumber = stringResource(R.string.report_visit_number_format, idx + 1 + visits.hidden)
-                val visitGaResult = remember(patient.dating, visit.date) {
-                    parseIsoDateOrNull(visit.date)?.let { vDate ->
-                        patient.dating?.calculateGestationalAgeResult(vDate)
-                    }
-                }
-                val visitGa = visitGaResult?.let { reportShortGestationalAge(it) }
+                val visitGa = remember(patient.dating, visit.date) {
+                    parseIsoDateOrNull(visit.date)?.let { patient.dating?.calculateGestationalAgeResult(it) }
+                }?.let { reportShortGestationalAge(it) }
                 val bpRaw = visit.bloodPressure?.trim()?.takeIf { it.isNotEmpty() }
                 val bpExtra: (@Composable () -> Unit)? = when (bpLevel(visit.bloodPressure)) {
-                    BpLevel.SEVERE -> {
-                        { StatusWord(stringResource(R.string.report_bp_severe), StatusTone.High) }
-                    }
-                    BpLevel.RAISED -> {
-                        { StatusWord(stringResource(R.string.report_bp_raised), StatusTone.Moderate) }
-                    }
+                    BpLevel.SEVERE -> { { StatusWord(stringResource(R.string.report_bp_severe), StatusTone.High) } }
+                    BpLevel.RAISED -> { { StatusWord(stringResource(R.string.report_bp_raised), StatusTone.Moderate) } }
                     BpLevel.NORMAL -> null
                 }
                 val weightDisplay = formatWeightKg(visit.weight)?.let(::ltrIsolate)
-                val findingsText = visitText(visit)
+                val linkedScan = remember(patient, visit) { latestScanForVisit(patient, visit) }
+                val combinedFigRefs = remember(linkedScan, visit.id, figures) {
+                    (linkedScan?.let { figureRefsFor(it.id, figures) }.orEmpty() + figureRefsFor(visit.id, figures))
+                        .distinct().sorted()
+                }
+                val dash = stringResource(R.string.report_dash)
 
                 FlowRow(
                     modifier = Modifier.fillMaxWidth(),
@@ -732,64 +732,34 @@ private fun ReportVisitsCard(patient: DemoPatient) {
                     verticalArrangement = Arrangement.spacedBy(RecordSpacing.XS),
                     itemVerticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        BandChip(
-                            text = ltrIsolate(visitNumber),
-                            tone = null,
-                            tinted = true,
-                            wrap = true,
-                        )
-                        Text(
-                            text = ltrIsolate(reportDate(visit.date)),
-                            style = RecordType.CardName,
-                            color = MaterialTheme.colorScheme.onSurface,
-                        )
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                        BandChip(text = ltrIsolate(visitNumber), tone = null, tinted = true, wrap = true)
+                        Text(ltrIsolate(reportDate(visit.date)), style = RecordType.CardName, color = MaterialTheme.colorScheme.onSurface)
                     }
-                    BandChip(
-                        text = visitGa?.let(::ltrIsolate) ?: stringResource(R.string.not_recorded),
-                        tone = null,
-                        tinted = true,
-                        wrap = true,
-                    )
+                    BandChip(text = visitGa?.let(::ltrIsolate) ?: stringResource(R.string.not_recorded), tone = null, tinted = true, wrap = true)
                 }
                 ReportTwoColumnPlainFields(
                     first = { fieldModifier ->
-                        PlainField(
-                            label = stringResource(R.string.report_bp_label),
-                            value = bpRaw?.let(::ltrIsolate) ?: "-",
-                            modifier = fieldModifier,
-                            emphasis = bpRaw != null,
-                            extra = bpExtra,
-                        )
+                        PlainField(stringResource(R.string.report_bp_label), bpRaw?.let(::ltrIsolate) ?: dash, fieldModifier, emphasis = bpRaw != null, extra = bpExtra)
                     },
                     second = { fieldModifier ->
-                        PlainField(
-                            label = stringResource(R.string.report_weight_label),
-                            value = weightDisplay ?: "-",
-                            modifier = fieldModifier,
-                            emphasis = weightDisplay != null,
-                        )
+                        PlainField(stringResource(R.string.report_weight_label), weightDisplay ?: dash, fieldModifier, emphasis = weightDisplay != null)
                     },
                 )
-                PlainField(
-                    label = stringResource(R.string.report_findings_label),
-                    value = if (findingsText == NOT_RECORDED) null else findingsText,
-                    missingText = stringResource(R.string.not_recorded),
-                    modifier = Modifier.fillMaxWidth(),
-                )
+                Column(
+                    modifier = Modifier.fillMaxWidth().testTag("reportScanOutcome_${visit.id}").semantics(mergeDescendants = true) {},
+                    verticalArrangement = Arrangement.spacedBy(2.dp),
+                ) {
+                    Text(stringResource(R.string.report_scan_outcome_label), style = RecordType.MetricLabel, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    ReportScanOutcomeContent(scan = linkedScan, figRefs = combinedFigRefs, visitNote = visitNote(visit))
+                }
             }
         }
     }
 }
 
 @Composable
-private fun ReportPageTwoHeaderCard(
-    patient: DemoPatient,
-    asOfDate: LocalDate,
-) {
+private fun ReportPageTwoHeaderCard(patient: DemoPatient, asOfDate: LocalDate) {
     val printDate = remember(asOfDate) { formatDmy(asOfDate) }
     val metaLine = listOf(
         stringResource(R.string.report_meta_pair_format, stringResource(R.string.report_patient_id_label), ltrIsolate(patient.caseId)),
@@ -807,185 +777,260 @@ private fun ReportPageTwoHeaderCard(
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun ReportScansCard(patient: DemoPatient) {
-    val scans = remember(patient) { reportScans(patient, MAX_REPORT_SCANS) }
+private fun ReportOtherScansCard(
+    patient: DemoPatient,
+    shownVisits: List<DemoVisit>,
+    figures: List<Figure> = emptyList(),
+) {
+    val unlinked = remember(patient, shownVisits) { unlinkedScans(patient, shownVisits) }
+    if (unlinked.isEmpty()) return
 
     RecordSectionCard(
-        title = stringResource(R.string.report_section_scans),
+        title = stringResource(R.string.report_section_other_scans),
         family = FieldFamilies.obstetric(),
+        modifier = Modifier.testTag("reportOtherScans"),
     ) {
-        if (scans.rows.isEmpty()) {
-            Text(
-                text = stringResource(R.string.report_empty_scans),
-                style = RecordType.Missing,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        } else {
-            if (scans.hidden > 0) {
-                ReportHiddenCountNotice(
-                    text = stringResource(R.string.report_hidden_scans_format, scans.hidden),
+        ReportHairlineList(items = unlinked) { _, scan ->
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalArrangement = Arrangement.spacedBy(RecordSpacing.XS),
+                itemVerticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(ltrIsolate(reportDate(scan.date)), style = RecordType.CardName, color = MaterialTheme.colorScheme.onSurface)
+                val scanGa = scanGestationalAge(scan)
+                BandChip(
+                    text = if (scanGa == "-") stringResource(R.string.not_recorded) else ltrIsolate(scanGa),
+                    tone = null,
+                    tinted = true,
+                    wrap = true,
                 )
             }
-            ReportHairlineList(items = scans.rows) { _, scan ->
-                val efw = scanWeight(scan)
-                val notesText = scanNotes(scan)
-
-                FlowRow(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalArrangement = Arrangement.spacedBy(RecordSpacing.XS),
-                    itemVerticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        text = ltrIsolate(reportDate(scan.date)),
-                        style = RecordType.CardName,
-                        color = MaterialTheme.colorScheme.onSurface,
-                    )
-                    FlowRow(
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        verticalArrangement = Arrangement.spacedBy(RecordSpacing.XS),
-                    ) {
-                        val scanGa = scanGestationalAge(scan)
-                        BandChip(
-                            text = if (scanGa == "-") stringResource(R.string.not_recorded) else ltrIsolate(scanGa),
-                            tone = null,
-                            tinted = true,
-                            wrap = true,
-                        )
-                        if (scan.imageUris.isNotEmpty()) {
-                            BandChip(
-                                text = stringResource(R.string.report_scan_photos_format, scan.imageUris.size),
-                                tone = null,
-                                tinted = true,
-                                wrap = true,
-                            )
-                        }
-                    }
-                }
-                ReportTwoColumnPlainFields(
-                    first = { fieldModifier ->
-                        PlainField(
-                            label = stringResource(R.string.report_presentation_label),
-                            value = scan.presentation?.takeUnless(String::isBlank),
-                            missingText = stringResource(R.string.not_recorded),
-                            modifier = fieldModifier,
-                        )
-                    },
-                    second = { fieldModifier ->
-                        PlainField(
-                            label = stringResource(R.string.report_placenta_label),
-                            value = scan.placentalSite?.takeUnless(String::isBlank),
-                            missingText = stringResource(R.string.not_recorded),
-                            modifier = fieldModifier,
-                        )
-                    },
-                )
-                ReportTwoColumnPlainFields(
-                    first = { fieldModifier ->
-                        PlainField(
-                            label = stringResource(R.string.report_amniotic_fluid_label),
-                            value = scan.amnioticFluid?.takeUnless(String::isBlank),
-                            missingText = stringResource(R.string.not_recorded),
-                            modifier = fieldModifier,
-                        )
-                    },
-                    second = { fieldModifier ->
-                        PlainField(
-                            label = stringResource(R.string.report_efw_label),
-                            value = if (efw == "-") null else ltrIsolate(efw),
-                            missingText = stringResource(R.string.not_recorded),
-                            emphasis = efw != "-",
-                            modifier = fieldModifier,
-                        )
-                    },
-                )
-                PlainField(
-                    label = stringResource(R.string.report_scan_notes_label),
-                    value = if (notesText == NOT_RECORDED) null else notesText,
-                    missingText = stringResource(R.string.not_recorded),
-                    modifier = Modifier.fillMaxWidth(),
-                )
+            Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                ReportScanOutcomeContent(scan = scan, figRefs = figureRefsFor(scan.id, figures))
             }
         }
     }
 }
 
+/** Shared compact scan outcome layout used in both Visits and Other scans cards. */
+@Composable
+private fun ReportScanOutcomeContent(
+    scan: DemoUltrasoundScan?,
+    figRefs: List<Int>,
+    visitNote: String? = null,
+) {
+    val outcome = remember(scan) { scan?.let(::scanOutcomeFor) }
+    val detailSep = stringResource(R.string.detail_separator)
+    val figRefsText = if (figRefs.isNotEmpty()) {
+        figRefs.map { stringResource(R.string.report_figure_ref_format, it) }.joinToString(", ")
+    } else {
+        null
+    }
+    val hasPrimaryLine = (outcome != null && (outcome.typeLabel != null || outcome.presentation != null)) || figRefsText != null
+    val hasMeasurements = outcome != null && outcome.measurements.isNotEmpty()
+    val hasExtras = outcome != null && outcome.extras.isNotEmpty()
+
+    if (!hasPrimaryLine && !hasMeasurements && !hasExtras) {
+        Text(stringResource(R.string.report_dash), style = RecordType.FieldValue, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    } else {
+        if (hasPrimaryLine) {
+            val primaryText = buildAnnotatedString {
+                var hasPrevious = false
+                outcome?.typeLabel?.let {
+                    withStyle(SpanStyle(fontWeight = FontWeight.Bold)) { append(it) }
+                    hasPrevious = true
+                }
+                outcome?.presentation?.let {
+                    if (hasPrevious) append(", ")
+                    append(it)
+                    hasPrevious = true
+                }
+                if (figRefsText != null) {
+                    if (hasPrevious) append(detailSep)
+                    withStyle(SpanStyle(fontWeight = FontWeight.SemiBold)) { append(figRefsText) }
+                }
+            }
+            Text(primaryText, style = RecordType.FieldValue, color = MaterialTheme.colorScheme.onSurface)
+        }
+        if (hasMeasurements) {
+            val measurementsLine = outcome!!.measurements.joinToString(", ") { (label, value) -> ltrIsolate("$label $value") }
+            Text(measurementsLine, style = RecordType.Secondary, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        if (hasExtras) {
+            Text(outcome!!.extras.joinToString(detailSep), style = RecordType.Secondary, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+    visitNote?.let { note ->
+        Text(stringResource(R.string.report_visit_note_format, note), style = RecordType.Secondary, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
 @Composable
 private fun ReportLabsCard(patient: DemoPatient) {
-    val labs = remember(patient) { reportLabs(patient, MAX_REPORT_LABS) }
+    val report = remember(patient) { labReport(patient) }
+    val comparisonGroups = remember(report) { groupLabComparisonsByCategory(report.comparisons) }
 
-    RecordSectionCard(
-        title = stringResource(R.string.report_section_labs),
-        family = FieldFamilies.background(),
+    RecordSectionCard(title = stringResource(R.string.report_section_labs), family = FieldFamilies.background()) {
+        if (comparisonGroups.isEmpty() && report.singles.isEmpty()) {
+            Text(stringResource(R.string.report_empty_labs), style = RecordType.Missing, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        } else {
+            comparisonGroups.forEachIndexed { index, group ->
+                if (index > 0) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                ReportLabComparisonGroup(group = group)
+            }
+            if (report.singles.isNotEmpty()) {
+                if (comparisonGroups.isNotEmpty()) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                ReportSingleLabsSection(singles = report.singles, notes = report.notes)
+            }
+            Text(stringResource(R.string.report_labs_legend), style = RecordType.FieldLabel, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun ReportLabComparisonGroup(group: LabComparisonGroup) {
+    Column(
+        modifier = Modifier.fillMaxWidth().testTag("reportLabComparison_${group.category}"),
+        verticalArrangement = Arrangement.spacedBy(RecordSpacing.S),
     ) {
-        if (labs.rows.isEmpty()) {
+        Text(
+            text = group.category,
+            style = RecordType.CardName,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.semantics { heading() },
+        )
+        ReportHairlineList(items = group.rows, itemSpacing = RecordSpacing.XS) { _, row ->
+            Text(row.label, style = RecordType.KeyValue, color = MaterialTheme.colorScheme.onSurface)
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(RecordSpacing.S),
+                verticalArrangement = Arrangement.spacedBy(RecordSpacing.XS),
+            ) {
+                row.entries.forEach { (dateLabel, cell) -> ReportLabDateValueChip(dateLabel = dateLabel, cell = cell) }
+            }
+        }
+        if (group.notes.isNotEmpty()) ReportLabNotesBlock(notes = group.notes)
+    }
+}
+
+@Composable
+private fun ReportLabDateValueChip(dateLabel: String, cell: LabCell) {
+    val family = currentFieldFamily()
+    val hasAbnormal = cell.flag != null || cell.abnormalNoDirection ||
+        cell.entries.any { it.flag != null || it.abnormalNoDirection }
+    val dark = isDarkTheme()
+    val dash = stringResource(R.string.report_dash)
+
+    Surface(
+        shape = RecordShapes.Small,
+        color = family.container,
+        border = if (hasAbnormal) BorderStroke(1.dp, if (dark) StatusHighDarkBorder else StatusHighBorder) else null,
+        modifier = Modifier.semantics(mergeDescendants = true) {},
+    ) {
+        Column(modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(if (dateLabel.isBlank()) dash else ltrIsolate(dateLabel), style = RecordType.FieldLabel, color = family.label)
+            ReportLabCellValueText(cell = cell, style = RecordType.Secondary)
+        }
+    }
+}
+
+@Composable
+private fun ReportLabCellValueText(cell: LabCell, style: TextStyle) {
+    val entries = cell.entries.ifEmpty {
+        listOf(LabCellEntry(value = cell.value, flag = cell.flag, abnormalNoDirection = cell.abnormalNoDirection))
+    }
+    val errorColor = MaterialTheme.colorScheme.error
+    val normalColor = MaterialTheme.colorScheme.onSurface
+    val annotated = buildAnnotatedString {
+        append("\u2066")
+        entries.forEachIndexed { index, entry ->
+            if (index > 0) withStyle(SpanStyle(color = normalColor)) { append(" / ") }
+            val mark = entry.flagMark()
+            if (mark != null) {
+                withStyle(SpanStyle(fontWeight = FontWeight.Bold, color = errorColor)) { append("${entry.value} $mark") }
+            } else {
+                withStyle(SpanStyle(color = normalColor)) { append(entry.value) }
+            }
+        }
+        append("\u2069")
+    }
+    Text(text = annotated, style = style)
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun ReportSingleLabsSection(singles: List<SingleLab>, notes: List<LabNote>) {
+    val dash = stringResource(R.string.report_dash)
+    val validNotes = remember(notes) { notes.filter { it.text.isNotBlank() } }
+
+    Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(RecordSpacing.S)) {
+        Text(
+            text = stringResource(R.string.report_labs_single_tests),
+            style = RecordType.CardName,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.semantics { heading() },
+        )
+        ReportHairlineList(items = singles, itemSpacing = RecordSpacing.XS) { _, single ->
+            val resultWithUnit = if (!single.unit.isNullOrBlank()) "${single.result} ${single.unit}" else single.result
+            val displayValue = if (single.flagMark != null) "$resultWithUnit ${single.flagMark}" else resultWithUnit
+            val dateText = single.date.trim()
+
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalArrangement = Arrangement.spacedBy(2.dp),
+            ) {
+                Text(
+                    text = single.test,
+                    style = RecordType.KeyValue,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.padding(end = RecordSpacing.S),
+                )
+                Text(
+                    text = ltrIsolate(displayValue),
+                    style = if (single.flagMark != null) RecordType.FieldValue.copy(fontWeight = FontWeight.Bold) else RecordType.FieldValue,
+                    color = if (single.flagMark != null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
+                )
+            }
             Text(
-                text = stringResource(R.string.report_empty_labs),
-                style = RecordType.Missing,
+                text = if (dateText.isEmpty()) dash else ltrIsolate(dateText),
+                style = RecordType.Secondary,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-        } else {
-            if (labs.hidden > 0) {
-                ReportHiddenCountNotice(
-                    text = stringResource(R.string.report_hidden_labs_format, labs.hidden),
-                )
-            }
-            ReportHairlineList(items = labs.rows, itemSpacing = RecordSpacing.XS) { _, lab ->
-                val resultText = labResult(lab)
-                val isMissingResult = resultText == NOT_RECORDED
-                val datePart = ltrIsolate(reportDate(lab.date))
-                val refPart = lab.referenceRange?.trim()?.takeIf { it.isNotEmpty() }?.let {
-                    stringResource(R.string.report_lab_ref_format, ltrIsolate(it))
-                }
-                val dateRefLine = listOfNotNull(datePart, refPart).joinToString(stringResource(R.string.detail_separator))
-                val extra = labExtra(lab)
+        }
+        if (validNotes.isNotEmpty()) ReportLabNotesBlock(notes = validNotes)
+    }
+}
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(RecordSpacing.S),
-                    verticalAlignment = Alignment.Top,
-                ) {
-                    Text(
-                        text = lab.testName,
-                        style = RecordType.CardName,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.weight(1f),
-                    )
-                    Column(
-                        modifier = Modifier.weight(1f, fill = false),
-                        horizontalAlignment = Alignment.End,
-                    ) {
-                        Text(
-                            text = if (isMissingResult) stringResource(R.string.not_recorded) else ltrIsolate(resultText),
-                            style = if (isMissingResult) RecordType.Missing else RecordType.KeyValue,
-                            color = when {
-                                lab.isAbnormal -> MaterialTheme.colorScheme.error
-                                isMissingResult -> MaterialTheme.colorScheme.onSurfaceVariant
-                                else -> MaterialTheme.colorScheme.onSurface
-                            },
-                            textAlign = TextAlign.End,
-                        )
-                        if (lab.isAbnormal) {
-                            StatusWord(
-                                text = stringResource(R.string.lab_abnormal),
-                                tone = StatusTone.High,
-                            )
-                        }
-                    }
-                }
-                Text(
-                    text = dateRefLine,
-                    style = RecordType.Secondary,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                if (extra.isNotBlank()) {
-                    Text(
-                        text = extra,
-                        style = RecordType.Secondary,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
+@Composable
+private fun ReportLabNotesBlock(notes: List<LabNote>) {
+    Column(
+        modifier = Modifier.fillMaxWidth().testTag("reportLabNotes"),
+        verticalArrangement = Arrangement.spacedBy(2.dp),
+    ) {
+        Text(
+            text = stringResource(R.string.report_lab_notes_title),
+            style = RecordType.FieldLabel.copy(fontWeight = FontWeight.Bold),
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+        notes.forEach { note ->
+            val datePart = note.date.trim()
+            val testName = note.test.trim()
+            val text = note.text.trim()
+            val labName = note.labName?.trim()?.takeIf { it.isNotEmpty() }
+            val body = if (labName != null) {
+                stringResource(R.string.report_lab_note_with_lab_format, testName, text, labName)
+            } else {
+                stringResource(R.string.report_lab_note_format, testName, text)
             }
+            val line = if (datePart.isNotEmpty()) {
+                stringResource(R.string.report_lab_note_dated_format, ltrIsolate(datePart), body)
+            } else {
+                body
+            }
+            Text(text = line, style = RecordType.Secondary, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
@@ -995,25 +1040,18 @@ private fun ReportMedicationSections(patient: DemoPatient) {
     val meds = remember(patient) { reportMedications(patient) }
 
     RecordSectionCard(
-        title = stringResource(R.string.report_section_current_meds),
+        title = stringResource(R.string.report_section_current_meds_count_format, stringResource(R.string.report_section_current_meds), meds.current.size),
         family = FieldFamilies.background(),
     ) {
         if (meds.current.isEmpty()) {
-            Text(
-                text = stringResource(R.string.report_empty_current_meds),
-                style = RecordType.Missing,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            Text(stringResource(R.string.report_empty_current_meds), style = RecordType.Missing, color = MaterialTheme.colorScheme.onSurfaceVariant)
         } else {
             ReportMedicationRows(meds = meds.current)
         }
     }
 
     if (meds.stopped.isNotEmpty()) {
-        RecordSectionCard(
-            title = stringResource(R.string.report_section_stopped_meds),
-            family = FieldFamilies.background(),
-        ) {
+        RecordSectionCard(title = stringResource(R.string.report_section_stopped_meds), family = FieldFamilies.background()) {
             ReportMedicationRows(meds = meds.stopped)
         }
     }

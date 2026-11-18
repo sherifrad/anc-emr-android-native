@@ -838,4 +838,89 @@ class ReportDataTest {
         val refs = figureRefsFor(candidates.first().linkedRecordId.orEmpty(), figures)
         assertNotNull(refs)
     }
+
+    // --- RULE 7: groupLabComparisonsByCategory and flagMark extension ---
+
+    @Test
+    fun flagMark_entryExtension_returnsExpectedMarkForHighLowAsteriskAndNormal() {
+        val highEntry = LabCellEntry(value = "16.5", flag = LabResultFlag.HIGH, abnormalNoDirection = false)
+        assertEquals("H", highEntry.flagMark())
+
+        val lowEntry = LabCellEntry(value = "9.5", flag = LabResultFlag.LOW, abnormalNoDirection = false)
+        assertEquals("L", lowEntry.flagMark())
+
+        val asteriskEntry = LabCellEntry(value = "Reactive", flag = null, abnormalNoDirection = true)
+        assertEquals("*", asteriskEntry.flagMark())
+
+        val normalEntry = LabCellEntry(value = "12.5", flag = null, abnormalNoDirection = false)
+        assertNull(normalEntry.flagMark())
+
+        val normalFlagEntry = LabCellEntry(value = "12.5", flag = LabResultFlag.NORMAL, abnormalNoDirection = false)
+        assertNull(normalFlagEntry.flagMark())
+
+        val unknownFlagEntry = LabCellEntry(value = "12.5", flag = LabResultFlag.UNKNOWN, abnormalNoDirection = false)
+        assertNull(unknownFlagEntry.flagMark())
+    }
+
+    @Test
+    fun groupLabComparisonsByCategory_mergesChunksByLabelAndCollectsNotes() {
+        assertTrue(groupLabComparisonsByCategory(emptyList()).isEmpty())
+
+        val datesChunk1 = listOf("01/01/2026", "05/01/2026", "10/01/2026", "15/01/2026", "20/01/2026", "25/01/2026")
+        val datesChunk2 = listOf("01/02/2026", "05/02/2026")
+
+        val cell1 = LabCell(value = "4.0", flag = null, abnormalNoDirection = false)
+        val cell2 = LabCell(value = "4.1", flag = null, abnormalNoDirection = false)
+        val cell3 = LabCell(value = "4.2", flag = null, abnormalNoDirection = false)
+        val cell4 = LabCell(value = "4.3", flag = null, abnormalNoDirection = false)
+        val cell5 = LabCell(value = "4.4", flag = null, abnormalNoDirection = false)
+        val cell6 = LabCell(value = "4.5", flag = null, abnormalNoDirection = false)
+        val cell7 = LabCell(value = "4.6", flag = null, abnormalNoDirection = false)
+        val cell8 = LabCell(value = "4.7", flag = LabResultFlag.HIGH, abnormalNoDirection = false)
+
+        val noteChunk1 = LabNote(date = "01/01/2026", test = "Uric Acid", text = "Baseline", labName = "Lab A")
+        val noteChunk2 = LabNote(date = "05/02/2026", test = "Uric Acid", text = "Follow-up high", labName = "Lab B")
+
+        val tableBioChunk1 = LabComparisonTable(
+            category = "Biochemistry",
+            dates = datesChunk1,
+            rows = listOf(LabRow(label = "Uric Acid (mg/dL)", cells = listOf(cell1, cell2, cell3, cell4, cell5, cell6))),
+            notes = listOf(noteChunk1),
+        )
+        val tableBioChunk2 = LabComparisonTable(
+            category = "Biochemistry",
+            dates = datesChunk2,
+            rows = listOf(LabRow(label = "Uric Acid (mg/dL)", cells = listOf(cell7, cell8))),
+            notes = listOf(noteChunk2),
+        )
+
+        val hemCell1 = LabCell(value = "250", flag = null, abnormalNoDirection = false)
+        val hemCell2 = LabCell(value = "240", flag = null, abnormalNoDirection = false)
+        val tableHem = LabComparisonTable(
+            category = "Hematology",
+            dates = listOf("01/01/2026", "10/01/2026"),
+            rows = listOf(LabRow(label = "Platelets (x10^9/L)", cells = listOf(hemCell1, hemCell2))),
+            notes = emptyList(),
+        )
+
+        val groups = groupLabComparisonsByCategory(listOf(tableBioChunk1, tableBioChunk2, tableHem))
+        assertEquals(2, groups.size)
+
+        val bioGroup = groups.first { it.category == "Biochemistry" }
+        assertEquals(1, bioGroup.rows.size)
+        val uricRow = bioGroup.rows.first()
+        assertEquals("Uric Acid (mg/dL)", uricRow.label)
+        assertEquals(8, uricRow.entries.size)
+        assertEquals(listOf("01/01/2026", "05/01/2026", "10/01/2026", "15/01/2026", "20/01/2026", "25/01/2026", "01/02/2026", "05/02/2026"), uricRow.entries.map { it.first })
+        assertEquals(listOf("4.0", "4.1", "4.2", "4.3", "4.4", "4.5", "4.6", "4.7"), uricRow.entries.map { it.second.value })
+        assertEquals(listOf(noteChunk1, noteChunk2), bioGroup.notes)
+
+        val hemGroup = groups.first { it.category == "Hematology" }
+        assertEquals(1, hemGroup.rows.size)
+        val plateletsRow = hemGroup.rows.first()
+        assertEquals("Platelets (x10^9/L)", plateletsRow.label)
+        assertEquals(2, plateletsRow.entries.size)
+        assertEquals(listOf("01/01/2026" to hemCell1, "10/01/2026" to hemCell2), plateletsRow.entries)
+        assertTrue(hemGroup.notes.isEmpty())
+    }
 }

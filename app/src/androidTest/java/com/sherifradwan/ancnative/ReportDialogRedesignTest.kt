@@ -37,7 +37,9 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.LayoutDirection
@@ -358,7 +360,11 @@ class ReportDialogRedesignTest {
     @Test
     fun keptTags_displayedAndHierarchy_pageSwitching_andCloseCallback() {
         var dismissed = false
-        show(basePatient, onDismiss = { dismissed = true })
+        val unlinkedScan = scan(id = "scan-kept-unlinked", date = "2026-05-01")
+        val patientWithUnlinked = basePatient.copy(
+            ultrasoundScans = basePatient.ultrasoundScans + unlinkedScan,
+        )
+        show(patientWithUnlinked, onDismiss = { dismissed = true })
 
         // Outer surface and header controls
         node("patientTwoPageReportDialog").assertIsDisplayed()
@@ -384,7 +390,7 @@ class ReportDialogRedesignTest {
             .performScrollTo().assertIsDisplayed()
 
         // Page 2 sections must not exist on Page 1
-        compose.onNodeWithText(str(R.string.report_section_scans), useUnmergedTree = true).assertDoesNotExist()
+        compose.onNodeWithText(str(R.string.report_section_other_scans), useUnmergedTree = true).assertDoesNotExist()
         compose.onNodeWithText(str(R.string.report_section_labs), useUnmergedTree = true).assertDoesNotExist()
         compose.onNodeWithText(str(R.string.report_section_delivery_plan), useUnmergedTree = true).assertDoesNotExist()
         compose.onNodeWithText(str(R.string.report_section_attestation), useUnmergedTree = true).assertDoesNotExist()
@@ -396,11 +402,16 @@ class ReportDialogRedesignTest {
         // Page 2 sections are composed
         compose.onNodeWithText(str(R.string.report_badge_continued), useUnmergedTree = true).assertIsDisplayed()
         compose.onNodeWithText(str(R.string.report_page2_subtitle), useUnmergedTree = true).assertIsDisplayed()
-        compose.onNodeWithText(str(R.string.report_section_scans), useUnmergedTree = true)
+        compose.onNodeWithText(str(R.string.report_section_other_scans), useUnmergedTree = true)
             .performScrollTo().assertIsDisplayed()
         compose.onNodeWithText(str(R.string.report_section_labs), useUnmergedTree = true)
             .performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText(str(R.string.report_section_current_meds), useUnmergedTree = true)
+        val expectedCurrentMedsTitle = str(
+            R.string.report_section_current_meds_count_format,
+            str(R.string.report_section_current_meds),
+            1,
+        )
+        compose.onNodeWithText(expectedCurrentMedsTitle, useUnmergedTree = true)
             .performScrollTo().assertIsDisplayed()
         compose.onNodeWithText(str(R.string.report_section_delivery_plan), useUnmergedTree = true)
             .performScrollTo().assertIsDisplayed()
@@ -583,14 +594,13 @@ class ReportDialogRedesignTest {
         node("reportPage2Chip").performClick()
         compose.waitForIdle()
 
-        // Page 2: 9 scans clamped to 7 -> 2 hidden scans notice
-        val expectedScansNotice = str(R.string.report_hidden_scans_format, 2)
-        compose.onNodeWithText(expectedScansNotice, useUnmergedTree = true)
+        // Page 2: unlinked scans card rendered for unlinked scans
+        node("reportOtherScans").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText(str(R.string.report_section_other_scans), useUnmergedTree = true)
             .performScrollTo().assertIsDisplayed()
 
-        // Page 2: 12 labs clamped to 10 -> 2 hidden labs notice
-        val expectedLabsNotice = str(R.string.report_hidden_labs_format, 2)
-        compose.onNodeWithText(expectedLabsNotice, useUnmergedTree = true)
+        // Page 2: labs card rendered
+        compose.onNodeWithText(str(R.string.report_section_labs), useUnmergedTree = true)
             .performScrollTo().assertIsDisplayed()
     }
 
@@ -655,8 +665,10 @@ class ReportDialogRedesignTest {
         node("reportPage2Chip").performClick()
         compose.waitForIdle()
 
-        // Page 2: Abnormal lab status word
-        compose.onNodeWithText(str(R.string.lab_abnormal), useUnmergedTree = true)
+        // Page 2: Abnormal lab legend and abnormal result displayed
+        compose.onNodeWithText(str(R.string.report_labs_legend), useUnmergedTree = true)
+            .performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Lupus Anticoagulant", substring = true, useUnmergedTree = true)
             .performScrollTo().assertIsDisplayed()
 
         // Page 2: Stopped medications section card
@@ -715,7 +727,12 @@ class ReportDialogRedesignTest {
         node("reportPage2Chip").performClick()
         compose.waitForIdle()
 
-        compose.onNodeWithText(str(R.string.report_section_current_meds), useUnmergedTree = true)
+        val expectedCurrentMedsTitle = str(
+            R.string.report_section_current_meds_count_format,
+            str(R.string.report_section_current_meds),
+            1,
+        )
+        compose.onNodeWithText(expectedCurrentMedsTitle, useUnmergedTree = true)
             .performScrollTo().assertIsDisplayed()
         compose.onNodeWithText(str(R.string.report_section_stopped_meds), useUnmergedTree = true)
             .assertDoesNotExist()
@@ -782,10 +799,17 @@ class ReportDialogRedesignTest {
         node("reportPage2Chip").performClick()
         compose.waitForIdle()
 
-        // Page 2 empty fallbacks
-        compose.onNodeWithText(str(R.string.report_empty_scans), useUnmergedTree = true)
-            .performScrollTo().assertIsDisplayed()
+        // Page 2 empty fallbacks: Other scans is omitted when empty
+        node("reportOtherScans").assertDoesNotExist()
+        compose.onNodeWithText(str(R.string.report_section_other_scans), useUnmergedTree = true).assertDoesNotExist()
         compose.onNodeWithText(str(R.string.report_empty_labs), useUnmergedTree = true)
+            .performScrollTo().assertIsDisplayed()
+        val expectedEmptyCurrentMedsTitle = str(
+            R.string.report_section_current_meds_count_format,
+            str(R.string.report_section_current_meds),
+            0,
+        )
+        compose.onNodeWithText(expectedEmptyCurrentMedsTitle, useUnmergedTree = true)
             .performScrollTo().assertIsDisplayed()
         compose.onNodeWithText(str(R.string.report_empty_current_meds), useUnmergedTree = true)
             .performScrollTo().assertIsDisplayed()
@@ -905,9 +929,17 @@ class ReportDialogRedesignTest {
 
     @Test
     fun rtlArabic_darkTheme_layoutIntegrity() {
+        val unlinkedScan = scan(
+            id = "scan-arabic-unlinked",
+            patientId = basePatient.id,
+            date = "2026-05-01",
+            gaWeeks = 24,
+            presentation = "Cephalic",
+        )
         val arabicPatient = basePatient.copy(
             displayName = "منى رجب",
             bloodGroupText = "B+",
+            ultrasoundScans = basePatient.ultrasoundScans + unlinkedScan,
         )
         show(
             patient = arabicPatient,
@@ -928,7 +960,12 @@ class ReportDialogRedesignTest {
         node("reportPage2Chip").performClick()
         compose.waitForIdle()
 
-        compose.onNodeWithText(str(R.string.report_section_scans), useUnmergedTree = true)
+        compose.onNodeWithText(str(R.string.report_section_other_scans), useUnmergedTree = true)
+            .performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText(SecuritySettingsState.DEFAULT_DOCTOR_NAME_AR, useUnmergedTree = true)
+            .performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText(str(R.string.report_section_labs), useUnmergedTree = true)
+            .performScrollTo().assertIsDisplayed()
             .performScrollTo().assertIsDisplayed()
         compose.onNodeWithText(SecuritySettingsState.DEFAULT_DOCTOR_NAME_AR, useUnmergedTree = true)
             .performScrollTo().assertIsDisplayed()
@@ -1077,6 +1114,365 @@ class ReportDialogRedesignTest {
             .performScrollTo().assertIsDisplayed()
         compose.onNodeWithText(customSubtitle, substring = true, useUnmergedTree = true)
             .assertDoesNotExist()
+    }
+
+    // =========================================================================
+    // 20. S3 Redesign: reportScanOutcome (bold type, presentation, measurements, note)
+    // =========================================================================
+
+    @Test
+    fun reportScanOutcome_rendersBoldType_presentation_measurements_andVisitNote() {
+        val scanWithDetails = DemoUltrasoundScan(
+            id = "scan-outcome-test",
+            patientId = basePatient.id,
+            date = "2026-03-10",
+            gestationalAgeWeeks = 20,
+            gestationalAgeDays = 3,
+            fetalNumber = "Singleton",
+            presentation = "Cephalic",
+            placentalSite = "Anterior",
+            amnioticFluid = "Normal",
+            fetalHeartRate = "140 bpm",
+            biometryBpd = "45 mm",
+            biometryHc = "165 mm",
+            biometryAc = "150 mm",
+            biometryFl = "35 mm",
+            estimatedFetalWeight = "380 g",
+            impression = "Normal anatomy",
+            linkedVisitId = "visit-outcome-test",
+        )
+        val visitWithOutcome = DemoVisit(
+            id = "visit-outcome-test",
+            patientId = basePatient.id,
+            date = "2026-03-10",
+            bloodPressure = "115/75",
+            weight = "66 kg",
+            findings = null,
+            notes = "Routine interval ultrasound completed",
+        )
+        val patient = basePatient.copy(
+            visits = listOf(visitWithOutcome),
+            ultrasoundScans = listOf(scanWithDetails),
+        )
+
+        show(patient)
+
+        // Tag reportScanOutcome_<visitId> exists and is displayed
+        val outcomeNode = compose.onNodeWithTag("reportScanOutcome_${visitWithOutcome.id}", useUnmergedTree = true)
+        outcomeNode.performScrollTo().assertIsDisplayed()
+
+        // Outcome label header
+        compose.onNodeWithText(str(R.string.report_scan_outcome_label), useUnmergedTree = true)
+            .performScrollTo().assertIsDisplayed()
+
+        // Bold type label "Singleton" and presentation "Cephalic"
+        compose.onNodeWithText("Singleton", substring = true, useUnmergedTree = true)
+            .performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Cephalic", substring = true, useUnmergedTree = true)
+            .performScrollTo().assertIsDisplayed()
+
+        // Measurements: BPD 45 mm, HC 165 mm, AC 150 mm, FL 35 mm, EFW 380 g
+        compose.onNodeWithText("BPD 45 mm", substring = true, useUnmergedTree = true)
+            .performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("EFW 380 g", substring = true, useUnmergedTree = true)
+            .performScrollTo().assertIsDisplayed()
+
+        // Note line: Note: Routine interval ultrasound completed
+        val expectedNote = str(R.string.report_visit_note_format, "Routine interval ultrasound completed")
+        compose.onNodeWithText(expectedNote, substring = true, useUnmergedTree = true)
+            .performScrollTo().assertIsDisplayed()
+
+        // Verify bold styling on the type label
+        val textNodes = compose.onAllNodes(
+            inTagged("reportScanOutcome_${visitWithOutcome.id}") and
+                (SemanticsMatcher.keyIsDefined(SemanticsProperties.Text) or
+                    SemanticsMatcher.keyIsDefined(SemanticsProperties.EditableText)),
+            useUnmergedTree = true,
+        ).fetchSemanticsNodes()
+        var foundBoldType = false
+        textNodes.forEach { n ->
+            val layouts = mutableListOf<TextLayoutResult>()
+            n.config.getOrNull(SemanticsActions.GetTextLayoutResult)?.action?.invoke(layouts)
+            layouts.forEach { layout ->
+                val charSeq = layout.layoutInput.text
+                if (charSeq is AnnotatedString && charSeq.text.contains("Singleton")) {
+                    if (charSeq.spanStyles.any { it.item.fontWeight == FontWeight.Bold }) {
+                        foundBoldType = true
+                    }
+                }
+            }
+        }
+        assertTrue("Singleton type label must have bold style", foundBoldType)
+    }
+
+    // =========================================================================
+    // 21. S3 Redesign: Other scans card (shown only when unlinked; hidden visit scan appears)
+    // =========================================================================
+
+    @Test
+    fun otherScansCard_shownOnlyWhenUnlinkedScans_andScanLinkedToHiddenVisitAppears() {
+        // 1. Patient with only linked scans to shown visits: Other scans card is NOT shown
+        val shownVisit = visit(id = "v-shown-only", date = "2026-03-01")
+        val linkedScan = scan(id = "s-linked-only", date = "2026-03-01", gaWeeks = 14).copy(
+            linkedVisitId = "v-shown-only",
+        )
+        val patientAllLinked = basePatient.copy(
+            visits = listOf(shownVisit),
+            ultrasoundScans = listOf(linkedScan),
+        )
+        show(patientAllLinked)
+        node("reportPage2Chip").performClick()
+        compose.waitForIdle()
+
+        node("reportOtherScans").assertDoesNotExist()
+        compose.onNodeWithText(str(R.string.report_section_other_scans), useUnmergedTree = true).assertDoesNotExist()
+
+        // 2. Patient with 13 visits (visit 1 is clamped/hidden) and unlinked scans
+        val visits13 = (1..13).map { i ->
+            visit(
+                id = "v-clamped-$i",
+                date = "2026-01-${String.format(java.util.Locale.ROOT, "%02d", i + 5)}",
+            )
+        }
+        val scanLinkedToHidden = scan(
+            id = "s-linked-to-hidden",
+            date = "2026-01-06",
+            gaWeeks = 10,
+            presentation = "Cephalic",
+        ).copy(linkedVisitId = "v-clamped-1")
+
+        val scanUnlinked = scan(
+            id = "s-pure-unlinked",
+            date = "2026-02-10",
+            gaWeeks = 18,
+            presentation = "Breech",
+        )
+
+        val scanLinkedToShown = scan(
+            id = "s-linked-to-shown",
+            date = "2026-01-18",
+            gaWeeks = 12,
+        ).copy(linkedVisitId = "v-clamped-13")
+
+        val patientWithOtherScans = basePatient.copy(
+            visits = visits13,
+            ultrasoundScans = listOf(scanLinkedToHidden, scanUnlinked, scanLinkedToShown),
+        )
+
+        show(patientWithOtherScans)
+        node("reportPage2Chip").performClick()
+        compose.waitForIdle()
+
+        // Other scans card is displayed
+        node("reportOtherScans").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText(str(R.string.report_section_other_scans), useUnmergedTree = true)
+            .performScrollTo().assertIsDisplayed()
+
+        // Scan linked to hidden visit appears in Other scans
+        compose.onNodeWithText("06/01/2026", substring = true, useUnmergedTree = true)
+            .performScrollTo().assertIsDisplayed()
+
+        // Unlinked scan appears in Other scans
+        compose.onNodeWithText("10/02/2026", substring = true, useUnmergedTree = true)
+            .performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Breech", substring = true, useUnmergedTree = true)
+            .performScrollTo().assertIsDisplayed()
+    }
+
+    // =========================================================================
+    // 22. S3 Redesign: Lab comparison (dates and values, H mark, notes)
+    // =========================================================================
+
+    @Test
+    fun labComparison_rendersDatesAndValues_hMark_andNotes() {
+        val ferritinDate1 = DemoLabInvestigation(
+            id = "lab-ferritin-1",
+            patientId = basePatient.id,
+            date = "2026-02-01",
+            testCategory = "Biochemistry",
+            testName = "Serum Ferritin",
+            result = "15.0",
+            unit = "ng/mL",
+            referenceRange = "20.0 - 200.0",
+            isAbnormal = true,
+            notes = null,
+        )
+        val ferritinDate2 = DemoLabInvestigation(
+            id = "lab-ferritin-2",
+            patientId = basePatient.id,
+            date = "2026-03-01",
+            testCategory = "Biochemistry",
+            testName = "Serum Ferritin",
+            result = "250.0",
+            unit = "ng/mL",
+            referenceRange = "20.0 - 200.0",
+            isAbnormal = true,
+            notes = "Iron overload surveillance",
+            labName = "Central Cairo Lab",
+        )
+        val patient = basePatient.copy(
+            labInvestigations = listOf(ferritinDate1, ferritinDate2),
+        )
+
+        show(patient)
+        node("reportPage2Chip").performClick()
+        compose.waitForIdle()
+
+        // Category comparison group exists
+        node("reportLabComparison_Biochemistry").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Biochemistry", useUnmergedTree = true)
+            .performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Serum Ferritin (ng/mL)", substring = true, useUnmergedTree = true)
+            .performScrollTo().assertIsDisplayed()
+
+        // Dates and values
+        compose.onNodeWithText("01/02/2026", substring = true, useUnmergedTree = true)
+            .performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("01/03/2026", substring = true, useUnmergedTree = true)
+            .performScrollTo().assertIsDisplayed()
+
+        // H mark on high result and L mark on low result
+        compose.onNodeWithText("250.0 H", substring = true, useUnmergedTree = true)
+            .performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("15.0 L", substring = true, useUnmergedTree = true)
+            .performScrollTo().assertIsDisplayed()
+
+        // Notes block
+        node("reportLabNotes").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Iron overload surveillance", substring = true, useUnmergedTree = true)
+            .performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Central Cairo Lab", substring = true, useUnmergedTree = true)
+            .performScrollTo().assertIsDisplayed()
+
+        // Legend is displayed
+        compose.onNodeWithText(str(R.string.report_labs_legend), useUnmergedTree = true)
+            .performScrollTo().assertIsDisplayed()
+    }
+
+    // =========================================================================
+    // 23. S3 Redesign: 360dp narrow window no horizontal overflow
+    // =========================================================================
+
+    @Test
+    fun s3Components_narrow360dp_noHorizontalOverflow() {
+        val scanOutcome = DemoUltrasoundScan(
+            id = "scan-narrow-1",
+            patientId = basePatient.id,
+            date = "2026-03-01",
+            gestationalAgeWeeks = 22,
+            gestationalAgeDays = 4,
+            fetalNumber = "Singleton",
+            presentation = "Cephalic",
+            placentalSite = "Posterior",
+            amnioticFluid = "Normal",
+            fetalHeartRate = "142 bpm",
+            biometryBpd = "52 mm",
+            biometryHc = "192 mm",
+            biometryAc = "174 mm",
+            biometryFl = "38 mm",
+            estimatedFetalWeight = "490 g",
+            impression = "Anatomy survey normal with reassuring doppler velocity",
+            linkedVisitId = "visit-narrow-1",
+        )
+        val visitOutcome = DemoVisit(
+            id = "visit-narrow-1",
+            patientId = basePatient.id,
+            date = "2026-03-01",
+            bloodPressure = "120/80",
+            weight = "68 kg",
+            findings = null,
+            notes = "Patient counselled on nutrition and iron adherence",
+        )
+        val unlinkedScan = DemoUltrasoundScan(
+            id = "scan-narrow-unlinked",
+            patientId = basePatient.id,
+            date = "2026-02-15",
+            gestationalAgeWeeks = 20,
+            gestationalAgeDays = 1,
+            fetalNumber = "Singleton",
+            presentation = "Breech",
+            placentalSite = "Anterior",
+            amnioticFluid = "Normal",
+            fetalHeartRate = "140 bpm",
+            biometryBpd = "48 mm",
+            biometryHc = "175 mm",
+            biometryAc = "158 mm",
+            biometryFl = "34 mm",
+            estimatedFetalWeight = "380 g",
+            impression = "Growth on 50th centile",
+            linkedVisitId = null,
+        )
+        val labRep1 = DemoLabInvestigation(
+            id = "lab-narrow-1",
+            patientId = basePatient.id,
+            date = "2026-01-10",
+            testCategory = "Biochemistry",
+            testName = "Serum Ferritin",
+            result = "14.5",
+            unit = "ng/mL",
+            referenceRange = "20.0 - 200.0",
+            isAbnormal = true,
+            notes = "Initial baseline test",
+            labName = "Cairo Diagnostic Lab",
+        )
+        val labRep2 = DemoLabInvestigation(
+            id = "lab-narrow-2",
+            patientId = basePatient.id,
+            date = "2026-02-10",
+            testCategory = "Biochemistry",
+            testName = "Serum Ferritin",
+            result = "125.0",
+            unit = "ng/mL",
+            referenceRange = "20.0 - 200.0",
+            isAbnormal = false,
+            notes = null,
+        )
+        val labRep3 = DemoLabInvestigation(
+            id = "lab-narrow-3",
+            patientId = basePatient.id,
+            date = "2026-03-10",
+            testCategory = "Biochemistry",
+            testName = "Serum Ferritin",
+            result = "220.0",
+            unit = "ng/mL",
+            referenceRange = "20.0 - 200.0",
+            isAbnormal = true,
+            notes = "Surveillance post-infusion",
+            labName = "Cairo Diagnostic Lab",
+        )
+        val singleLab = DemoLabInvestigation(
+            id = "lab-narrow-single",
+            patientId = basePatient.id,
+            date = "2026-01-10",
+            testCategory = "Serology",
+            testName = "Rubella IgG Antibody",
+            result = "Positive (> 15 IU/mL)",
+            unit = "IU/mL",
+            referenceRange = "Positive > 10",
+            isAbnormal = false,
+            notes = "Immune status confirmed",
+        )
+
+        val patient = basePatient.copy(
+            visits = listOf(visitOutcome),
+            ultrasoundScans = listOf(scanOutcome, unlinkedScan),
+            labInvestigations = listOf(labRep1, labRep2, labRep3, singleLab),
+        )
+
+        show(patient, fontScale = 1.3f)
+
+        // Page 1: no horizontal overflow at 360dp with fontScale 1.3
+        assertNoClippingInContainer("patientTwoPageReportDialog")
+        node("reportScanOutcome_${visitOutcome.id}").performScrollTo().assertIsDisplayed()
+
+        // Page 2: no horizontal overflow at 360dp with fontScale 1.3
+        node("reportPage2Chip").performClick()
+        compose.waitForIdle()
+
+        node("reportOtherScans").performScrollTo().assertIsDisplayed()
+        node("reportLabComparison_Biochemistry").performScrollTo().assertIsDisplayed()
+        node("reportLabNotes").performScrollTo().assertIsDisplayed()
+        assertNoClippingInContainer("patientTwoPageReportDialog")
     }
 
     private companion object {

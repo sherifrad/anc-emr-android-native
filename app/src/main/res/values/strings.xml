@@ -938,9 +938,10 @@
     <string name="report_section_history">Obstetric and medical history</string>
     <string name="report_section_previous_pregnancies">Previous pregnancies and obstetric outcomes</string>
     <string name="report_section_visits">Antenatal care visits log</string>
-    <string name="report_section_scans">Ultrasound biometry and fetal surveillance</string>
+    <string name="report_section_other_scans">Other scans</string>
     <string name="report_section_labs">Laboratory investigations</string>
     <string name="report_section_current_meds">Current medications</string>
+    <string name="report_section_current_meds_count_format">%1$s (%2$d active)</string>
     <string name="report_section_stopped_meds">Stopped medications</string>
     <string name="report_section_delivery_plan">Delivery plan</string>
     <string name="report_section_attestation">Clinician attestation</string>
@@ -958,26 +959,25 @@
 
     <string name="report_bp_label">Blood pressure</string>
     <string name="report_weight_label">Weight</string>
-    <string name="report_findings_label">Clinical findings and observations</string>
+    <string name="report_scan_outcome_label">Scan outcome</string>
+    <string name="report_visit_note_format">Note: %1$s</string>
+    <string name="report_figure_ref_format">Fig %1$d</string>
+    <string name="report_dash">-</string>
     <string name="report_visit_number_format">#%1$d</string>
     <string name="report_bp_raised">Raised BP - recheck</string>
     <string name="report_bp_severe">Severe-range BP - urgent assessment</string>
 
-    <string name="report_presentation_label">Presentation</string>
-    <string name="report_placenta_label">Placenta</string>
-    <string name="report_amniotic_fluid_label">Amniotic fluid</string>
-    <string name="report_efw_label">EFW (g)</string>
-    <string name="report_scan_notes_label">Clinical notes</string>
-    <string name="report_scan_photos_format">%1$d photos in the clinic record</string>
-    <string name="report_lab_ref_format">Ref: %1$s</string>
+    <string name="report_labs_single_tests">Single tests</string>
+    <string name="report_labs_legend">H: above the usual range. L: below the usual range. *: abnormal.</string>
+    <string name="report_lab_notes_title">Notes</string>
+    <string name="report_lab_note_format">%1$s: %2$s</string>
+    <string name="report_lab_note_with_lab_format">%1$s: %2$s (%3$s)</string>
+    <string name="report_lab_note_dated_format">%1$s, %2$s</string>
 
     <string name="report_hidden_visits_format">%1$d earlier visits not shown</string>
-    <string name="report_hidden_scans_format">%1$d earlier scans not shown</string>
-    <string name="report_hidden_labs_format">%1$d older results not shown</string>
 
     <string name="report_empty_previous_pregnancies_format">No previous pregnancies or deliveries recorded (%1$s).</string>
     <string name="report_empty_visits">No clinical visits recorded yet</string>
-    <string name="report_empty_scans">No ultrasound scans recorded yet</string>
     <string name="report_empty_labs">No laboratory test results recorded yet</string>
     <string name="report_empty_current_meds">No current medications recorded</string>
 
