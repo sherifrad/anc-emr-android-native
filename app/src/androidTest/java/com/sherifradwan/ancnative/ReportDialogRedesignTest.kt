@@ -23,8 +23,11 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertContentDescriptionEquals
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsOff
+import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasTestTag
@@ -1473,6 +1476,202 @@ class ReportDialogRedesignTest {
         node("reportLabComparison_Biochemistry").performScrollTo().assertIsDisplayed()
         node("reportLabNotes").performScrollTo().assertIsDisplayed()
         assertNoClippingInContainer("patientTwoPageReportDialog")
+    }
+
+    // =========================================================================
+    // 24. S4 Redesign: Picture selection before print
+    // =========================================================================
+
+    @Test
+    fun s4PicturesButton_hiddenWithNoPictures() {
+        show(basePatient)
+        node("reportPicturesButton").assertDoesNotExist()
+    }
+
+    @Test
+    fun s4PicturesButton_withPictures_showsAndOpensPicker() {
+        val scan = basePatient.ultrasoundScans.first().copy(imageUris = listOf("photo1.jpg"))
+        val patient = basePatient.copy(ultrasoundScans = listOf(scan) + basePatient.ultrasoundScans.drop(1))
+        show(patient)
+
+        node("reportPicturesButton").assertIsDisplayed().performClick()
+        compose.waitForIdle()
+
+        node("reportPicturePicker").assertIsDisplayed()
+        compose.onNodeWithText(str(R.string.report_picture_picker_title)).assertIsDisplayed()
+    }
+
+    @Test
+    fun s4PicturePicker_nothingSelectedByDefault() {
+        val scan = basePatient.ultrasoundScans.first().copy(imageUris = listOf("photo1.jpg"))
+        val patient = basePatient.copy(ultrasoundScans = listOf(scan) + basePatient.ultrasoundScans.drop(1))
+        show(patient)
+
+        node("reportPicturesButton").assertContentDescriptionEquals(str(R.string.report_pictures_cd))
+        node("reportPicturesButton").performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithText(str(R.string.report_picture_picker_subtitle, 0, 1)).assertIsDisplayed()
+        node("reportPictureRow_scan:${scan.id}:0").assertIsOff()
+    }
+
+    @Test
+    fun s4PicturePicker_tappingRowTogglesBadgeCount() {
+        val scan = basePatient.ultrasoundScans.first().copy(imageUris = listOf("photo1.jpg"))
+        val patient = basePatient.copy(ultrasoundScans = listOf(scan) + basePatient.ultrasoundScans.drop(1))
+        show(patient)
+
+        node("reportPicturesButton").performClick()
+        compose.waitForIdle()
+
+        val rowTag = "reportPictureRow_scan:${scan.id}:0"
+        node(rowTag).performClick()
+        compose.waitForIdle()
+
+        node(rowTag).assertIsOn()
+        compose.onNodeWithText(str(R.string.report_picture_picker_subtitle, 1, 1)).assertIsDisplayed()
+        node("reportPicturesButton").assertContentDescriptionEquals(str(R.string.report_pictures_selected_cd, 1))
+
+        node(rowTag).performClick()
+        compose.waitForIdle()
+
+        node(rowTag).assertIsOff()
+        compose.onNodeWithText(str(R.string.report_picture_picker_subtitle, 0, 1)).assertIsDisplayed()
+        node("reportPicturesButton").assertContentDescriptionEquals(str(R.string.report_pictures_cd))
+    }
+
+    @Test
+    fun s4PicturePicker_selectAllAndClear() {
+        val scan = basePatient.ultrasoundScans.first().copy(imageUris = listOf("p1.jpg", "p2.jpg"))
+        val patient = basePatient.copy(ultrasoundScans = listOf(scan) + basePatient.ultrasoundScans.drop(1))
+        show(patient)
+
+        node("reportPicturesButton").performClick()
+        compose.waitForIdle()
+
+        node("reportPicturesSelectAll").performClick()
+        compose.waitForIdle()
+
+        node("reportPictureRow_scan:${scan.id}:0").assertIsOn()
+        node("reportPictureRow_scan:${scan.id}:1").assertIsOn()
+        compose.onNodeWithText(str(R.string.report_picture_picker_subtitle, 2, 2)).assertIsDisplayed()
+        node("reportPicturesButton").assertContentDescriptionEquals(str(R.string.report_pictures_selected_cd, 2))
+
+        node("reportPicturesClear").performClick()
+        compose.waitForIdle()
+
+        node("reportPictureRow_scan:${scan.id}:0").assertIsOff()
+        node("reportPictureRow_scan:${scan.id}:1").assertIsOff()
+        compose.onNodeWithText(str(R.string.report_picture_picker_subtitle, 0, 2)).assertIsDisplayed()
+        node("reportPicturesButton").assertContentDescriptionEquals(str(R.string.report_pictures_cd))
+    }
+
+    @Test
+    fun s4PicturePicker_doneCloses() {
+        val scan = basePatient.ultrasoundScans.first().copy(imageUris = listOf("p1.jpg"))
+        val patient = basePatient.copy(ultrasoundScans = listOf(scan) + basePatient.ultrasoundScans.drop(1))
+        show(patient)
+
+        node("reportPicturesButton").performClick()
+        compose.waitForIdle()
+        node("reportPicturePicker").assertIsDisplayed()
+
+        node("reportPicturesDone").performClick()
+        compose.waitForIdle()
+        node("reportPicturePicker").assertDoesNotExist()
+    }
+
+    @Test
+    fun s4PictureSelection_showsFigureReferencesAndAttachedImagesSummary() {
+        val scan = basePatient.ultrasoundScans.first().copy(imageUris = listOf("p1.jpg"))
+        val patient = basePatient.copy(ultrasoundScans = listOf(scan) + basePatient.ultrasoundScans.drop(1))
+        show(patient)
+
+        node("reportPicturesButton").performClick()
+        compose.waitForIdle()
+
+        node("reportPictureRow_scan:${scan.id}:0").performClick()
+        compose.waitForIdle()
+
+        node("reportPicturesDone").performClick()
+        compose.waitForIdle()
+
+        node("reportAttachedImagesSummary").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText(str(R.string.report_attached_images_selected, 1), substring = true)
+            .assertIsDisplayed()
+
+        val visitId = scan.linkedVisitId
+        if (visitId != null) {
+            node("reportScanOutcome_$visitId").performScrollTo().assertIsDisplayed()
+            compose.onNode(
+                hasText(str(R.string.report_figure_ref_format, 1), substring = true) and
+                    inTagged("reportScanOutcome_$visitId"),
+                useUnmergedTree = true,
+            ).assertIsDisplayed()
+        }
+    }
+
+    @Test
+    fun s4PictureSelection_noneSelected_noPicturesLineAppears() {
+        val scan = basePatient.ultrasoundScans.first().copy(imageUris = listOf("p1.jpg"))
+        val patient = basePatient.copy(ultrasoundScans = listOf(scan) + basePatient.ultrasoundScans.drop(1))
+        show(patient)
+
+        node("reportAttachedImagesSummary").assertDoesNotExist()
+        val visitId = scan.linkedVisitId
+        if (visitId != null) {
+            node("reportScanOutcome_$visitId").performScrollTo().assertIsDisplayed()
+            compose.onAllNodes(
+                hasText("Fig 1", substring = true) and inTagged("reportScanOutcome_$visitId"),
+                useUnmergedTree = true,
+            ).assertCountEquals(0)
+        }
+    }
+
+    @Test
+    fun s4PicturePicker_missingFile_showsImageNotAvailableTile_withoutCrash() {
+        val scan = basePatient.ultrasoundScans.first().copy(imageUris = listOf("missing_file_404.jpg"))
+        val patient = basePatient.copy(ultrasoundScans = listOf(scan) + basePatient.ultrasoundScans.drop(1))
+        show(patient)
+
+        node("reportPicturesButton").performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithText(str(R.string.report_image_not_available), useUnmergedTree = true)
+            .assertIsDisplayed()
+    }
+
+    @Test
+    fun s4PicturePicker_min48dpTouchTargets() {
+        val scan = basePatient.ultrasoundScans.first().copy(imageUris = listOf("p1.jpg"))
+        val patient = basePatient.copy(ultrasoundScans = listOf(scan) + basePatient.ultrasoundScans.drop(1))
+        show(patient)
+
+        assertMinTouchTarget("reportPicturesButton")
+
+        node("reportPicturesButton").performClick()
+        compose.waitForIdle()
+
+        val rowBounds = bounds("reportPictureRow_scan:${scan.id}:0")
+        assertTrue("candidate row height < 48dp (${rowBounds.height})", rowBounds.height >= 47.99.dp)
+
+        assertMinTouchTarget("reportPicturesSelectAll")
+        assertMinTouchTarget("reportPicturesClear")
+        assertMinTouchTarget("reportPicturesDone")
+    }
+
+    @Test
+    fun s4PicturePicker_narrow360dp_noHorizontalOverflow() {
+        val scan = basePatient.ultrasoundScans.first().copy(imageUris = listOf("p1.jpg"))
+        val patient = basePatient.copy(ultrasoundScans = listOf(scan) + basePatient.ultrasoundScans.drop(1))
+        show(patient, fontScale = 1.3f)
+
+        assertNoClippingInContainer("patientTwoPageReportDialog")
+
+        node("reportPicturesButton").performClick()
+        compose.waitForIdle()
+
+        assertNoClippingInContainer("reportPicturePicker")
     }
 
     private companion object {

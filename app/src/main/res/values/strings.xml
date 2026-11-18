@@ -982,4 +982,16 @@
     <string name="report_empty_current_meds">No current medications recorded</string>
 
     <string name="report_confidential_footer_format">Confidential medical record · %1$s · Tel %2$s</string>
+
+    <string name="report_pictures_cd">Pictures</string>
+    <string name="report_pictures_selected_cd">Pictures, %1$d selected</string>
+    <string name="report_preparing_print">Preparing…</string>
+    <string name="report_attached_images_selected">Attached images: %1$d selected</string>
+    <string name="report_picture_picker_title">Choose pictures to print</string>
+    <string name="report_picture_picker_subtitle">Selected pictures print at the end of the report (%1$d of %2$d selected).</string>
+    <string name="report_pictures_select_all">Select all</string>
+    <string name="report_pictures_clear">Clear</string>
+    <string name="report_image_not_available">Image not available</string>
+    <string name="report_picture_thumbnail_cd">Picture: %1$s, %2$s</string>
+    <string name="report_picture_thumbnail_undated_cd">Picture: %1$s</string>
 </resources>

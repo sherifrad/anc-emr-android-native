@@ -331,8 +331,8 @@ internal fun ReportPageOneSections(
     patient: DemoPatient,
     securitySettings: SecuritySettingsState?,
     asOfDate: LocalDate = LocalDate.now(),
+    figures: List<Figure> = emptyList(),
 ) {
-    val figures = emptyList<Figure>()
     ReportClinicMetaCard(
         patient = patient,
         securitySettings = securitySettings,
@@ -350,8 +350,8 @@ internal fun ReportPageTwoSections(
     patient: DemoPatient,
     securitySettings: SecuritySettingsState?,
     asOfDate: LocalDate = LocalDate.now(),
+    figures: List<Figure> = emptyList(),
 ) {
-    val figures = emptyList<Figure>()
     val shownVisits = remember(patient) { reportVisits(patient, MAX_REPORT_VISITS).rows }
     ReportPageTwoHeaderCard(patient = patient, asOfDate = asOfDate)
     ReportOtherScansCard(patient = patient, shownVisits = shownVisits, figures = figures)

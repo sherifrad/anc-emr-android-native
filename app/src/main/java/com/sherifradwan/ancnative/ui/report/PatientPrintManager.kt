@@ -25,6 +25,8 @@ object PatientPrintManager {
         settings: SecuritySettingsState? = null,
         onComplete: (() -> Unit)? = null,
         onUnavailable: (() -> Unit)? = null,
+        selectedPictureKeys: Set<String> = emptySet(),
+        pictureDataUris: Map<String, String> = emptyMap(),
     ) {
         val activity = context.findActivity()
         if (activity == null) {
@@ -42,6 +44,8 @@ object PatientPrintManager {
             context = activity,
             patient = patient,
             settings = settings,
+            selectedPictureKeys = selectedPictureKeys,
+            pictureDataUri = { pictureDataUris[it.key] },
         )
 
         val webView = WebView(activity)
