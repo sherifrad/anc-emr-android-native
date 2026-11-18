@@ -1,7 +1,10 @@
 package com.sherifradwan.ancnative.ui.report
 
+import android.content.ClipData
+import android.content.Context
 import android.content.Intent
 import android.widget.Toast
+import androidx.core.content.FileProvider
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -24,12 +27,16 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.PhotoLibrary
+import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -39,6 +46,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -70,12 +78,26 @@ import com.sherifradwan.ancnative.ui.components.RecordType
 import com.sherifradwan.ancnative.ui.components.ltrIsolate
 import com.sherifradwan.ancnative.ui.minimumTouchTarget
 import java.time.LocalDate
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 
 private val StringSetSaver = listSaver<Set<String>, String>(
     save = { it.toList() },
     restore = { it.toSet() },
 )
+
+private suspend fun encodeSelectedPictures(
+    context: Context,
+    patientId: String,
+    figures: List<Figure>,
+): Map<String, String> {
+    if (figures.isEmpty()) return emptyMap()
+    return encodePicturesForPrint(
+        context = context,
+        patientId = patientId,
+        figures = figures,
+    )
+}
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -85,6 +107,15 @@ fun PatientTwoPageReportDialog(
     onDismiss: () -> Unit,
 ) {
     val context = LocalContext.current
+    LaunchedEffect(Unit) {
+        try {
+            purgeStaleReportExports(context.cacheDir)
+        } catch (ce: CancellationException) {
+            throw ce
+        } catch (_: Throwable) {
+            // Cleanup is best-effort; never block opening the report dialog.
+        }
+    }
     val coroutineScope = rememberCoroutineScope()
     val shareSubject = stringResource(R.string.report_share_subject_format, patient.displayName)
     val shareChooserTitle = stringResource(R.string.report_share_chooser_title)
@@ -96,6 +127,8 @@ fun PatientTwoPageReportDialog(
     }
     var showPicturePicker by rememberSaveable(patient.id) { mutableStateOf(false) }
     var isPreparingPrint by remember { mutableStateOf(false) }
+    var showShareMenu by remember { mutableStateOf(false) }
+    var isExportingPdf by remember { mutableStateOf(false) }
     val validSelectedKeys = remember(candidates, selectedPictureKeys) {
         val candidateKeys = candidates.mapTo(HashSet(candidates.size)) { it.key }
         selectedPictureKeys.intersect(candidateKeys)
@@ -107,6 +140,13 @@ fun PatientTwoPageReportDialog(
         Toast.makeText(
             context,
             context.getString(R.string.report_print_unavailable),
+            Toast.LENGTH_LONG,
+        ).show()
+    }
+    val showPdfExportFailed: () -> Unit = {
+        Toast.makeText(
+            context,
+            context.getString(R.string.report_share_pdf_failed),
             Toast.LENGTH_LONG,
         ).show()
     }
@@ -173,7 +213,7 @@ fun PatientTwoPageReportDialog(
                                     }
                                     OutlinedButton(
                                         onClick = { showPicturePicker = true },
-                                        enabled = !isPreparingPrint,
+                                        enabled = !isPreparingPrint && !isExportingPdf,
                                         shape = RecordShapes.Small,
                                         border = BorderStroke(
                                             1.dp,
@@ -230,25 +270,120 @@ fun PatientTwoPageReportDialog(
                                     }
                                 }
 
-                                IconButton(
-                                    onClick = {
-                                        val summary = patientShareText(patient)
-                                        val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                                            type = "text/plain"
-                                            putExtra(Intent.EXTRA_SUBJECT, shareSubject)
-                                            putExtra(Intent.EXTRA_TEXT, summary)
+                                val shareCd = stringResource(R.string.report_share_cd)
+                                val sharePreparingCd = stringResource(R.string.report_share_pdf_preparing)
+                                Box {
+                                    IconButton(
+                                        onClick = {
+                                            if (!isExportingPdf) {
+                                                showShareMenu = true
+                                            }
+                                        },
+                                        enabled = !isExportingPdf,
+                                        modifier = Modifier
+                                            .minimumTouchTarget()
+                                            .semantics {
+                                                contentDescription = if (isExportingPdf) {
+                                                    sharePreparingCd
+                                                } else {
+                                                    shareCd
+                                                }
+                                            }
+                                            .testTag("shareReportButton"),
+                                    ) {
+                                        if (isExportingPdf) {
+                                            CircularProgressIndicator(
+                                                modifier = Modifier.size(20.dp),
+                                                strokeWidth = 2.dp,
+                                                color = MaterialTheme.colorScheme.primary,
+                                            )
+                                        } else {
+                                            Icon(
+                                                imageVector = Icons.Default.Share,
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.primary,
+                                            )
                                         }
-                                        context.startActivity(Intent.createChooser(shareIntent, shareChooserTitle))
-                                    },
-                                    modifier = Modifier
-                                        .minimumTouchTarget()
-                                        .testTag("shareReportButton"),
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Share,
-                                        contentDescription = stringResource(R.string.report_share_cd),
-                                        tint = MaterialTheme.colorScheme.primary,
-                                    )
+                                    }
+
+                                    DropdownMenu(
+                                        expanded = showShareMenu,
+                                        onDismissRequest = { showShareMenu = false },
+                                        containerColor = MaterialTheme.colorScheme.surface,
+                                    ) {
+                                        DropdownMenuItem(
+                                            text = {
+                                                Text(
+                                                    text = stringResource(R.string.report_share_pdf),
+                                                    style = RecordType.Action,
+                                                    color = MaterialTheme.colorScheme.onSurface,
+                                                )
+                                            },
+                                            leadingIcon = {
+                                                Icon(
+                                                    imageVector = Icons.Default.PictureAsPdf,
+                                                    contentDescription = null,
+                                                    tint = MaterialTheme.colorScheme.primary,
+                                                    modifier = Modifier.size(20.dp),
+                                                )
+                                            },
+                                            onClick = {
+                                                showShareMenu = false
+                                                if (isExportingPdf) return@DropdownMenuItem
+                                                isExportingPdf = true
+                                                coroutineScope.launch {
+                                                    try {
+                                                        val shared = sharePatientReportPdf(
+                                                            context = context,
+                                                            patient = patient,
+                                                            securitySettings = securitySettings,
+                                                            selectedPictureKeys = validSelectedKeys,
+                                                            figures = figures,
+                                                            shareSubject = shareSubject,
+                                                            shareChooserTitle = shareChooserTitle,
+                                                        )
+                                                        if (!shared) {
+                                                            showPdfExportFailed()
+                                                        }
+                                                    } finally {
+                                                        isExportingPdf = false
+                                                    }
+                                                }
+                                            },
+                                            modifier = Modifier
+                                                .minimumTouchTarget()
+                                                .testTag("shareReportPdfItem"),
+                                        )
+                                        DropdownMenuItem(
+                                            text = {
+                                                Text(
+                                                    text = stringResource(R.string.report_share_short_text),
+                                                    style = RecordType.Action,
+                                                    color = MaterialTheme.colorScheme.onSurface,
+                                                )
+                                            },
+                                            leadingIcon = {
+                                                Icon(
+                                                    imageVector = Icons.Default.Description,
+                                                    contentDescription = null,
+                                                    tint = MaterialTheme.colorScheme.primary,
+                                                    modifier = Modifier.size(20.dp),
+                                                )
+                                            },
+                                            onClick = {
+                                                showShareMenu = false
+                                                sharePatientShortText(
+                                                    context = context,
+                                                    patient = patient,
+                                                    shareSubject = shareSubject,
+                                                    shareChooserTitle = shareChooserTitle,
+                                                )
+                                            },
+                                            modifier = Modifier
+                                                .minimumTouchTarget()
+                                                .testTag("shareReportTextItem"),
+                                        )
+                                    }
                                 }
 
                                 Button(
@@ -265,7 +400,7 @@ fun PatientTwoPageReportDialog(
                                             isPreparingPrint = true
                                             coroutineScope.launch {
                                                 try {
-                                                    val encodedUris = encodePicturesForPrint(
+                                                    val encodedUris = encodeSelectedPictures(
                                                         context = context,
                                                         patientId = patient.id,
                                                         figures = figures,
@@ -447,5 +582,65 @@ fun PatientTwoPageReportDialog(
             onClear = { selectedPictureKeys = emptySet() },
             onDismiss = { showPicturePicker = false },
         )
+    }
+}
+
+private fun sharePatientShortText(
+    context: Context,
+    patient: DemoPatient,
+    shareSubject: String,
+    shareChooserTitle: String,
+) {
+    val summary = patientShareText(patient)
+    val shareIntent = Intent(Intent.ACTION_SEND).apply {
+        type = "text/plain"
+        putExtra(Intent.EXTRA_SUBJECT, shareSubject)
+        putExtra(Intent.EXTRA_TEXT, summary)
+    }
+    context.startActivity(Intent.createChooser(shareIntent, shareChooserTitle))
+}
+
+private suspend fun sharePatientReportPdf(
+    context: Context,
+    patient: DemoPatient,
+    securitySettings: SecuritySettingsState?,
+    selectedPictureKeys: Set<String>,
+    figures: List<Figure>,
+    shareSubject: String,
+    shareChooserTitle: String,
+): Boolean {
+    val activity = context.findActivity() ?: return false
+    return try {
+        val encodedUris = encodeSelectedPictures(
+            context = context,
+            patientId = patient.id,
+            figures = figures,
+        )
+        val pdfFile = exportReportPdf(
+            activity = activity,
+            patient = patient,
+            settings = securitySettings,
+            selectedPictureKeys = selectedPictureKeys,
+            pictureDataUris = encodedUris,
+        ) ?: return false
+
+        val uri = FileProvider.getUriForFile(
+            context,
+            "${context.packageName}.fileprovider",
+            pdfFile,
+        )
+        val shareIntent = Intent(Intent.ACTION_SEND).apply {
+            type = "application/pdf"
+            putExtra(Intent.EXTRA_STREAM, uri)
+            putExtra(Intent.EXTRA_SUBJECT, shareSubject)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            clipData = ClipData.newUri(context.contentResolver, shareSubject, uri)
+        }
+        context.startActivity(Intent.createChooser(shareIntent, shareChooserTitle))
+        true
+    } catch (ce: CancellationException) {
+        throw ce
+    } catch (_: Throwable) {
+        false
     }
 }

@@ -1,128 +1,194 @@
 package com.sherifradwan.ancnative.ui.report
 
-import com.sherifradwan.ancnative.model.DemoMedicationRecord
 import com.sherifradwan.ancnative.model.DemoPatient
+import com.sherifradwan.ancnative.model.DemoUltrasoundScan
 import com.sherifradwan.ancnative.model.datingSummaryOf
-import com.sherifradwan.ancnative.model.datingTextRows
-import com.sherifradwan.ancnative.model.datingDiscordanceLine
 import com.sherifradwan.ancnative.model.formatDmy
+import com.sherifradwan.ancnative.model.parseIsoDateOrNull
 import com.sherifradwan.ancnative.ui.formatWeightKg
 import java.time.LocalDate
 
-private fun medicationShareLine(m: DemoMedicationRecord): String {
-    val detail = medicationDetail(m).takeIf { it.isNotBlank() }?.let { " $it" }.orEmpty()
-    val dates = medicationDates(m).takeIf { it.isNotBlank() }?.let { " ($it)" }.orEmpty()
-    return "• ${m.name}$detail$dates"
+private const val MAX_SHARE_LINES = 15
+private const val MAX_SHARE_MED_NAMES = 3
+private const val MAX_SHARE_MED_CHARS = 80
+
+private enum class ShareLineRole {
+    SAFETY,
+    CLINICAL,
+    MEDICATIONS,
+    DELIVERY_PLAN,
 }
 
+private data class ShareLine(
+    val text: String,
+    val role: ShareLineRole,
+)
+
+private fun isDeliverySafetyRow(label: String): Boolean =
+    label == "Delivery Outcome" ||
+        label == "Blood bank precautions" ||
+        label.contains("blood", ignoreCase = true) ||
+        label.contains("Rh", ignoreCase = true) ||
+        label.contains("precaution", ignoreCase = true)
+
+private fun formatMedicationsLine(medNames: List<String>): String {
+    val shown = mutableListOf<String>()
+    var totalChars = 0
+    for (medName in medNames) {
+        if (shown.size >= MAX_SHARE_MED_NAMES) break
+        val nextChars = if (shown.isEmpty()) medName.length else totalChars + 2 + medName.length
+        if (shown.isNotEmpty() && nextChars > MAX_SHARE_MED_CHARS) break
+        shown.add(medName)
+        totalChars = nextChars
+    }
+    val remaining = medNames.size - shown.size
+    val medsText = if (remaining > 0) {
+        "${shown.joinToString(", ")} +$remaining more"
+    } else {
+        shown.joinToString(", ")
+    }
+    return "Current medications: $medsText"
+}
+
+private fun compactShareLines(entries: List<ShareLine>): List<String> {
+    if (entries.size <= MAX_SHARE_LINES) {
+        return entries.map { it.text }
+    }
+
+    val working = entries.toMutableList()
+    val planIndices = working.indices.filter { working[it].role == ShareLineRole.DELIVERY_PLAN }
+    if (planIndices.size > 1) {
+        val mergedText = "Delivery plan: ${planIndices.joinToString(" · ") { working[it].text }}"
+        working[planIndices.first()] = ShareLine(mergedText, ShareLineRole.DELIVERY_PLAN)
+        for (idx in planIndices.drop(1).asReversed()) {
+            working.removeAt(idx)
+        }
+    }
+    if (working.size <= MAX_SHARE_LINES) {
+        return working.map { it.text }
+    }
+
+    for (roleToTrim in listOf(ShareLineRole.DELIVERY_PLAN, ShareLineRole.MEDICATIONS, ShareLineRole.CLINICAL)) {
+        for (i in working.lastIndex downTo 0) {
+            if (working.size <= MAX_SHARE_LINES) break
+            if (working[i].role == roleToTrim) {
+                working.removeAt(i)
+            }
+        }
+        if (working.size <= MAX_SHARE_LINES) break
+    }
+
+    return working.map { it.text }
+}
+
+private fun singleLine(raw: String?): String =
+    raw?.trim()
+        ?.lines()
+        ?.map { it.trim() }
+        ?.filter { it.isNotEmpty() }
+        ?.joinToString(" · ")
+        .orEmpty()
+
+private fun latestScan(patient: DemoPatient): DemoUltrasoundScan? =
+    patient.ultrasoundScans.maxWithOrNull(
+        compareBy<DemoUltrasoundScan>(
+            { parseIsoDateOrNull(it.date) != null },
+            { parseIsoDateOrNull(it.date) },
+            { it.id },
+        ),
+    )
+
 internal fun patientShareText(patient: DemoPatient, asOf: LocalDate = LocalDate.now()): String {
-    val sb = StringBuilder()
-
-    sb.appendLine("ANTENATAL CARE SUMMARY")
-    sb.appendLine("Patient: ${patient.displayName}")
-    sb.appendLine("Case ID: ${patient.caseId}")
-    if (!patient.dateOfBirth.isNullOrBlank()) sb.appendLine("Date of birth: ${reportDate(patient.dateOfBirth)}")
-    if (!patient.phone.isNullOrBlank()) sb.appendLine("Phone: ${patient.phone}")
-    if (!patient.bloodGroupText.isNullOrBlank()) sb.appendLine("Blood group: ${patient.bloodGroupText}")
-    sb.appendLine("Risk: ${reportRiskLabel(patient.riskLevel)}")
-    sb.appendLine("Obstetric: G${patient.gravida ?: "-"} P${patient.parity ?: "-"} A${patient.abortion ?: "-"}")
-    reportStatusLine(patient)?.let { sb.appendLine("Status: $it") }
-    if (!patient.clinicalAttention.isNullOrBlank()) sb.appendLine("Clinical attention: ${patient.clinicalAttention}")
-    if (!patient.allergyHistory.isNullOrBlank()) sb.appendLine("Allergies: ${patient.allergyHistory}")
-    if (!patient.medicalHistory.isNullOrBlank()) sb.appendLine("Medical history: ${patient.medicalHistory}")
-    if (!patient.surgicalHistory.isNullOrBlank()) sb.appendLine("Surgical history: ${patient.surgicalHistory}")
-    if (!patient.familyHistory.isNullOrBlank()) sb.appendLine("Family history: ${patient.familyHistory}")
-    sb.appendLine()
-
-    sb.appendLine("PREGNANCY DATING")
-    reportGestationalAge(patient, asOf)?.let { sb.appendLine("Gestational age today: $it") }
-    val summary = datingSummaryOf(patient, asOf)
-    if (patient.dating != null) {
-        datingTextRows(summary).forEach { row ->
-            sb.appendLine("${row.label}: ${row.value ?: "Not recorded"}")
+    val entries = buildList {
+        val name = singleLine(patient.displayName)
+        val caseId = singleLine(patient.caseId)
+        listOfNotNull(
+            name.takeIf { it.isNotEmpty() }?.let { "Patient: $it" },
+            caseId.takeIf { it.isNotEmpty() }?.let { "ID: $it" },
+        ).joinToString(" · ").takeIf { it.isNotEmpty() }?.let {
+            add(ShareLine(it, ShareLineRole.SAFETY))
         }
-    } else {
-        sb.appendLine("Dating: Not recorded")
-    }
-    datingDiscordanceLine(patient.dating, summary)?.let { sb.appendLine(it) }
-    sb.appendLine()
 
-    val visits = reportVisits(patient, Int.MAX_VALUE).rows.asReversed()
-    sb.appendLine("VISITS (${visits.size})")
-    if (visits.isEmpty()) {
-        sb.appendLine("No visits recorded.")
-    } else {
-        visits.forEach { visit ->
-            val sbLine = StringBuilder("• ${reportDate(visit.date)}")
-            if (!visit.bloodPressure.isNullOrBlank()) sbLine.append(" | BP: ${visit.bloodPressure}")
-            val formattedWeight = formatWeightKg(visit.weight)
-            if (formattedWeight != null) sbLine.append(" | Wt: $formattedWeight")
-            sbLine.append(" | ${visitText(visit)}")
-            sb.appendLine(sbLine.toString())
+        if (!patient.riskLevel.isNullOrBlank()) {
+            val riskLabel = singleLine(reportRiskLabel(patient.riskLevel))
+            if (riskLabel.isNotEmpty()) {
+                add(ShareLine("Risk: $riskLabel", ShareLineRole.SAFETY))
+            }
+        }
+
+        val allergies = singleLine(patient.allergyHistory)
+        if (allergies.isNotEmpty() && allergies != NOT_RECORDED) {
+            add(ShareLine("Allergies: $allergies", ShareLineRole.SAFETY))
+        }
+
+        val attention = singleLine(patient.clinicalAttention)
+        if (attention.isNotEmpty()) {
+            add(ShareLine("Clinical attention: $attention", ShareLineRole.SAFETY))
+        }
+
+        val ga = singleLine(reportGestationalAge(patient, asOf))
+        val summary = datingSummaryOf(patient, asOf)
+        val edd = if (!patient.delivered) summary.edd?.let(::formatDmy).orEmpty() else ""
+        listOfNotNull(
+            ga.takeIf { it.isNotEmpty() }?.let { "GA: $it" },
+            edd.takeIf { it.isNotEmpty() }?.let { "EDD: $it" },
+        ).joinToString(" · ").takeIf { it.isNotEmpty() }?.let {
+            add(ShareLine(it, ShareLineRole.CLINICAL))
+        }
+
+        reportVisits(patient, 1).rows.lastOrNull()?.let { visit ->
+            val visitDate = formatDmy(visit.date)?.takeIf { it.isNotEmpty() }
+                ?: singleLine(visit.date).takeIf { it.isNotEmpty() }
+            val bp = singleLine(visit.bloodPressure).takeIf { it.isNotEmpty() }?.let { "BP $it" }
+            val weight = formatWeightKg(visit.weight)?.let(::singleLine)?.takeIf { it.isNotEmpty() }
+                ?.let { "Wt $it" }
+            val parts = listOfNotNull(visitDate, bp, weight)
+            if (parts.isNotEmpty()) {
+                add(ShareLine("Last visit: ${parts.joinToString(" · ")}", ShareLineRole.CLINICAL))
+            }
+        }
+
+        latestScan(patient)?.let { scan ->
+            val outcome = scanOutcomeFor(scan)
+            val scanDate = formatDmy(scan.date)?.takeIf { it.isNotEmpty() }
+                ?: singleLine(scan.date).takeIf { it.isNotEmpty() }
+            val typeAndPres = listOfNotNull(
+                outcome.typeLabel?.let(::singleLine)?.takeIf { it.isNotEmpty() },
+                outcome.presentation?.let(::singleLine)?.takeIf { it.isNotEmpty() },
+            ).joinToString(", ").takeIf { it.isNotEmpty() }
+            val measurements = outcome.measurements
+                .mapNotNull { (label, value) ->
+                    singleLine(value).takeIf { it.isNotEmpty() }?.let { "$label $it" }
+                }
+                .joinToString(", ")
+                .takeIf { it.isNotEmpty() }
+            val bodyParts = listOfNotNull(typeAndPres, measurements)
+            if (bodyParts.isNotEmpty()) {
+                val allParts = listOfNotNull(scanDate) + bodyParts
+                add(ShareLine("Latest scan: ${allParts.joinToString(" · ")}", ShareLineRole.CLINICAL))
+            }
+        }
+
+        val currentMedNames = reportMedications(patient).current
+            .map { singleLine(it.name) }
+            .filter { it.isNotEmpty() }
+        if (currentMedNames.isNotEmpty()) {
+            add(ShareLine(formatMedicationsLine(currentMedNames), ShareLineRole.MEDICATIONS))
+        }
+
+        val deliveryRows = reportDeliveryRows(patient, edd.takeIf { it.isNotEmpty() })
+        for (row in deliveryRows) {
+            if (row.label == "Estimated due date") continue
+            val value = singleLine(row.value)
+            if (value.isNotEmpty() && value != NOT_RECORDED) {
+                val role = if (isDeliverySafetyRow(row.label)) {
+                    ShareLineRole.SAFETY
+                } else {
+                    ShareLineRole.DELIVERY_PLAN
+                }
+                add(ShareLine("${row.label}: $value", role))
+            }
         }
     }
-    sb.appendLine()
-
-    val scans = reportScans(patient, Int.MAX_VALUE).rows.asReversed()
-    sb.appendLine("ULTRASOUND SCANS (${scans.size})")
-    if (scans.isEmpty()) {
-        sb.appendLine("No scans recorded.")
-    } else {
-        scans.forEach { scan ->
-            val parts = mutableListOf<String>()
-            val ga = scanGestationalAge(scan)
-            if (ga != "-") parts.add("GA: $ga")
-            if (!scan.presentation.isNullOrBlank()) parts.add("Pres: ${scan.presentation}")
-            if (!scan.placentalSite.isNullOrBlank()) parts.add("Placenta: ${scan.placentalSite}")
-            if (!scan.amnioticFluid.isNullOrBlank()) parts.add("Fluid: ${scan.amnioticFluid}")
-            val efw = scanWeight(scan)
-            if (efw != "-") parts.add("EFW: $efw")
-            val notes = scanNotes(scan)
-            if (notes != NOT_RECORDED) parts.add(notes)
-            val details = if (parts.isEmpty()) NOT_RECORDED else parts.joinToString(" | ")
-            sb.appendLine("• ${reportDate(scan.date)} | $details")
-        }
-    }
-    sb.appendLine()
-
-    val labs = reportLabs(patient, Int.MAX_VALUE).rows
-    sb.appendLine("LABORATORY RESULTS (${labs.size})")
-    if (labs.isEmpty()) {
-        sb.appendLine("No laboratory results recorded.")
-    } else {
-        labs.forEach { lab ->
-            val flag = if (lab.isAbnormal) "[ABNORMAL] " else ""
-            val ref = if (!lab.referenceRange.isNullOrBlank()) " (Ref: ${lab.referenceRange})" else ""
-            val extra = labExtra(lab)
-            sb.appendLine("• $flag${lab.testName}: ${labResult(lab)}$ref [${reportDate(lab.date)}]${if (extra.isNotBlank()) " $extra" else ""}")
-        }
-    }
-    sb.appendLine()
-
-    val meds = reportMedications(patient)
-    sb.appendLine("CURRENT MEDICATIONS (${meds.current.size})")
-    if (meds.current.isEmpty()) {
-        sb.appendLine("No current medications recorded.")
-    } else {
-        meds.current.forEach { m ->
-            sb.appendLine(medicationShareLine(m))
-        }
-    }
-    sb.appendLine()
-
-    if (meds.stopped.isNotEmpty()) {
-        sb.appendLine("STOPPED MEDICATIONS (${meds.stopped.size})")
-        meds.stopped.forEach { m ->
-            sb.appendLine(medicationShareLine(m))
-        }
-        sb.appendLine()
-    }
-
-    val deliveryRows = reportDeliveryRows(patient, summary.edd?.let(::formatDmy))
-    if (deliveryRows.isNotEmpty()) {
-        sb.appendLine("DELIVERY PLAN")
-        deliveryRows.forEach { row -> sb.appendLine("${row.label}: ${row.value}") }
-    }
-
-    return sb.toString()
+    return compactShareLines(entries).joinToString("\n")
 }

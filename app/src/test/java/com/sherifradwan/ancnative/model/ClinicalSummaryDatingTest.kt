@@ -1,6 +1,6 @@
 package com.sherifradwan.ancnative.model
 
-import com.sherifradwan.ancnative.ui.report.patientShareText
+import java.time.LocalDate
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -38,9 +38,10 @@ class ClinicalSummaryDatingTest {
     }
 
     private fun datingBlock(p: DemoPatient): String {
-        val text = patientShareText(p).replace(' ', ' ')
-        val after = text.substringAfter("--- PREGNANCY DATING ---")
-        return after.substringBefore("--- RECENT VISITS")
+        val summary = datingSummaryOf(p, LocalDate.of(2026, 8, 27))
+        val rows = datingTextRows(summary).map { "${it.label}: ${it.value}" }
+        val discordance = datingDiscordanceLine(p.dating, summary)
+        return (rows + listOfNotNull(discordance)).joinToString("\n")
     }
 
     @Test

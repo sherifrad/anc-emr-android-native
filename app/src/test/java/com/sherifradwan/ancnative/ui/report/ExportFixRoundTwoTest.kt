@@ -220,18 +220,18 @@ class ExportFixRoundTwoTest {
     @Test
     fun oracleE_shareScanFluidNoTrailingNotRecordedAndEmptyLine() {
         val withFluid = basePatient(
-            scans = listOf(scan("s1", "2026-10-01", placentalSite = "Anterior", amnioticFluid = "Normal")),
+            scans = listOf(scan("s1", "2026-10-01", presentation = "Cephalic", placentalSite = "Anterior", amnioticFluid = "Normal")),
         )
         val sFluid = share(withFluid)
-        assertTrue(sFluid.contains("Placenta: Anterior"))
-        assertTrue(sFluid.contains("Fluid: Normal"))
-        assertFalse(sFluid.contains("Fluid: Normal | Not recorded"))
+        assertTrue(sFluid.contains("Latest scan: 01/10/2026 · Cephalic"))
+        assertFalse(sFluid.contains("Not recorded"))
 
         val emptyScan = basePatient(
             scans = listOf(scan("s2", "2026-10-02").copy(gestationalAgeWeeks = null, gestationalAgeDays = null)),
         )
         val sEmpty = share(emptyScan)
-        assertTrue(sEmpty.contains("02/10/2026 | Not recorded"))
+        assertFalse(sEmpty.contains("Latest scan:"))
+        assertFalse(sEmpty.contains("Not recorded"))
     }
 
     @Test
@@ -378,50 +378,49 @@ class ExportFixRoundTwoTest {
         assertFalse(h.contains("5000"))
 
         val s = share(delivered)
-        assertTrue(s.contains("Status: Delivered"))
-        assertFalse(s.contains("Gestational age today"))
+        assertTrue(s.contains("Delivery Outcome: Delivered 08 Oct 2026 · Vaginal · Live birth"))
+        assertFalse(s.contains("GA:"))
     }
 
     @Test
     fun p4_shareTextWeightsUseFormatWeightKg() {
-        val patient = basePatient(
-            visits = listOf(
-                visit("v1", "2026-10-01", weight = "68.5"),
-                visit("v2", "2026-10-02", weight = "63 kg"),
-                visit("v3", "2026-10-03", weight = ""),
-            ),
-        )
-        val s = share(patient)
-        assertTrue(s.contains(" | Wt: 68.5 kg | "))
-        assertTrue(s.contains(" | Wt: 63 kg | "))
-        assertFalse(s.contains("kg kg"))
-        val blankWeightLine = s.lines().first { it.contains("03/10/2026") }
-        assertFalse(blankWeightLine.contains("Wt:"))
+        val patient1 = basePatient(visits = listOf(visit("v1", "2026-10-01", weight = "68.5")))
+        val s1 = share(patient1)
+        assertTrue(s1.contains("Wt 68.5 kg"))
+
+        val patient2 = basePatient(visits = listOf(visit("v2", "2026-10-02", weight = "63 kg")))
+        val s2 = share(patient2)
+        assertTrue(s2.contains("Wt 63 kg"))
+        assertFalse(s2.contains("kg kg"))
+
+        val patient3 = basePatient(visits = listOf(visit("v3", "2026-10-03", weight = "")))
+        val s3 = share(patient3)
+        assertFalse(s3.contains("Wt"))
     }
 
     @Test
     fun p5_shareTextVisitsNewestFirstWithUndatedFirst() {
-        val patient = basePatient(
+        val datedPatient = basePatient(
             visits = listOf(
                 visit("v1", "2026-01-10"),
                 visit("v2", "2026-03-01"),
                 visit("v3", "2026-02-01"),
+            ),
+        )
+        val sDated = share(datedPatient)
+        assertTrue(sDated.contains("Last visit: 01/03/2026 · BP 120/80"))
+        assertFalse(sDated.contains("10/01/2026"))
+        assertFalse(sDated.contains("01/02/2026"))
+
+        val undatedPatient = basePatient(
+            visits = listOf(
+                visit("v1", "2026-01-10"),
                 visit("v4", ""),
             ),
         )
-        val s = share(patient)
-        val visitsBlock = s.substringAfter("VISITS (").substringBefore("ULTRASOUND SCANS")
-        val undated = visitsBlock.indexOf("Not recorded")
-        val march = visitsBlock.indexOf("01/03/2026")
-        val february = visitsBlock.indexOf("01/02/2026")
-        val january = visitsBlock.indexOf("10/01/2026")
-        assertTrue(undated >= 0)
-        assertTrue(march >= 0)
-        assertTrue(february >= 0)
-        assertTrue(january >= 0)
-        assertTrue(undated < march)
-        assertTrue(march < february)
-        assertTrue(february < january)
+        val sUndated = share(undatedPatient)
+        assertTrue(sUndated.contains("Last visit: BP 120/80"))
+        assertFalse(sUndated.contains("10/01/2026"))
     }
 
     @Test

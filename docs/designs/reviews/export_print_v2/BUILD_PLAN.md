@@ -17,3 +17,7 @@ S5 share: Share PDF and Share text (short). Separate step.
 - Lab notes and the performing lab name print under the corresponding lab date, as small "Notes" lines under the lab table that holds that result (date, test, note, lab name), only when present.
 - Amniotic fluid is always printed when recorded, including Normal (clinically important).
 - Next slices: S3 native report, S4 picture selection and embedding, then S5 share.
+## Slice 5 (share), owner said "Build share" 2026-11-18
+- Share button in the report dialog opens a small menu: "Share PDF" and "Share short text".
+- Share PDF: the same HTML as print (same selected pictures), rendered to a PDF file in cacheDir/reports through a hidden WebView and the print adapter, shared with ACTION_SEND application/pdf through the existing FileProvider (needs one new cache-path "reports/" in res/xml/file_paths.xml: owner to be told). Files older than 1 hour in that folder are deleted at each export.
+- Share short text: at most 15 lines: patient name and ID, risk, clinical attention, GA and EDD, last visit date with BP and weight, latest scan outcome (type, presentation, measurements), current medications (names only, "+N more" when long), delivery plan. No full lists.

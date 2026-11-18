@@ -1,6 +1,9 @@
 package com.sherifradwan.ancnative.ui.report
 
+import android.app.Activity
 import android.content.Context
+import android.os.Handler
+import android.os.Looper
 import android.print.PrintAttributes
 import android.print.PrintManager
 import android.webkit.WebResourceError
@@ -48,31 +51,10 @@ object PatientPrintManager {
             pictureDataUri = { pictureDataUris[it.key] },
         )
 
-        val webView = WebView(activity)
-        activeWebViews.add(webView)
-        var printHandedOver = false
-        lateinit var timeoutRunnable: Runnable
-
-        fun releaseAbandonedWebView() {
-            webView.removeCallbacks(timeoutRunnable)
-            activeWebViews.remove(webView)
-            webView.destroy()
-            onUnavailable?.invoke()
-        }
-
-        timeoutRunnable = Runnable {
-            if (printHandedOver) return@Runnable
-            printHandedOver = true
-            releaseAbandonedWebView()
-        }
-
-        webView.webViewClient = object : WebViewClient() {
-            override fun onPageFinished(view: WebView?, url: String?) {
-                super.onPageFinished(view, url)
-                if (printHandedOver) return
-                printHandedOver = true
-                webView.removeCallbacks(timeoutRunnable)
-
+        loadHtmlInActivityWebView(
+            activity = activity,
+            htmlContent = htmlContent,
+            onPageLoaded = { webView ->
                 val jobName = printJobName(patient.displayName, patient.caseId)
                 val printAttributes = PrintAttributes.Builder()
                     .setMediaSize(PrintAttributes.MediaSize.ISO_A4)
@@ -84,13 +66,58 @@ object PatientPrintManager {
                     val printAdapter = webView.createPrintDocumentAdapter(jobName)
                     printManager.print(jobName, printAdapter, printAttributes)
                 }
-                activeWebViews.remove(webView)
                 printResult
                     .onSuccess { onComplete?.invoke() }
                     .onFailure {
                         webView.destroy()
                         onUnavailable?.invoke()
                     }
+            },
+            onFailed = { onUnavailable?.invoke() },
+        )
+    }
+
+    /**
+     * Loads [htmlContent] in a hidden [WebView] hosted by [activity] with a 20-second timeout,
+     * keeping the instance retained until page load succeeds or fails and releasing/destroying it
+     * on failure, timeout, or cancellation.
+     */
+    internal fun loadHtmlInActivityWebView(
+        activity: Activity,
+        htmlContent: String,
+        onPageLoaded: (WebView) -> Unit,
+        onFailed: () -> Unit,
+    ): () -> Unit {
+        val webView = WebView(activity)
+        activeWebViews.add(webView)
+        var settled = false
+        // Detached WebViews never attach to a window, so post the timeout on the main Looper directly.
+        val mainHandler = Handler(Looper.getMainLooper())
+        lateinit var timeoutRunnable: Runnable
+
+        fun releaseAbandonedWebView(notifyFailure: Boolean) {
+            mainHandler.removeCallbacks(timeoutRunnable)
+            activeWebViews.remove(webView)
+            webView.destroy()
+            if (notifyFailure) {
+                onFailed()
+            }
+        }
+
+        timeoutRunnable = Runnable {
+            if (settled) return@Runnable
+            settled = true
+            releaseAbandonedWebView(notifyFailure = true)
+        }
+
+        webView.webViewClient = object : WebViewClient() {
+            override fun onPageFinished(view: WebView?, url: String?) {
+                super.onPageFinished(view, url)
+                if (settled) return
+                settled = true
+                mainHandler.removeCallbacks(timeoutRunnable)
+                activeWebViews.remove(webView)
+                onPageLoaded(webView)
             }
 
             override fun onReceivedError(
@@ -99,14 +126,28 @@ object PatientPrintManager {
                 error: WebResourceError?,
             ) {
                 super.onReceivedError(view, request, error)
-                if (request?.isForMainFrame != true || printHandedOver) return
-                printHandedOver = true
-                releaseAbandonedWebView()
+                if (request?.isForMainFrame != true || settled) return
+                settled = true
+                releaseAbandonedWebView(notifyFailure = true)
             }
         }
 
-        webView.postDelayed(timeoutRunnable, LOAD_TIMEOUT_MS)
+        mainHandler.postDelayed(timeoutRunnable, LOAD_TIMEOUT_MS)
         webView.loadDataWithBaseURL("file:///android_asset/", htmlContent, "text/html", "UTF-8", null)
+
+        return {
+            val cancelOnMain = {
+                if (!settled) {
+                    settled = true
+                    releaseAbandonedWebView(notifyFailure = false)
+                }
+            }
+            if (Looper.myLooper() == Looper.getMainLooper()) {
+                cancelOnMain()
+            } else {
+                mainHandler.post(cancelOnMain)
+            }
+        }
     }
 
     internal fun printJobName(displayName: String, caseId: String): String {

@@ -921,8 +921,12 @@
     <string name="report_page_2">Page 2</string>
     <string name="report_pages_tab_group">Report pages</string>
     <string name="report_share_cd">Share clinical record</string>
-    <string name="report_share_chooser_title">Share Clinical Record</string>
-    <string name="report_share_subject_format">Clinical Record - %1$s</string>
+    <string name="report_share_chooser_title">Share clinical record</string>
+    <string name="report_share_subject_format">Clinical record - %1$s</string>
+    <string name="report_share_pdf">Share PDF</string>
+    <string name="report_share_short_text">Share short text</string>
+    <string name="report_share_pdf_preparing">Preparing PDF</string>
+    <string name="report_share_pdf_failed">Could not create the PDF. Try again.</string>
     <string name="report_print_unavailable">Printing is not available right now. Close this window and try again.</string>
 
     <string name="report_badge_clinical_record">Clinical record</string>
