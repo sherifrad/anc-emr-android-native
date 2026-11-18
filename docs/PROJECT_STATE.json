@@ -1876,12 +1876,12 @@
   "rd40": {
    "phase": "pRD",
    "order": 40,
-   "status": "todo",
+   "status": "done",
    "title": "Report attestation doctor name and clinic phone are hardcoded (print sheet and dialog); drive from clinic settings",
    "ref": "",
-   "detail": "Owner agreed 2026-11-17 to make attestation doctor name and clinic phone come from clinic settings. Needs print generator change (protected): do with frontier review and independent tests.",
+   "detail": "Attestation doctor name, titles and clinic phone now come from clinic settings (five new fields in the Clinic branding section, defaults equal to the old text); print sheet and native report read them; Arabic-Indic digits in the phone are converted. Frontier review, alphacode and independent tests pass.",
    "owner": "",
-   "updated": "2026-11-17"
+   "updated": "2026-11-18"
   },
   "rd41": {
    "phase": "pRD",
@@ -1915,6 +1915,10 @@
   }
  },
  "log": [
+  {
+   "date": "2026-11-18",
+   "text": "Polish batch and rd40 done (attestation from clinic settings). Final gate and merge next."
+  },
   {
    "date": "2026-11-18",
    "text": "Pre-push phone test: 18 pass, 0 fail, logcat clean (docs/qa/prepush/REPORT.md); 5 owner observations."

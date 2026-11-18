@@ -32,7 +32,6 @@ object PatientPrintHtmlGenerator {
     private const val MAX_PRINT_VISITS = 12
     private const val MAX_PRINT_SCANS = 7
     private const val MAX_PRINT_LABS = 10
-    private const val CLINIC_PHONE = "01201720808"
     private const val LOGO_PRINT_HEIGHT_PX = 360
 
     private const val BP_ALERT_RAISED = "Raised BP - recheck"
@@ -71,9 +70,14 @@ object PatientPrintHtmlGenerator {
         asOfDate: LocalDate = LocalDate.now(),
     ): String {
         val logoBase64 = getLogoBase64(context)
+        val attestation = settings.resolvedAttestation()
         val clinicName = escapeHtml(settings?.clinicName?.takeUnless(String::isBlank) ?: "Dr. Sherif Radwan Clinic")
         val clinicSpecialty = "Maternal-Fetal Medicine & Advanced Obstetrics"
-        val doctorOfficialTitle = "Specialist of Obstetrics, Gynecology & Laparoscopy"
+        val doctorNameEn = escapeHtml(attestation.doctorNameEn)
+        val doctorOfficialTitle = escapeHtml(attestation.doctorSpecialtyEn)
+        val doctorNameAr = escapeHtml(attestation.doctorNameAr)
+        val doctorSpecialtyAr = escapeHtml(attestation.doctorSpecialtyAr)
+        val clinicPhone = escapeHtml(attestation.clinicPhone)
         val printDateStr = formatDmy(asOfDate)
         val currentGa: String? = reportGestationalAge(patient, asOfDate)
         val statusLine: String? = reportStatusLine(patient)
@@ -1044,7 +1048,7 @@ object PatientPrintHtmlGenerator {
         </div>
 
         <footer class="page-footer">
-            <span>Confidential medical record · $clinicName · $doctorOfficialTitle · Tel $CLINIC_PHONE</span>
+            <span>Confidential medical record · $clinicName · $doctorOfficialTitle · Tel $clinicPhone</span>
         </footer>
     </div>
 
@@ -1174,9 +1178,9 @@ object PatientPrintHtmlGenerator {
 
                     <div class="signature-box">
                         <div>
-                            <div class="doc-name">Dr. Sherif Radwan</div>
-                            <div class="doc-sign" lang="ar" dir="rtl">شريف جمال رضوان</div>
-                            <div class="doc-sign doc-sign-title" lang="ar" dir="rtl">أخصائي التوليد وأمراض النساء وتأخر الحمل</div>
+                            <div class="doc-name">$doctorNameEn</div>
+                            <div class="doc-sign" lang="ar" dir="rtl">$doctorNameAr</div>
+                            <div class="doc-sign doc-sign-title" lang="ar" dir="rtl">$doctorSpecialtyAr</div>
                             <div class="stamp-placeholder">Stamp</div>
                         </div>
                     </div>
@@ -1186,7 +1190,7 @@ object PatientPrintHtmlGenerator {
         </div>
 
         <footer class="page-footer">
-            <span>$clinicName · $doctorOfficialTitle · Tel $CLINIC_PHONE</span>
+            <span>$clinicName · $doctorOfficialTitle · Tel $clinicPhone</span>
         </footer>
     </div>
 

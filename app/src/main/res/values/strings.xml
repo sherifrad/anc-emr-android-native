@@ -848,6 +848,11 @@
     <string name="security_emblem_desc">Shown on the home screen, lock screen, and printed reports.</string>
     <string name="security_clinic_name_label">Clinic name (header and reports)</string>
     <string name="security_clinic_subtitle_label">Specialty or subtitle</string>
+    <string name="security_doctor_name_en_label">Doctor name (English)</string>
+    <string name="security_doctor_specialty_en_label">Doctor title or specialty (English)</string>
+    <string name="security_doctor_name_ar_label">Doctor name (Arabic)</string>
+    <string name="security_doctor_specialty_ar_label">Doctor title or specialty (Arabic)</string>
+    <string name="security_clinic_phone_label">Clinic phone number</string>
     <string name="security_save_branding">Save clinic branding</string>
     <string name="security_branding_saved">Clinic branding saved and applied.</string>
     <string name="security_pin_section_title">6-digit PIN</string>
@@ -975,9 +980,5 @@
     <string name="report_empty_labs">No laboratory test results recorded yet</string>
     <string name="report_empty_current_meds">No current medications recorded</string>
 
-    <string name="report_doctor_name_en">Dr. Sherif Radwan</string>
-    <string name="report_doctor_specialty_en">Specialist of Obstetrics, Gynecology &amp; Laparoscopy</string>
-    <string name="report_doctor_name_ar">شريف جمال رضوان</string>
-    <string name="report_doctor_specialty_ar">أخصائي التوليد وأمراض النساء وتأخر الحمل</string>
     <string name="report_confidential_footer_format">Confidential medical record · %1$s · Tel %2$s</string>
 </resources>

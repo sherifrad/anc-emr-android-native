@@ -1,0 +1,42 @@
+I have authored the test suite for **rd40** in accordance with the specification and invariants. Only files under `app/src/test` and `app/src/androidTest` were touched (zero production code, no git, no adb).
+
+### Summary of Changes
+
+1. **[ReportDialogRedesignTest.kt](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/androidTest/java/com/sherifradwan/ancnative/ReportDialogRedesignTest.kt#L500-L509)**:
+   - Replaced assertions on `R.string.report_doctor_*` at lines 500–509 and line 933 with `SecuritySettingsState.DEFAULT_DOCTOR_NAME_EN`, `DEFAULT_DOCTOR_SPECIALTY_EN`, `DEFAULT_DOCTOR_NAME_AR`, `DEFAULT_DOCTOR_SPECIALTY_AR`, and `DEFAULT_CLINIC_PHONE`.
+   - Zero references to `report_doctor_*` remain in test code.
+
+2. **[ClinicAttestationSettingsTest.kt](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/security/ClinicAttestationSettingsTest.kt)**:
+   - Implemented 7 unit tests against `SecuritySettingsRepository` backed by `FakeSharedPreferences`.
+   - Verifies companion default constants and fresh repository defaults match original literals.
+   - Verifies update persistence and reload in a new repository instance.
+   - Verifies fallback to defaults when blank or whitespace strings are passed.
+   - Verifies capping names/titles at 80 characters, phone at 24 characters, phone character filtering (`'0'..'9'`, `+`, space, `-`, `(`, `)`), and fallback to default if all characters are invalid.
+   - Verifies Arabic script is accepted in Arabic fields without regression.
+   - Verifies backward compatibility for existing installs lacking the new keys.
+   - Verifies PIN security, lockout state, and existing clinic branding remain untouched by `updateClinicAttestation`.
+
+3. **[AttestationReportParityTest.kt](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/ui/report/AttestationReportParityTest.kt)**:
+   - Implemented 3 unit tests against `PatientPrintHtmlGenerator.generateHtml`.
+   - Verifies `settings = null` and default `SecuritySettingsState` produce identical HTML containing the default doctor name, specialty titles (`&amp;` escaped), and clinic phone.
+   - Verifies custom attestation values appear and default literals are absent.
+   - Verifies XSS vectors (`<script>alert(1)</script>`, `&`, and angle brackets) are properly HTML-escaped.
+
+4. **[AttestationSettingsRedesignTest.kt](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/androidTest/java/com/sherifradwan/ancnative/AttestationSettingsRedesignTest.kt)**:
+   - Implemented 3 Android UI tests following the `SecurityLockVaultRedesignTest` structure inside a 360dp narrow window host using an isolated repository.
+   - Verifies the five fields (`settingsDoctorNameEn`, `settingsDoctorSpecialtyEn`, `settingsDoctorNameAr`, `settingsDoctorSpecialtyAr`, `settingsClinicPhone`) exist with defaults and touch target heights $\ge 48\,\text{dp}$.
+   - Verifies Arabic fields draw RTL right-aligned (`TextAlign.Right`, `TextDirection.Rtl`, `ResolvedTextDirection.Rtl`) while phone draws LTR.
+   - Verifies typing new values and pressing `saveBrandingButton` updates the repository, and that `PatientTwoPageReportDialog` (`ReportAttestationCard`) renders the custom values and suppresses defaults.
+
+---
+
+### Verification Results
+
+- **Compilation**:
+  `./gradlew --offline :app:compileDebugUnitTestKotlin :app:compileDebugAndroidTestKotlin -q`
+  $\rightarrow$ **PASSED** (exit code 0).
+- **Unit Tests**:
+  `./gradlew --offline :app:testDebugUnitTest -q`
+  $\rightarrow$ **PASSED** (1,626 tests completed, 0 failures, 0 errors, 0 skipped; 10 new tests passing).
+- **Report**:
+  Detailed test documentation written to [rd40_tests_report.md](file:///Users/sherifgamalradwan/anc-emr-android-native/docs/qa/prepush/rd40_tests_report.md). No production defects were detected.

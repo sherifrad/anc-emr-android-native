@@ -497,15 +497,15 @@ class ReportDialogRedesignTest {
             .performScrollTo().assertIsDisplayed()
         compose.onNodeWithText(str(R.string.report_section_attestation), useUnmergedTree = true)
             .performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText(str(R.string.report_doctor_name_en), useUnmergedTree = true)
+        compose.onNodeWithText(SecuritySettingsState.DEFAULT_DOCTOR_NAME_EN, useUnmergedTree = true)
             .performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText(str(R.string.report_doctor_specialty_en), useUnmergedTree = true)
+        compose.onNodeWithText(SecuritySettingsState.DEFAULT_DOCTOR_SPECIALTY_EN, useUnmergedTree = true)
             .performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText(str(R.string.report_doctor_name_ar), useUnmergedTree = true)
+        compose.onNodeWithText(SecuritySettingsState.DEFAULT_DOCTOR_NAME_AR, useUnmergedTree = true)
             .performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText(str(R.string.report_doctor_specialty_ar), useUnmergedTree = true)
+        compose.onNodeWithText(SecuritySettingsState.DEFAULT_DOCTOR_SPECIALTY_AR, useUnmergedTree = true)
             .performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText("01201720808", substring = true, useUnmergedTree = true)
+        compose.onNodeWithText(SecuritySettingsState.DEFAULT_CLINIC_PHONE, substring = true, useUnmergedTree = true)
             .performScrollTo().assertIsDisplayed()
 
         // LEVEL 3 NEGATIVE INVARIANTS:
@@ -930,7 +930,7 @@ class ReportDialogRedesignTest {
 
         compose.onNodeWithText(str(R.string.report_section_scans), useUnmergedTree = true)
             .performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText(str(R.string.report_doctor_name_ar), useUnmergedTree = true)
+        compose.onNodeWithText(SecuritySettingsState.DEFAULT_DOCTOR_NAME_AR, useUnmergedTree = true)
             .performScrollTo().assertIsDisplayed()
     }
 

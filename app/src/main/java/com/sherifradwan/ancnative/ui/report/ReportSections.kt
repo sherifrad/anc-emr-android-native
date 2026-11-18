@@ -267,8 +267,28 @@ internal fun reportDeliveryRows(patient: DemoPatient, eddText: String?): List<Re
 internal const val MAX_REPORT_VISITS = 12
 internal const val MAX_REPORT_SCANS = 7
 internal const val MAX_REPORT_LABS = 10
-private const val CLINIC_PHONE = "01201720808"
 private const val ROW_STACK_FONT_SCALE = 1.3f
+
+internal data class ReportAttestationValues(
+    val doctorNameEn: String,
+    val doctorSpecialtyEn: String,
+    val doctorNameAr: String,
+    val doctorSpecialtyAr: String,
+    val clinicPhone: String,
+)
+
+internal fun SecuritySettingsState?.resolvedAttestation(): ReportAttestationValues = ReportAttestationValues(
+    doctorNameEn = this?.doctorNameEn?.takeUnless(String::isBlank)
+        ?: SecuritySettingsState.DEFAULT_DOCTOR_NAME_EN,
+    doctorSpecialtyEn = this?.doctorSpecialtyEn?.takeUnless(String::isBlank)
+        ?: SecuritySettingsState.DEFAULT_DOCTOR_SPECIALTY_EN,
+    doctorNameAr = this?.doctorNameAr?.takeUnless(String::isBlank)
+        ?: SecuritySettingsState.DEFAULT_DOCTOR_NAME_AR,
+    doctorSpecialtyAr = this?.doctorSpecialtyAr?.takeUnless(String::isBlank)
+        ?: SecuritySettingsState.DEFAULT_DOCTOR_SPECIALTY_AR,
+    clinicPhone = this?.clinicPhone?.takeUnless(String::isBlank)
+        ?: SecuritySettingsState.DEFAULT_CLINIC_PHONE,
+)
 
 internal fun reportPreviousPregnancyOutcome(pp: DemoPreviousPregnancy): Pair<String, Boolean> {
     val outcomeText = pp.outcomeText?.takeUnless(String::isBlank)
@@ -1068,6 +1088,7 @@ private fun ReportDeliveryPlanCard(
 @Composable
 private fun ReportAttestationCard(securitySettings: SecuritySettingsState?) {
     val clinicTitle = reportClinicTitle(securitySettings)
+    val attestation = securitySettings.resolvedAttestation()
     RecordSectionCard(
         title = stringResource(R.string.report_section_attestation),
         family = FieldFamilies.patient(),
@@ -1077,23 +1098,23 @@ private fun ReportAttestationCard(securitySettings: SecuritySettingsState?) {
             verticalArrangement = Arrangement.spacedBy(RecordSpacing.XS),
         ) {
             Text(
-                text = stringResource(R.string.report_doctor_name_en),
+                text = attestation.doctorNameEn,
                 style = RecordType.CardName,
                 color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
-                text = stringResource(R.string.report_doctor_specialty_en),
+                text = attestation.doctorSpecialtyEn,
                 style = RecordType.Secondary,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             PatientNameText(
-                name = stringResource(R.string.report_doctor_name_ar),
+                name = attestation.doctorNameAr,
                 style = RecordType.CardName,
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.padding(top = 2.dp),
             )
             PatientNameText(
-                name = stringResource(R.string.report_doctor_specialty_ar),
+                name = attestation.doctorSpecialtyAr,
                 style = RecordType.Secondary,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -1101,7 +1122,7 @@ private fun ReportAttestationCard(securitySettings: SecuritySettingsState?) {
                 text = stringResource(
                     R.string.report_confidential_footer_format,
                     clinicTitle,
-                    ltrIsolate(CLINIC_PHONE),
+                    ltrIsolate(attestation.clinicPhone),
                 ),
                 style = RecordType.Secondary,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,

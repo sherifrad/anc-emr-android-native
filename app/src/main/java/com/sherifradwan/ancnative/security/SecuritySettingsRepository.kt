@@ -34,7 +34,20 @@ data class SecuritySettingsState(
     val needsPinSetup: Boolean = true,
     val isLegacyPin: Boolean = false,
     val lockoutRemainingMs: Long = 0L,
-)
+    val doctorNameEn: String = DEFAULT_DOCTOR_NAME_EN,
+    val doctorNameAr: String = DEFAULT_DOCTOR_NAME_AR,
+    val doctorSpecialtyEn: String = DEFAULT_DOCTOR_SPECIALTY_EN,
+    val doctorSpecialtyAr: String = DEFAULT_DOCTOR_SPECIALTY_AR,
+    val clinicPhone: String = DEFAULT_CLINIC_PHONE,
+) {
+    companion object {
+        const val DEFAULT_DOCTOR_NAME_EN = "Dr. Sherif Radwan"
+        const val DEFAULT_DOCTOR_NAME_AR = "شريف جمال رضوان"
+        const val DEFAULT_DOCTOR_SPECIALTY_EN = "Specialist of Obstetrics, Gynecology & Laparoscopy"
+        const val DEFAULT_DOCTOR_SPECIALTY_AR = "أخصائي التوليد وأمراض النساء وتأخر الحمل"
+        const val DEFAULT_CLINIC_PHONE = "01201720808"
+    }
+}
 
 class SecuritySettingsRepository internal constructor(
     private val prefs: SharedPreferences,
@@ -62,6 +75,23 @@ class SecuritySettingsRepository internal constructor(
         val clinicSub = if (rawClinicSub.any { Character.UnicodeBlock.of(it) == Character.UnicodeBlock.ARABIC }) "Maternal-Fetal Medicine & Obstetrics" else rawClinicSub
         val themeName = prefs.getString(KEY_THEME_MODE, AppThemeMode.SYSTEM.name)
         val themeMode = runCatching { AppThemeMode.valueOf(themeName ?: AppThemeMode.SYSTEM.name) }.getOrDefault(AppThemeMode.SYSTEM)
+        val doctorNameEn = sanitizeAttestationText(
+            prefs.getString(KEY_DOCTOR_NAME_EN, null),
+            SecuritySettingsState.DEFAULT_DOCTOR_NAME_EN,
+        )
+        val doctorNameAr = sanitizeAttestationText(
+            prefs.getString(KEY_DOCTOR_NAME_AR, null),
+            SecuritySettingsState.DEFAULT_DOCTOR_NAME_AR,
+        )
+        val doctorSpecialtyEn = sanitizeAttestationText(
+            prefs.getString(KEY_DOCTOR_SPECIALTY_EN, null),
+            SecuritySettingsState.DEFAULT_DOCTOR_SPECIALTY_EN,
+        )
+        val doctorSpecialtyAr = sanitizeAttestationText(
+            prefs.getString(KEY_DOCTOR_SPECIALTY_AR, null),
+            SecuritySettingsState.DEFAULT_DOCTOR_SPECIALTY_AR,
+        )
+        val clinicPhone = sanitizeClinicPhone(prefs.getString(KEY_CLINIC_PHONE, null))
 
         return SecuritySettingsState(
             isPinConfigured = configured,
@@ -75,6 +105,11 @@ class SecuritySettingsRepository internal constructor(
             needsPinSetup = needsPinSetup,
             isLegacyPin = legacy,
             lockoutRemainingMs = remainingLockoutMs(),
+            doctorNameEn = doctorNameEn,
+            doctorNameAr = doctorNameAr,
+            doctorSpecialtyEn = doctorSpecialtyEn,
+            doctorSpecialtyAr = doctorSpecialtyAr,
+            clinicPhone = clinicPhone,
         )
     }
 
@@ -188,6 +223,54 @@ class SecuritySettingsRepository internal constructor(
         )
     }
 
+    /** Trims, caps lengths, filters phone characters, and falls back to defaults when blank. */
+    fun updateClinicAttestation(
+        nameEn: String,
+        specialtyEn: String,
+        nameAr: String,
+        specialtyAr: String,
+        phone: String,
+    ) {
+        val safeNameEn = sanitizeAttestationText(nameEn, SecuritySettingsState.DEFAULT_DOCTOR_NAME_EN)
+        val safeSpecialtyEn = sanitizeAttestationText(specialtyEn, SecuritySettingsState.DEFAULT_DOCTOR_SPECIALTY_EN)
+        val safeNameAr = sanitizeAttestationText(nameAr, SecuritySettingsState.DEFAULT_DOCTOR_NAME_AR)
+        val safeSpecialtyAr = sanitizeAttestationText(specialtyAr, SecuritySettingsState.DEFAULT_DOCTOR_SPECIALTY_AR)
+        val safePhone = sanitizeClinicPhone(phone)
+        prefs.edit()
+            .putString(KEY_DOCTOR_NAME_EN, safeNameEn)
+            .putString(KEY_DOCTOR_SPECIALTY_EN, safeSpecialtyEn)
+            .putString(KEY_DOCTOR_NAME_AR, safeNameAr)
+            .putString(KEY_DOCTOR_SPECIALTY_AR, safeSpecialtyAr)
+            .putString(KEY_CLINIC_PHONE, safePhone)
+            .apply()
+        _settings.value = _settings.value.copy(
+            doctorNameEn = safeNameEn,
+            doctorSpecialtyEn = safeSpecialtyEn,
+            doctorNameAr = safeNameAr,
+            doctorSpecialtyAr = safeSpecialtyAr,
+            clinicPhone = safePhone,
+        )
+    }
+
+    private fun sanitizeAttestationText(raw: String?, default: String): String =
+        (raw ?: "").trim().take(MAX_ATTESTATION_TEXT_LENGTH).trim().ifEmpty { default }
+
+    private fun sanitizeClinicPhone(raw: String?): String =
+        (raw ?: "")
+            .map { ch ->
+                when (ch) {
+                    in '\u0660'..'\u0669' -> '0' + (ch - '\u0660')
+                    in '\u06F0'..'\u06F9' -> '0' + (ch - '\u06F0')
+                    else -> ch
+                }
+            }
+            .joinToString("")
+            .filter { it in '0'..'9' || it == '+' || it == ' ' || it == '-' || it == '(' || it == ')' }
+            .trim()
+            .take(MAX_CLINIC_PHONE_LENGTH)
+            .trim()
+            .ifEmpty { SecuritySettingsState.DEFAULT_CLINIC_PHONE }
+
     companion object {
         private const val PREFS_NAME = "anc_security_preferences"
         private const val KEY_PIN_HASH = "key_pin_hash"
@@ -203,6 +286,13 @@ class SecuritySettingsRepository internal constructor(
         private const val KEY_CLINIC_NAME = "key_clinic_name"
         private const val KEY_CLINIC_SUBTITLE = "key_clinic_subtitle"
         private const val KEY_THEME_MODE = "key_theme_mode"
+        private const val KEY_DOCTOR_NAME_EN = "key_doctor_name_en"
+        private const val KEY_DOCTOR_SPECIALTY_EN = "key_doctor_specialty_en"
+        private const val KEY_DOCTOR_NAME_AR = "key_doctor_name_ar"
+        private const val KEY_DOCTOR_SPECIALTY_AR = "key_doctor_specialty_ar"
+        private const val KEY_CLINIC_PHONE = "key_clinic_phone"
+        private const val MAX_ATTESTATION_TEXT_LENGTH = 80
+        private const val MAX_CLINIC_PHONE_LENGTH = 24
 
         @Volatile
         private var instance: SecuritySettingsRepository? = null

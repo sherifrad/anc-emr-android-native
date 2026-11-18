@@ -62,11 +62,13 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -86,6 +88,7 @@ import com.sherifradwan.ancnative.ui.components.RecordFilterChip
 import com.sherifradwan.ancnative.ui.components.RecordSectionCard
 import com.sherifradwan.ancnative.ui.components.RecordShapes
 import com.sherifradwan.ancnative.ui.components.RecordType
+import com.sherifradwan.ancnative.ui.components.isRtlText
 import com.sherifradwan.ancnative.ui.patienthub.components.SheetCancelSaveRow
 import java.io.File
 import java.io.FileOutputStream
@@ -111,6 +114,11 @@ fun SecuritySettingsDialog(
     var settingsState by remember { mutableStateOf(securityRepo.settings.value) }
     var editedClinicName by remember(settingsState.clinicName) { mutableStateOf(settingsState.clinicName) }
     var editedClinicSubtitle by remember(settingsState.clinicSubtitle) { mutableStateOf(settingsState.clinicSubtitle) }
+    var editedDoctorNameEn by remember(settingsState.doctorNameEn) { mutableStateOf(settingsState.doctorNameEn) }
+    var editedDoctorSpecialtyEn by remember(settingsState.doctorSpecialtyEn) { mutableStateOf(settingsState.doctorSpecialtyEn) }
+    var editedDoctorNameAr by remember(settingsState.doctorNameAr) { mutableStateOf(settingsState.doctorNameAr) }
+    var editedDoctorSpecialtyAr by remember(settingsState.doctorSpecialtyAr) { mutableStateOf(settingsState.doctorSpecialtyAr) }
+    var editedClinicPhone by remember(settingsState.clinicPhone) { mutableStateOf(settingsState.clinicPhone) }
     var brandingSavedMessage by remember { mutableStateOf<String?>(null) }
 
     var showChangePinDialog by remember { mutableStateOf(false) }
@@ -385,6 +393,45 @@ fun SecuritySettingsDialog(
                                     tag = "clinicSubtitleField",
                                 )
 
+                                SecurityLabeledField(
+                                    value = editedDoctorNameEn,
+                                    onValueChange = { editedDoctorNameEn = it },
+                                    label = stringResource(R.string.security_doctor_name_en_label),
+                                    tag = "settingsDoctorNameEn",
+                                )
+
+                                SecurityLabeledField(
+                                    value = editedDoctorSpecialtyEn,
+                                    onValueChange = { editedDoctorSpecialtyEn = it },
+                                    label = stringResource(R.string.security_doctor_specialty_en_label),
+                                    tag = "settingsDoctorSpecialtyEn",
+                                )
+
+                                SecurityLabeledField(
+                                    value = editedDoctorNameAr,
+                                    onValueChange = { editedDoctorNameAr = it },
+                                    label = stringResource(R.string.security_doctor_name_ar_label),
+                                    textStyle = rtlAwareTextStyle(editedDoctorNameAr),
+                                    tag = "settingsDoctorNameAr",
+                                )
+
+                                SecurityLabeledField(
+                                    value = editedDoctorSpecialtyAr,
+                                    onValueChange = { editedDoctorSpecialtyAr = it },
+                                    label = stringResource(R.string.security_doctor_specialty_ar_label),
+                                    textStyle = rtlAwareTextStyle(editedDoctorSpecialtyAr),
+                                    tag = "settingsDoctorSpecialtyAr",
+                                )
+
+                                SecurityLabeledField(
+                                    value = editedClinicPhone,
+                                    onValueChange = { editedClinicPhone = it },
+                                    label = stringResource(R.string.security_clinic_phone_label),
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                                    textStyle = RecordType.FieldValue.copy(textDirection = TextDirection.Ltr),
+                                    tag = "settingsClinicPhone",
+                                )
+
                                 if (brandingSavedMessage != null) {
                                     Text(
                                         text = brandingSavedMessage ?: "",
@@ -400,7 +447,19 @@ fun SecuritySettingsDialog(
                                 Button(
                                     onClick = {
                                         securityRepo.updateClinicBranding(editedClinicName, editedClinicSubtitle)
+                                        securityRepo.updateClinicAttestation(
+                                            nameEn = editedDoctorNameEn,
+                                            specialtyEn = editedDoctorSpecialtyEn,
+                                            nameAr = editedDoctorNameAr,
+                                            specialtyAr = editedDoctorSpecialtyAr,
+                                            phone = editedClinicPhone,
+                                        )
                                         settingsState = securityRepo.settings.value
+                                        editedDoctorNameEn = settingsState.doctorNameEn
+                                        editedDoctorSpecialtyEn = settingsState.doctorSpecialtyEn
+                                        editedDoctorNameAr = settingsState.doctorNameAr
+                                        editedDoctorSpecialtyAr = settingsState.doctorSpecialtyAr
+                                        editedClinicPhone = settingsState.clinicPhone
                                         brandingSavedMessage = brandingSavedNotice
                                     },
                                     shape = RecordShapes.Small,
@@ -917,6 +976,14 @@ private fun SecurityFormDialog(
     }
 }
 
+private fun rtlAwareTextStyle(text: String): TextStyle {
+    val rtl = text.isBlank() || isRtlText(text)
+    return RecordType.FieldValue.copy(
+        textDirection = if (rtl) TextDirection.Rtl else TextDirection.Ltr,
+        textAlign = if (rtl) TextAlign.Right else TextAlign.Left,
+    )
+}
+
 @Composable
 private fun SecurityLabeledField(
     value: String,
@@ -927,6 +994,7 @@ private fun SecurityLabeledField(
     isError: Boolean = false,
     visualTransformation: VisualTransformation = VisualTransformation.None,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    textStyle: TextStyle = RecordType.FieldValue,
 ) {
     Column(
         modifier = modifier.fillMaxWidth(),
@@ -951,7 +1019,7 @@ private fun SecurityLabeledField(
             keyboardOptions = keyboardOptions,
             singleLine = true,
             shape = RecordShapes.Small,
-            textStyle = RecordType.FieldValue,
+            textStyle = textStyle,
             colors = editorFieldColors(),
             modifier = Modifier
                 .fillMaxWidth()
