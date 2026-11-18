@@ -1799,7 +1799,7 @@
    "status": "active",
    "title": "Export and print v2 (print crash fix, new layout)",
    "ref": "",
-   "detail": "Step 1 (print crash fix) built: Activity unwrap, WebView kept and released, safe job name, unavailable message; 8 unit tests, independent review done and its 2 findings fixed. Not yet run on a real print (needs phone or emulator). Next: three layout mocks for your pick, then preview and share. Plan: docs/designs/reviews/export_print_v2/BRIEF.md",
+   "detail": "Slices 1 and 2 built: report data layer and the print HTML in the approved B3 layout (scan outcome column, other scans, grouped labs, compact medications, pictures page when pictures are selected). All unit tests pass; frontier and test reviews done, findings fixed. Open: visit notes and lab notes no longer print (owner to decide), native report (slice 3), picture selection before print (slice 4), share (slice 5), real print on phone. Plan: docs/designs/reviews/export_print_v2/BUILD_PLAN.md",
    "owner": "",
    "updated": "2026-11-18"
   },
@@ -1915,6 +1915,10 @@
   }
  },
  "log": [
+  {
+   "date": "2026-11-18",
+   "text": "Print v2 slices 1 and 2 done and reviewed (local, not pushed)."
+  },
   {
    "date": "2026-11-18",
    "text": "Print v2 slice 1 done: pure report data layer (scan outcome, unlinked scans, lab comparison, picture figures), 25 unit tests, independent review fixed (local, not pushed)."

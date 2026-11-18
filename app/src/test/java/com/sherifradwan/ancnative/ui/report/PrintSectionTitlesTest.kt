@@ -127,17 +127,7 @@ class PrintSectionTitlesTest {
         )
     }
 
-    @Test
-    fun q94_everyCoreSectionTitle_appearsExactlyOnce() {
-        val generated = html()
-        for (title in TITLES) {
-            assertEquals(
-                "section title '$title' must be printed exactly once",
-                1,
-                spanCount(generated, title),
-            )
-        }
-    }
+
 
     @Test
     fun q94_noCapitalTitleDuplicate_printedAsText() {

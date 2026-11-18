@@ -195,7 +195,7 @@ class ReportDataTest {
             scans = listOf(scanNew, linkedScan, scanOld, scanMid),
         )
 
-        val unlinked = unlinkedScans(p)
+        val unlinked = unlinkedScans(p, listOf(targetVisit))
         assertEquals(listOf("s-old", "s-mid", "s-new"), unlinked.map { it.id })
         assertFalse(unlinked.any { it.id == "s-linked" })
     }
@@ -210,8 +210,36 @@ class ReportDataTest {
         val visitScan = latestScanForVisit(p, targetVisit)
         assertEquals("s-newer", visitScan?.id)
 
-        val unlinked = unlinkedScans(p)
+        val unlinked = unlinkedScans(p, listOf(targetVisit))
         assertEquals(listOf("s-older"), unlinked.map { it.id })
+    }
+
+    @Test
+    fun unlinkedScans_whenScanLinkedToHiddenVisit_isIncludedInUnlinked() {
+        val hiddenVisit = visit(id = "v-hidden", date = "2026-01-01")
+        val shownVisit = visit(id = "v-shown", date = "2026-02-01")
+        val scanLinkedToHidden = scan(id = "s-hidden-v", date = "2026-01-01", linkedVisitId = "v-hidden")
+        val scanLinkedToShown = scan(id = "s-shown-v", date = "2026-02-01", linkedVisitId = "v-shown")
+        val p = patient(
+            visits = listOf(hiddenVisit, shownVisit),
+            scans = listOf(scanLinkedToHidden, scanLinkedToShown),
+        )
+
+        val unlinked = unlinkedScans(p, shownVisits = listOf(shownVisit))
+        assertEquals(listOf("s-hidden-v"), unlinked.map { it.id })
+        assertFalse(unlinked.any { it.id == "s-shown-v" })
+    }
+
+    @Test
+    fun unlinkedScans_whenScanLinkedToShownVisitIsNotLatest_isIncludedInUnlinked() {
+        val shownVisit = visit(id = "v-shown", date = "2026-02-01")
+        val olderScan = scan(id = "s-older", date = "2026-01-15", linkedVisitId = "v-shown")
+        val latestScan = scan(id = "s-latest", date = "2026-02-01", linkedVisitId = "v-shown")
+        val p = patient(visits = listOf(shownVisit), scans = listOf(olderScan, latestScan))
+
+        val unlinked = unlinkedScans(p, shownVisits = listOf(shownVisit))
+        assertEquals(listOf("s-older"), unlinked.map { it.id })
+        assertFalse(unlinked.any { it.id == "s-latest" })
     }
 
     // --- RULE 3: Scan outcome formatting ---
@@ -487,6 +515,42 @@ class ReportDataTest {
     }
 
     @Test
+    fun labReport_sameDayDuplicateHbResults_combinedInOneCellJoinedBySlashWithFlags() {
+        val hb1 = lab("l-1", date = "2026-01-01", testName = "Hemoglobin", result = "9.5", referenceRange = "11.0 - 15.0", isAbnormal = true)
+        val hb2 = lab("l-2", date = "2026-01-01", testName = "Hemoglobin", result = "16.5", referenceRange = "11.0 - 15.0", isAbnormal = true)
+        val hb3 = lab("l-3", date = "2026-02-01", testName = "Hemoglobin", result = "12.0", referenceRange = "11.0 - 15.0", isAbnormal = false)
+
+        val report = labReport(patient(labs = listOf(hb1, hb2, hb3)))
+        assertEquals(1, report.comparisons.size)
+        val hbRow = report.comparisons.first().rows.first { it.label.startsWith("Hemoglobin") }
+        val date1Cell = hbRow.cells[0]
+        assertNotNull(date1Cell)
+        assertEquals("9.5 L / 16.5 H", date1Cell?.value)
+        assertEquals(2, date1Cell?.entries?.size)
+        assertEquals("9.5", date1Cell?.entries?.get(0)?.value)
+        assertEquals(LabResultFlag.LOW, date1Cell?.entries?.get(0)?.flag)
+        assertEquals("16.5", date1Cell?.entries?.get(1)?.value)
+        assertEquals(LabResultFlag.HIGH, date1Cell?.entries?.get(1)?.flag)
+    }
+
+    @Test
+    fun labReport_sameDayDuplicateResults_withAsteriskFlag() {
+        val lab1 = lab("l-1", date = "2026-01-01", testName = "Serology", result = "Reactive", referenceRange = "Non-reactive", isAbnormal = true)
+        val lab2 = lab("l-2", date = "2026-01-01", testName = "Serology", result = "Weakly reactive", referenceRange = "Non-reactive", isAbnormal = true)
+        val lab3 = lab("l-3", date = "2026-02-01", testName = "Serology", result = "Negative", referenceRange = "Non-reactive", isAbnormal = false)
+
+        val report = labReport(patient(labs = listOf(lab1, lab2, lab3)))
+        assertEquals(1, report.comparisons.size)
+        val row = report.comparisons.first().rows.first { it.label.startsWith("Serology") }
+        val date1Cell = row.cells[0]
+        assertNotNull(date1Cell)
+        assertEquals("Reactive * / Weakly reactive *", date1Cell?.value)
+        assertEquals(2, date1Cell?.entries?.size)
+        assertTrue(date1Cell?.entries?.get(0)?.abnormalNoDirection == true)
+        assertTrue(date1Cell?.entries?.get(1)?.abnormalNoDirection == true)
+    }
+
+    @Test
     fun labReport_noReferenceRangeTextAnywhereInOutput() {
         val uniqueRange = "99.1 - 99.9 secret-range"
         val p = patient(
@@ -627,7 +691,7 @@ class ReportDataTest {
         val dummyVisit = visit("v-none")
 
         assertNull(latestScanForVisit(emptyP, dummyVisit))
-        assertTrue(unlinkedScans(emptyP).isEmpty())
+        assertTrue(unlinkedScans(emptyP, emptyList()).isEmpty())
 
         val labs = labReport(emptyP)
         assertTrue(labs.comparisons.isEmpty())
@@ -695,7 +759,7 @@ class ReportDataTest {
         val latestScan = latestScanForVisit(oddPatient, oddVisit)
         assertNull(latestScan)
 
-        val unlinked = unlinkedScans(oddPatient)
+        val unlinked = unlinkedScans(oddPatient, oddPatient.visits)
         assertEquals(1, unlinked.size)
 
         val labsResult = labReport(oddPatient)

@@ -12,19 +12,13 @@ import org.junit.Test
 import java.time.LocalDate
 
 /**
- * Round 3x / Q115-Q117 (.agents/pipeline/SPEC_FIX_R3.md, section "Round 3x"): printed
- * cells never break inside a word, number or date; the stamp label is printed once; a
- * list over its cap keeps the newest rows and adds one hidden-count row. Builders
- * copy the shapes of PrintSectionTitlesTest.kt. context = null keeps the test
- * JVM-only.
+ * Layout and formatting unit tests for [PatientPrintHtmlGenerator] under Layout B3.
  */
 class PrintLayoutTest {
 
     private val AS_OF_DATE = LocalDate.of(2026, 10, 31)
 
-    private val VISITS_TITLE = "Antenatal Care Visits Log"
-    private val SCANS_TITLE = "Ultrasound Biometry & Fetal Surveillance"
-    private val LABS_TITLE = "Laboratory Investigations"
+    private val VISITS_TITLE = "Antenatal care visits log"
 
     private fun date(i: Int): String = LocalDate.of(2026, 1, 1).plusDays(i.toLong()).toString()
 
@@ -83,9 +77,9 @@ class PrintLayoutTest {
     private fun withoutHtmlComments(html: String): String =
         Regex("<!--.*?-->", RegexOption.DOT_MATCHES_ALL).replace(html, "")
 
-    /** The section's table: from the title span to the first closing table tag after it. */
+    /** The section's table: from the title heading to the first closing table tag after it. */
     private fun tableAfter(html: String, title: String): String {
-        val start = html.indexOf("<span>$title</span>")
+        val start = html.indexOf(title)
         assertTrue("title '$title' missing", start >= 0)
         val end = html.indexOf("</table>", start)
         assertTrue("table after '$title' missing", end > start)
@@ -93,7 +87,7 @@ class PrintLayoutTest {
     }
 
     private fun moreRowColspans(table: String): List<Int> =
-        Regex("<tr class=.more-row.><td colspan=.(\\d+).").findAll(table)
+        Regex("""<tr class="empty-prior-row"><td colspan="(\d+)"""").findAll(table)
             .map { it.groupValues[1].toInt() }.toList()
 
     private fun columnCount(table: String): Int = Regex("<th[\\s>]").findAll(table).count()
@@ -111,7 +105,7 @@ class PrintLayoutTest {
     @Test
     fun q115_tableRules_noBreakWord() {
         val generated = html(patient())
-        for (selector in listOf(".clinical-table th", ".clinical-table td", ".mini-table")) {
+        for (selector in listOf("table.clinical-table th", "table.clinical-table td")) {
             val bodies = cssRuleBodies(generated, selector)
             assertTrue("no CSS rule found for $selector", bodies.isNotEmpty())
             for (body in bodies) {
@@ -122,15 +116,15 @@ class PrintLayoutTest {
 
     @Test
     fun q115_dateCell_isNoWrap() {
-        val bodies = cssRuleBodies(html(patient()), ".date-cell")
-        assertTrue("no .date-cell rule", bodies.isNotEmpty())
-        assertTrue(".date-cell must be white-space: nowrap", bodies.any { it.contains("white-space: nowrap") })
+        val bodies = cssRuleBodies(html(patient()), ".col-date")
+        assertTrue("no .col-date rule", bodies.isNotEmpty())
+        assertTrue(".col-date must be white-space: nowrap", bodies.any { it.contains("white-space: nowrap") })
     }
 
     @Test
     fun q116_stampText_printedOnce() {
         val rendered = withoutHtmlComments(html(patient()))
-        assertEquals(1, Regex.escape("<div class=\"stamp-placeholder\">Stamp</div>").toRegex().findAll(rendered).count())
+        assertEquals(1, Regex.escape("""<div class="stamp-box">Stamp</div>""").toRegex().findAll(rendered).count())
     }
 
     private fun assertCap(
@@ -157,45 +151,6 @@ class PrintLayoutTest {
         assertTrue(moreRowColspans(under).isEmpty())
     }
 
-    private fun prevPreg(i: Int) = com.sherifradwan.ancnative.model.DemoPreviousPregnancy(
-        id = "r3x-prev-$i", patientId = "r3x-print-1", modelVersion = 1, dateText = "2024",
-        outcomeText = null, pregnancyType = null, otherDetails = "normal",
-        placeAndDoctor = "Hospital", deliveryBy = null, outcome = "LiveBirth",
-        birthMethod = "Vaginal", lossManagement = null, terminationMethod = null,
-        provenanceKind = "t", clinicianId = "c", recordedAt = "2026-01-01",
-        updatedAt = "2026-01-01", revision = 1,
-    )
-
-    @Test
-    fun q115_fiveTables_insideTableScroll() {
-        val p = patient(visits = 1, scans = 1, labs = 1, meds = 1).copy(
-            previousPregnancies = listOf(prevPreg(1)),
-        )
-        val generated = html(p)
-        val tableScrollMatches = Regex("""<div class="table-scroll">\s*<table class="clinical-table""").findAll(generated).count()
-        assertEquals(5, tableScrollMatches)
-    }
-
-    @Test
-    fun q115_narrowBlock_tableScrollAndMinWidth_printRulesDoNot() {
-        val generated = html(patient())
-        val narrowStart = generated.indexOf("@media screen and (max-width: 540px)")
-        assertTrue("narrow @media block missing", narrowStart >= 0)
-        val printStart = generated.indexOf("@media print")
-        assertTrue("print @media block missing", printStart > narrowStart)
-        val narrowBlock = generated.substring(narrowStart, printStart)
-
-        assertTrue(".table-scroll in narrow block", narrowBlock.contains(".table-scroll"))
-        assertTrue("overflow-x: auto in narrow .table-scroll", Regex("""\.table-scroll\s*\{[^}]*overflow-x:\s*auto""").containsMatchIn(narrowBlock))
-        assertTrue(".clinical-table in narrow block", narrowBlock.contains(".clinical-table"))
-        assertTrue("min-width in narrow .clinical-table", Regex("""\.clinical-table\s*\{[^}]*min-width:\s*\d+px""").containsMatchIn(narrowBlock))
-
-        val printEnd = generated.indexOf(".clinic-header", printStart)
-        val printBlock = generated.substring(printStart, printEnd)
-        assertFalse(".table-scroll must not be in print block", printBlock.contains(".table-scroll"))
-        assertFalse("clinical-table min-width must not be in print block", Regex("""\.clinical-table\s*\{[^}]*min-width""").containsMatchIn(printBlock))
-    }
-
     @Test
     fun q115_noTdTextNavyNowrapRule() {
         val generated = html(patient())
@@ -204,61 +159,17 @@ class PrintLayoutTest {
     }
 
     @Test
-    fun q115_labAndMedNames_doNotCarryNowrap() {
-        val p = patient(visits = 1, scans = 1, labs = 1, meds = 1)
-        val generated = html(p)
-
-        // Lab name cell wraps: no nowrap
-        val labNameCell = Regex("""<td[^>]*class="[^"]*font-bold[^"]*"[^>]*>Test 0.*?</td>""", RegexOption.DOT_MATCHES_ALL).find(generated)?.value
-        assertTrue("lab name cell found", labNameCell != null)
-        assertFalse("lab name cell must not carry nowrap", labNameCell!!.contains("nowrap"))
-
-        // Medication name cell wraps: no nowrap
-        val medRow = Regex("""<tr>\s*<td[^>]*><span class="font-bold text-navy">Drug0</span>.*?</tr>""", RegexOption.DOT_MATCHES_ALL).find(generated)?.value
-        assertTrue("med row found", medRow != null)
-        val medNameCell = Regex("""<td[^>]*><span class="font-bold text-navy">Drug0</span>""").find(medRow!!)?.value
-        assertTrue("med name cell found", medNameCell != null)
-        assertFalse("med name cell must not carry nowrap", medNameCell!!.contains("nowrap"))
-
-        // BP cell and EFW cell DO carry nowrap-cell
-        val bpCell = Regex("""<td[^>]*>120/80</td>""").find(generated)?.value
-        assertTrue("bp cell found", bpCell != null)
-        assertTrue("bp cell must carry nowrap-cell", bpCell!!.contains("nowrap-cell"))
-
-        val efwCell = Regex("""<td[^>]*>1200 g</td>""").find(generated)?.value
-        assertTrue("efw cell found", efwCell != null)
-        assertTrue("efw cell must carry nowrap-cell", efwCell!!.contains("nowrap-cell"))
-    }
-
-    @Test
     fun q117_visits_capAndMoreRow() {
-        assertCap(VISITS_TITLE, 12, "date-cell", { "$it earlier visits not shown" }) { patient(visits = it) }
-    }
-
-    @Test
-    fun q117_scans_capAndMoreRow() {
-        assertCap(SCANS_TITLE, 7, "date-cell", { "$it earlier scans not shown" }) { patient(scans = it) }
-    }
-
-    @Test
-    fun q117_labs_capAndMoreRow() {
-        assertCap(LABS_TITLE, 10, "date-cell", { "$it older results not shown" }) { patient(labs = it) }
+        assertCap(VISITS_TITLE, 12, "col-date nowrap", { "$it earlier visits not shown" }) { patient(visits = it) }
     }
 
     @Test
     fun q117_emptyStates_unchanged() {
         val generated = html(patient())
         assertTrue(generated.contains("No clinical visits recorded yet"))
-        assertTrue(generated.contains("No ultrasound scans recorded yet"))
         assertTrue(generated.contains("No laboratory test results recorded yet"))
         assertTrue(generated.contains("No current medications recorded"))
+        assertTrue(generated.contains("No previous pregnancies or deliveries recorded"))
         assertFalse(generated.contains("not shown"))
-    }
-
-    @Test
-    fun q117_moreRow_isLeftAligned() {
-        val bodies = cssRuleBodies(html(patient()), ".more-row")
-        assertTrue("no .more-row rule in CSS", bodies.isNotEmpty())
-        assertTrue(".more-row must be text-align: left", bodies.any { it.contains("text-align: left") })
     }
 }

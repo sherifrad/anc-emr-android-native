@@ -131,17 +131,6 @@ class ExportFixRoundTwoTest {
         )
 
     @Test
-    fun oracleA_printPagingMarkersAndRules() {
-        val h = html(basePatient())
-        assertFalse(h.contains("Page 1"))
-        assertFalse(h.contains("Page 2"))
-        assertFalse(h.contains("Page:"))
-        assertTrue(h.contains("@page"))
-        assertTrue(h.contains("break-inside: avoid"))
-        assertTrue(h.contains("CONTINUED"))
-    }
-
-    @Test
     fun oracleB_weightFormattingInVisitCells() {
         val p = basePatient(
             visits = listOf(
@@ -151,10 +140,10 @@ class ExportFixRoundTwoTest {
             ),
         )
         val h = html(p)
-        assertTrue(h.contains("""<td class="text-center nowrap-cell">63 kg</td>"""))
+        assertTrue(h.contains("""<span class="col-num nowrap">63 kg</span>"""))
         assertFalse(h.contains("kg kg"))
-        assertTrue(h.contains("""<td class="text-center nowrap-cell">68.5 kg</td>"""))
-        assertTrue(h.contains("""<td class="text-center nowrap-cell">-</td>"""))
+        assertTrue(h.contains("""<span class="col-num nowrap">68.5 kg</span>"""))
+        assertTrue(h.contains("""<span class="col-num nowrap">-</span>"""))
     }
 
     @Test
@@ -220,8 +209,8 @@ class ExportFixRoundTwoTest {
 
         val hFull = html(fullPlan)
         val sFull = share(fullPlan)
-        assertTrue(hFull.contains("Hospital:"))
-        assertTrue(hFull.contains("Postpartum:"))
+        assertTrue(hFull.contains("""<span class="data-key">Hospital</span>"""))
+        assertTrue(hFull.contains("""<span class="data-key">Postpartum</span>"""))
         assertFalse(hFull.contains("5000"))
         assertTrue(sFull.contains("Hospital: City Hospital"))
         assertTrue(sFull.contains("Postpartum: Review in 6 weeks"))
@@ -300,11 +289,12 @@ class ExportFixRoundTwoTest {
         }
         val h = html(basePatient(visits = visits))
         for (n in 4..15) {
-            assertTrue("visit $n", h.contains("""<td class="text-center font-bold nowrap-cell">$n</td>"""))
+            assertTrue("visit $n", h.contains("<strong>#$n</strong>"))
         }
-        assertFalse(h.contains("""<td class="text-center font-bold nowrap-cell">1</td>"""))
-        assertFalse(h.contains("<td class=\"date-cell\">2</td>"))
-        assertFalse(h.contains("<td class=\"date-cell\">3</td>"))
+        assertFalse(h.contains("<strong>#1</strong>"))
+        assertFalse(h.contains("<strong>#2</strong>"))
+        assertFalse(h.contains("<strong>#3</strong>"))
+        assertTrue(h.contains("3 earlier visits not shown"))
     }
 
     @Test
@@ -316,8 +306,8 @@ class ExportFixRoundTwoTest {
             ),
         )
         val hBoth = html(withBoth)
-        val currentTitle = hBoth.indexOf("Current Medications")
-        val stoppedTitle = hBoth.indexOf("Stopped Medications")
+        val currentTitle = hBoth.indexOf("Current medications")
+        val stoppedTitle = hBoth.indexOf("Stopped medications")
         val folic = hBoth.indexOf("Folic Acid")
         val old = hBoth.indexOf("Old Drug")
         assertTrue(currentTitle >= 0)
@@ -327,8 +317,8 @@ class ExportFixRoundTwoTest {
 
         val onlyActive = basePatient(meds = listOf(med("m3", "Iron", "Active")))
         val hActive = html(onlyActive)
-        assertTrue(hActive.contains("Current Medications"))
-        assertFalse(hActive.contains("Stopped Medications"))
+        assertTrue(hActive.contains("Current medications"))
+        assertFalse(hActive.contains("Stopped medications"))
     }
 
     @Test
@@ -339,21 +329,21 @@ class ExportFixRoundTwoTest {
             clinicalAttention = "Monitor BP",
         )
         val h = html(p)
-        assertTrue(h.contains("Date of birth: 01/01/1995"))
+        assertTrue(h.contains("""Date of birth: <strong class="col-date">01/01/1995</strong>"""))
         assertTrue(h.contains("12 Nile Street"))
-        assertTrue(h.contains("Monitor BP"))
+        assertTrue(h.contains("""<span class="k">Clinical attention</span><span class="v">Monitor BP</span>"""))
 
         val blank = basePatient(dateOfBirth = null, addressText = null, clinicalAttention = null)
         val hBlank = html(blank)
         assertFalse(hBlank.contains("Date of birth:"))
         assertFalse(hBlank.contains("Address:"))
-        assertFalse(hBlank.contains("Clinical attention:"))
+        assertFalse(hBlank.contains("Clinical attention"))
     }
 
     @Test
     fun familyHistoryNotRecordedWhenBlank() {
         val h = html(basePatient(familyHistory = null))
-        assertTrue(h.contains("Family History"))
+        assertTrue(h.contains("Family history"))
         assertTrue(h.contains("Not recorded"))
     }
 
@@ -383,8 +373,8 @@ class ExportFixRoundTwoTest {
             ),
         )
         val h = html(delivered)
-        assertTrue(h.contains("Hospital:"))
-        assertTrue(h.contains("Postpartum:"))
+        assertTrue(h.contains("""<span class="data-key">Hospital</span>"""))
+        assertTrue(h.contains("""<span class="data-key">Postpartum</span>"""))
         assertFalse(h.contains("5000"))
 
         val s = share(delivered)
@@ -437,9 +427,9 @@ class ExportFixRoundTwoTest {
     @Test
     fun p6_blankIdentityFieldsPrintPlaceholders() {
         val h = html(basePatient(bloodGroupText = ""))
-        assertTrue(h.contains("Phone: Unspecified"))
+        assertTrue(h.contains("Phone: <strong>Unspecified</strong>"))
         val bloodGroupCell = h
-            .substringAfter("<span class=\"data-label\">Blood Group</span>")
+            .substringAfter("<span class=\"vital-label\">Blood group</span>")
             .substringBefore("</div>")
         assertEquals("-", bloodGroupCell.replace(Regex("<[^>]*>"), "").trim())
     }
@@ -449,7 +439,7 @@ class ExportFixRoundTwoTest {
         val h = html(basePatient())
         val printCss = h.substringAfter("@media print")
         assertTrue(printCss.contains("table-header-group"))
-        assertTrue(printCss.contains("@page { size: A4; margin: 8mm 0 8mm 0; }"))
+        assertTrue(printCss.contains("@page { size: A4 portrait; margin: 10mm 12mm; }"))
         assertFalse(printCss.contains("tr, .section-box"))
     }
 }

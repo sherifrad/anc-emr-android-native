@@ -56,7 +56,7 @@ class AttestationReportParityTest {
         )
         assertTrue("Contains Arabic doctor name", htmlDefault.contains("شريف جمال رضوان"))
         assertTrue("Contains Arabic specialty", htmlDefault.contains("أخصائي التوليد وأمراض النساء وتأخر الحمل"))
-        assertTrue("Contains clinic phone in footer", htmlDefault.contains("Tel 01201720808"))
+        assertTrue("Contains clinic phone in footer", htmlDefault.contains("Tel <span class=\"col-date\">01201720808</span>"))
     }
 
     @Test
@@ -82,7 +82,7 @@ class AttestationReportParityTest {
         assertTrue("Contains custom English specialty", htmlCustom.contains("Consultant Perinatologist"))
         assertTrue("Contains custom Arabic name", htmlCustom.contains("د. ألكسندريا سميث"))
         assertTrue("Contains custom Arabic specialty", htmlCustom.contains("استشارية طب الأجنة"))
-        assertTrue("Contains custom clinic phone", htmlCustom.contains("Tel 01009998888"))
+        assertTrue("Contains custom clinic phone", htmlCustom.contains("Tel <span class=\"col-date\">01009998888</span>"))
 
         // Default attestation values must NOT appear
         assertFalse("Default English name excluded", htmlCustom.contains("Dr. Sherif Radwan"))

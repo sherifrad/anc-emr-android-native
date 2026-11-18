@@ -6,32 +6,30 @@ import android.graphics.BitmapFactory
 import android.util.Base64
 import com.sherifradwan.ancnative.R
 import com.sherifradwan.ancnative.model.BpLevel
-import com.sherifradwan.ancnative.model.DemoPatient
-import com.sherifradwan.ancnative.model.GestationalAgeEngine
-import com.sherifradwan.ancnative.model.PreviousPregnancyFormRules
 import com.sherifradwan.ancnative.model.DemoMedicationRecord
+import com.sherifradwan.ancnative.model.DemoPatient
+import com.sherifradwan.ancnative.model.DemoUltrasoundScan
+import com.sherifradwan.ancnative.model.LabResultFlag
 import com.sherifradwan.ancnative.model.bpLevel
 import com.sherifradwan.ancnative.model.datingDiscordanceLine
 import com.sherifradwan.ancnative.model.datingSummaryOf
 import com.sherifradwan.ancnative.model.datingTextRows
-import com.sherifradwan.ancnative.model.formatDmy
-import com.sherifradwan.ancnative.model.isEarlyLoss
-import com.sherifradwan.ancnative.model.isStillbirth
-import com.sherifradwan.ancnative.model.parseIsoDateOrNull
 import com.sherifradwan.ancnative.model.deliveryOutcomeLine
+import com.sherifradwan.ancnative.model.formatDmy
+import com.sherifradwan.ancnative.model.parseIsoDateOrNull
 import com.sherifradwan.ancnative.model.previousDeliverySummary
 import com.sherifradwan.ancnative.security.SecuritySettingsState
 import com.sherifradwan.ancnative.ui.AllergyState
 import com.sherifradwan.ancnative.ui.classifyAllergy
+import com.sherifradwan.ancnative.ui.formatAgeYears
 import com.sherifradwan.ancnative.ui.formatWeightKg
+import com.sherifradwan.ancnative.ui.isRhNegative
 import java.io.ByteArrayOutputStream
 import java.time.LocalDate
 
 object PatientPrintHtmlGenerator {
 
     private const val MAX_PRINT_VISITS = 12
-    private const val MAX_PRINT_SCANS = 7
-    private const val MAX_PRINT_LABS = 10
     private const val LOGO_PRINT_HEIGHT_PX = 360
 
     private const val BP_ALERT_RAISED = "Raised BP - recheck"
@@ -39,7 +37,7 @@ object PatientPrintHtmlGenerator {
 
     private fun hiddenRowsHtml(hidden: Int, colspan: Int, what: String): String {
         if (hidden <= 0) return ""
-        return """<tr class="more-row"><td colspan="$colspan" class="text-center empty-cell">$hidden $what not shown</td></tr>"""
+        return """<tr class="empty-prior-row"><td colspan="$colspan">$hidden $what not shown</td></tr>"""
     }
 
     @Volatile
@@ -63,34 +61,50 @@ object PatientPrintHtmlGenerator {
         }
     }
 
+    private fun containsArabic(text: String): Boolean =
+        text.any { Character.UnicodeBlock.of(it) == Character.UnicodeBlock.ARABIC }
+
     fun generateHtml(
         context: Context? = null,
         patient: DemoPatient,
         settings: SecuritySettingsState? = null,
         asOfDate: LocalDate = LocalDate.now(),
+        selectedPictureKeys: Set<String> = emptySet(),
+        pictureDataUri: (PictureCandidate) -> String? = { null },
     ): String {
         val logoBase64 = getLogoBase64(context)
         val attestation = settings.resolvedAttestation()
         val clinicName = escapeHtml(settings?.clinicName?.takeUnless(String::isBlank) ?: "Dr. Sherif Radwan Clinic")
-        val clinicSpecialty = "Maternal-Fetal Medicine & Advanced Obstetrics"
+        val clinicSpecialty = escapeHtml("Maternal-Fetal Medicine & Advanced Obstetrics")
         val doctorNameEn = escapeHtml(attestation.doctorNameEn)
         val doctorOfficialTitle = escapeHtml(attestation.doctorSpecialtyEn)
         val doctorNameAr = escapeHtml(attestation.doctorNameAr)
         val doctorSpecialtyAr = escapeHtml(attestation.doctorSpecialtyAr)
         val clinicPhone = escapeHtml(attestation.clinicPhone)
-        val printDateStr = formatDmy(asOfDate)
+        val printDateStr = escapeHtml(formatDmy(asOfDate))
         val currentGa: String? = reportGestationalAge(patient, asOfDate)
         val statusLine: String? = reportStatusLine(patient)
         val datingSummary = datingSummaryOf(patient, asOfDate)
-        val datingMatrixHtml = buildString {
+
+        val datingRowsHtml = buildString {
             datingTextRows(datingSummary).forEach { row ->
-                val valueClass = if (row.isEdd) "val text-rose" else "val"
-                append("""<div class="matrix-item"><div class="label">${escapeHtml(row.label)}</div>""")
-                append("""<div class="$valueClass">${escapeHtml(row.value ?: "Not recorded")}</div></div>""")
+                val valueClass = when {
+                    row.isEdd -> "data-val col-date bold-val"
+                    row.label == "LMP" || row.label == "ET" -> "data-val col-date"
+                    else -> "data-val"
+                }
+                append("""<div class="data-row"><span class="data-key">${escapeHtml(row.label)}</span>""")
+                append("""<span class="$valueClass">${escapeHtml(row.value ?: "Not recorded")}</span></div>""")
             }
             datingDiscordanceLine(patient.dating, datingSummary)?.let {
-                append("""<div class="matrix-item" style="grid-column: 1 / -1"><div class="val">${escapeHtml(it)}</div></div>""")
+                append("""<div class="data-row"><span class="data-val data-val-full">${escapeHtml(it)}</span></div>""")
             }
+        }
+
+        val gaBannerHtml = when {
+            currentGa != null -> """<span>Gestational age today</span><span class="bold-val">${escapeHtml(currentGa)}</span>"""
+            patient.delivered -> """<span>${escapeHtml(patient.deliveryOutcomeLine())}</span>"""
+            else -> """<span>Gestational age: not recorded</span>"""
         }
 
         val g = patient.gravida ?: "-"
@@ -99,182 +113,74 @@ object PatientPrintHtmlGenerator {
         val pastDeliverySummary = previousDeliverySummary(patient)
 
         val risk = reportRisk(patient.riskLevel)
-        val isRhNegative = com.sherifradwan.ancnative.ui.isRhNegative(patient.bloodGroupText)
+        val isRhNegative = isRhNegative(patient.bloodGroupText)
+
+        val candidates = pictureCandidates(patient)
+        val figures = figuresFor(candidates, selectedPictureKeys)
 
         val visits = reportVisits(patient, MAX_PRINT_VISITS)
         val bpAlertCss = when {
             visits.rows.any { bpLevel(it.bloodPressure) == BpLevel.SEVERE } ->
-                "\n        .bp-alert { font-size: 6.8pt; line-height: 1.1; margin-top: 2px; color: #b45309; white-space: normal; }\n        .bp-alert-severe { color: #dc2626; }"
+                "\n        .bp-alert { font-size: 9pt; font-weight: 700; line-height: 1.25; margin-top: 2px; color: #b45309; display: block; white-space: normal; }\n        .bp-alert-severe { color: var(--color-alert-text); }"
             visits.rows.any { bpLevel(it.bloodPressure) == BpLevel.RAISED } ->
-                "\n        .bp-alert { font-size: 6.8pt; line-height: 1.1; margin-top: 2px; color: #b45309; white-space: normal; }"
+                "\n        .bp-alert { font-size: 9pt; font-weight: 700; line-height: 1.25; margin-top: 2px; color: #b45309; display: block; white-space: normal; }"
             else -> ""
         }
-        val visitsRowsHtml = if (visits.rows.isEmpty()) {
-            """<tr><td colspan="6" class="text-center empty-cell">No clinical visits recorded yet</td></tr>"""
-        } else {
-            val rows = visits.rows.mapIndexed { idx, v ->
-                val vGa = parseIsoDateOrNull(v.date)?.let { vDate ->
-                    patient.dating?.calculateGestationalAgeResult(vDate)?.formatted
-                } ?: "-"
-                val bpAlert = when (bpLevel(v.bloodPressure)) {
-                    BpLevel.RAISED -> """<div class="bp-alert">$BP_ALERT_RAISED</div>"""
-                    BpLevel.SEVERE -> """<div class="bp-alert bp-alert-severe">$BP_ALERT_SEVERE</div>"""
-                    BpLevel.NORMAL -> ""
-                }
-                """
-                <tr>
-                    <td class="text-center font-bold nowrap-cell">${idx + 1 + visits.hidden}</td>
-                    <td class="text-center date-cell">${escapeHtml(reportDate(v.date))}</td>
-                    <td class="text-center font-bold text-teal nowrap-cell">${escapeHtml(vGa)}</td>
-                    <td class="text-center nowrap-cell font-bold text-navy">${escapeHtml(v.bloodPressure?.takeUnless(String::isBlank) ?: "-")}$bpAlert</td>
-                    <td class="text-center nowrap-cell">${escapeHtml(formatWeightKg(v.weight) ?: "-")}</td>
-                    <td class="text-center notes-cell">${escapeHtml(visitText(v))}</td>
-                </tr>
-                """.trimIndent()
-            }.joinToString("\n")
-            val hidden = hiddenRowsHtml(visits.hidden, 6, "earlier visits")
-            if (hidden.isNotEmpty()) "$hidden\n$rows" else rows
-        }
 
-        val scans = reportScans(patient, MAX_PRINT_SCANS)
-        val scansRowsHtml = if (scans.rows.isEmpty()) {
-            """<tr><td colspan="7" class="text-center empty-cell">No ultrasound scans recorded yet</td></tr>"""
-        } else {
-            val rows = scans.rows.map { s ->
-                val photoBadge = if (s.imageUris.isNotEmpty()) {
-                    """<div class="photo-badge">${s.imageUris.size} photos in the clinic record</div>"""
-                } else {
-                    ""
-                }
-
-                """
-                <tr>
-                    <td class="text-center date-cell">${escapeHtml(reportDate(s.date))}</td>
-                    <td class="text-center font-bold text-teal nowrap-cell">${escapeHtml(scanGestationalAge(s))}</td>
-                    <td class="text-center">${escapeHtml(s.presentation?.takeUnless(String::isBlank) ?: "Not recorded")}</td>
-                    <td class="text-center">${escapeHtml(s.placentalSite?.takeUnless(String::isBlank) ?: "Not recorded")}</td>
-                    <td class="text-center">${escapeHtml(s.amnioticFluid?.takeUnless(String::isBlank) ?: "Not recorded")}</td>
-                    <td class="text-center nowrap-cell font-bold text-navy">${escapeHtml(scanWeight(s))}</td>
-                    <td class="text-center notes-cell">
-                        ${escapeHtml(scanNotes(s))}
-                        $photoBadge
-                    </td>
-                </tr>
-                """.trimIndent()
-            }.joinToString("\n")
-            val hidden = hiddenRowsHtml(scans.hidden, 7, "earlier scans")
-            if (hidden.isNotEmpty()) "$hidden\n$rows" else rows
-        }
-
-        val labs = reportLabs(patient, MAX_PRINT_LABS)
-        val labsRowsHtml = if (labs.rows.isEmpty()) {
-            """<tr><td colspan="4" class="text-center empty-cell">No laboratory test results recorded yet</td></tr>"""
-        } else {
-            val rows = labs.rows.map { l ->
-                val resultText = escapeHtml(labResult(l))
-                val resultHtml = if (l.isAbnormal) {
-                    """<span class="val-abnormal">$resultText (Abnormal)</span>"""
-                } else {
-                    """<span class="font-bold text-navy">$resultText</span>"""
-                }
-                val extraHtml = labExtra(l).takeUnless(String::isBlank)?.let { extra ->
-                    """<br><span class="text-muted med-instructions">${escapeHtml(extra)}</span>"""
-                } ?: ""
-                """
-                <tr>
-                    <td class="text-center date-cell">${escapeHtml(reportDate(l.date))}</td>
-                    <td class="text-center font-bold text-navy">${escapeHtml(l.testName)}$extraHtml</td>
-                    <td class="text-center">${resultHtml}</td>
-                    <td class="text-center text-muted">${escapeHtml(l.referenceRange?.takeUnless(String::isBlank) ?: "-")}</td>
-                </tr>
-                """.trimIndent()
-            }.joinToString("\n")
-            val hiddenRow = hiddenRowsHtml(labs.hidden, 4, "older results")
-            if (hiddenRow.isNotEmpty()) "$rows\n$hiddenRow" else rows
-        }
-
+        val visitsSectionHtml = renderVisitsSection(patient, visits, figures)
+        val unlinkedScansHtml = renderUnlinkedScansSection(unlinkedScans(patient, visits.rows), figures)
+        val labsSectionHtml = renderLabsSection(labReport(patient))
         val meds = reportMedications(patient)
-        fun medRows(list: List<DemoMedicationRecord>): String = list.joinToString("\n") { m ->
-            val detail = medicationDetail(m)
-            val detailHtml = if (detail.isEmpty()) "" else """<br><span class="text-muted med-instructions">${escapeHtml(detail)}</span>"""
-            """
-                <tr>
-                    <td class="text-center med-cell"><span class="font-bold text-navy">${escapeHtml(m.name)}</span>$detailHtml</td>
-                    <td class="text-center">${escapeHtml(medicationDates(m))}</td>
-                </tr>
-            """.trimIndent()
-        }
-        val currentMedsRowsHtml = medRows(meds.current).ifEmpty {
-            """<tr><td colspan="2" class="text-center empty-cell">No current medications recorded</td></tr>"""
-        }
-        val stoppedMedsRowsHtml: String = medRows(meds.stopped)
-
-        val prevPregRows = if (patient.previousPregnancies.isEmpty()) {
-            """<p class="text-muted text-center text-small" style="padding: 6px;">No previous pregnancies or deliveries recorded (${escapeHtml(pastDeliverySummary)}).</p>"""
-        } else {
-            """
-            <div class="table-scroll">
-            <table class="clinical-table mini-table">
-                <thead>
-                    <tr>
-                        <th style="width: 14%; text-align: center;">Year / Date</th>
-                        <th style="width: 26%; text-align: center;">Type & Delivery Mode</th>
-                        <th style="width: 25%; text-align: center;">Outcome & Status</th>
-                        <th style="width: 35%; text-align: center;">Hospital & Clinical Notes</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${patient.previousPregnancies.map { pp ->
-                        val outcomeText = pp.outcomeText?.takeUnless(String::isBlank)
-                        val outcomeLabel = when (pp.outcome) {
-                            "Stillbirth" -> outcomeText ?: "Stillbirth / IUFD"
-                            "EarlyPregnancyLoss" -> outcomeText ?: "Miscarriage"
-                            "TerminationOfPregnancy" -> outcomeText ?: "Therapeutic Termination"
-                            "LiveBirth" -> outcomeText ?: "Live Birth"
-                            else -> outcomeText ?: pp.outcome?.takeUnless(String::isBlank) ?: "-"
-                        }
-                        val isLoss = pp.outcome == "TerminationOfPregnancy" ||
-                            isStillbirth(pp) ||
-                            isEarlyLoss(pp)
-                        val outcomeBadge = if (isLoss) {
-                            """<span class="badge" style="background:#fee2e2;color:#991b1b;border:1px solid #f87171;font-weight:bold;padding:2px 6px;border-radius:4px;">${escapeHtml(outcomeLabel)}</span>"""
-                        } else {
-                            """<span style="font-weight:600;color:#0f766e;">${escapeHtml(outcomeLabel)}</span>"""
-                        }
-                        val methodText = pp.birthMethod?.takeUnless(String::isBlank)
-                            ?: pp.deliveryBy?.takeUnless(String::isBlank)
-                            ?: pp.lossManagement?.takeUnless(String::isBlank)
-                            ?: pp.terminationMethod?.takeUnless(String::isBlank)
-                            ?: "-"
-                        val dateFormatted = formatDmy(pp.dateText) ?: "-"
-                        """
-                        <tr>
-                            <td class="text-center date-cell">${escapeHtml(dateFormatted)}</td>
-                            <td class="text-center font-bold">${escapeHtml(listOfNotNull(pp.pregnancyType?.takeUnless(String::isBlank), methodText.takeUnless { it == "-" }).joinToString(" · ").ifEmpty { "-" })}</td>
-                            <td class="text-center">${outcomeBadge}</td>
-                            <td class="text-center">${escapeHtml(listOfNotNull(pp.placeAndDoctor?.takeUnless(String::isBlank), pp.otherDetails?.takeUnless(String::isBlank)).joinToString(" · ").ifEmpty { "Not recorded" })}</td>
-                        </tr>
-                        """.trimIndent()
-                    }.joinToString("\n")}
-                </tbody>
-            </table>
-            </div>
-            """.trimIndent()
-        }
-
-        val logoImgTag = if (logoBase64.isNotEmpty()) {
-            """<img src="data:image/png;base64,$logoBase64" alt="Clinic Logo" class="clinic-logo" width="46" height="64" />"""
-        } else {
-            """<div class="logo-fallback">DR</div>"""
-        }
-
-        val watermarkImg = if (logoBase64.isNotEmpty()) {
-            """background-image: url('data:image/png;base64,$logoBase64');"""
+        val currentMedsHtml = renderMedicationsSection(
+            title = "Current medications",
+            countText = "(${meds.current.size} active)",
+            meds = meds.current,
+            emptyMessage = "No current medications recorded",
+        )
+        val stoppedMedsHtml = if (meds.stopped.isNotEmpty()) {
+            renderMedicationsSection(
+                title = "Stopped medications",
+                countText = "(${meds.stopped.size})",
+                meds = meds.stopped,
+                emptyMessage = null,
+            )
         } else {
             ""
         }
+        val prevPregSectionHtml = renderPreviousPregnanciesSection(patient, pastDeliverySummary)
+        val attachedImagesHtml = renderAttachedImagesSection(figures, pictureDataUri)
 
-        val ageFormatted = patient.ageText?.trim()?.takeIf(String::isNotEmpty)?.let { ageText -> com.sherifradwan.ancnative.ui.formatAgeYears(ageText)?.let { "$it yrs" } ?: ageText } ?: "-"
+        val deliveryRowsHtml = reportDeliveryRows(patient, datingSummary.edd?.let(::formatDmy)).joinToString("\n") { row ->
+            val vClass = when (row.label) {
+                "Estimated due date" -> "data-val bold-val col-date"
+                "Delivery Outcome" -> "data-val bold-val"
+                "Blood bank precautions" -> "data-val data-val-alert"
+                else -> "data-val"
+            }
+            """<div class="data-row"><span class="data-key">${escapeHtml(row.label)}</span><span class="$vClass">${escapeHtml(row.value)}</span></div>"""
+        }
+
+        val logoImgTag = if (logoBase64.isNotEmpty()) {
+            """<img src="data:image/png;base64,$logoBase64" alt="Clinic Logo" class="clinic-logo" />"""
+        } else {
+            """<div class="clinic-mark">DR</div>"""
+        }
+
+        val ageFormatted = patient.ageText?.trim()?.takeIf(String::isNotEmpty)?.let { ageText ->
+            formatAgeYears(ageText)?.let { "$it yrs" } ?: ageText
+        } ?: "-"
+        val patientNameDirAttr = if (containsArabic(patient.displayName)) """ dir="rtl"""" else ""
+        val allergyClass = if (classifyAllergy(patient.allergyHistory) is AllergyState.Recorded) {
+            "data-val data-val-alert"
+        } else {
+            "data-val"
+        }
+        val riskPillHtml = when (risk) {
+            ReportRisk.HIGH -> """<span class="risk-pill risk-high">${risk.label}</span>"""
+            ReportRisk.MEDIUM -> """<span class="risk-pill risk-medium">${risk.label}</span>"""
+            ReportRisk.LOW -> """<span class="risk-pill risk-low">${risk.label}</span>"""
+            ReportRisk.UNRECORDED -> """<span class="risk-pill risk-unrecorded">${escapeHtml(reportRiskLabel(patient.riskLevel))}</span>"""
+        }
 
         return """
 <!DOCTYPE html>
@@ -282,920 +188,689 @@ object PatientPrintHtmlGenerator {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Clinical Record - ${escapeHtml(patient.displayName)} - $clinicName</title>
+    <title>Clinical record - ${escapeHtml(patient.displayName)} - $clinicName</title>
     <style>
-        @font-face { font-family: 'Arslan Wessam B'; src: url('fonts/ArslanWessamB.ttf'); }
-        :root {
-            --navy-primary: #0D1B3D;
-            --navy-dark: #070F24;
-            --rose-accent: #B34A60;
-            --teal-clinical: #176B70;
-            --bg-ivory: #FBF8F5;
-            --surface-white: #FFFFFF;
-            --border-light: #CBD5E1;
-            --border-hairline: #E2E8F0;
-            --text-main: #0F172A;
-            --text-muted: #475569;
-            --danger-bg: #FEE2E2;
-            --danger-text: #B91C1C;
-            --success-bg: #DCFCE7;
-            --success-text: #166534;
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background-color: #E2E8F0;
-            color: var(--text-main);
-            font-size: 10.5pt;
-            line-height: 1.4;
-            direction: ltr;
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
-        }
-
-        .page-sheet {
-            background: var(--surface-white);
-            position: relative;
-            box-sizing: border-box;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-        }
-
-        .watermark {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 380px;
-            height: 380px;
-            opacity: 0.045;
-            pointer-events: none;
-            z-index: 0;
-            background-position: center;
-            background-repeat: no-repeat;
-            background-size: contain;
-            $watermarkImg
-        }
-
-        .page-content {
-            position: relative;
-            z-index: 1;
-            display: flex;
-            flex-direction: column;
-            gap: 9px;
-            flex-grow: 1;
-        }
-
-        @media screen {
-            body {
-                background-color: #E2E8F0;
-                padding: 10px 8px;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                gap: 14px;
-            }
-            .page-sheet {
-                width: 100%;
-                max-width: 210mm;
-                min-height: auto;
-                max-height: none;
-                padding: 12px 14px;
-                border-radius: 6px;
-                box-shadow: 0 4px 14px rgba(13, 27, 61, 0.12);
-                margin: 0 auto;
-                overflow: visible;
-            }
-        }
-
-        @media screen and (max-width: 540px) {
-            .patient-card {
-                grid-template-columns: 1fr 1fr !important;
-                gap: 8px !important;
-            }
-            .grid-two-col {
-                grid-template-columns: 1fr !important;
-            }
-            .dating-matrix {
-                grid-template-columns: 1fr 1fr 1fr !important;
-            }
-            .attestation-grid {
-                grid-template-columns: 1fr !important;
-            }
-            .clinic-header {
-                flex-direction: column !important;
-                align-items: flex-start !important;
-                gap: 8px !important;
-            }
-            .uniform-meta {
-                border-left: none !important;
-                padding-left: 0 !important;
-                width: 100% !important;
-            }
-            .table-scroll {
-                overflow-x: auto;
-                -webkit-overflow-scrolling: touch;
-            }
-            .clinical-table {
-                min-width: 600px;
-            }
-        }
-
-        @media print {
-            @page { size: A4; margin: 8mm 0 8mm 0; }
-            body {
-                background: transparent;
-                margin: 0;
-                padding: 0;
-            }
-            .page-sheet, .page-content {
-                display: block;
-            }
-            .page-sheet {
-                margin: 0;
-                width: 210mm;
-                min-height: 0;
-                box-sizing: border-box;
-                box-shadow: none;
-                padding: 0 12mm;
-                border-radius: 0;
-            }
-            .page-sheet + .page-sheet {
-                break-before: page;
-                page-break-before: always;
-            }
-            thead {
-                display: table-header-group;
-            }
-            .section-title {
-                break-after: avoid;
-                page-break-after: avoid;
-            }
-            tr, .patient-card, .attestation-grid, .history-row, .status-banner, .attention-box {
-                break-inside: avoid;
-                page-break-inside: avoid;
-            }
-            .patient-card {
-                grid-template-columns: 2.2fr 1.1fr 1.2fr 1.4fr !important;
-            }
-            .grid-two-col {
-                grid-template-columns: 1fr 1fr !important;
-            }
-            .clinic-header {
-                flex-direction: row !important;
-                align-items: center !important;
-            }
-            .uniform-meta {
-                border-left: 2px solid var(--border-hairline) !important;
-                padding-left: 12px !important;
-                border-right: none !important;
-                padding-right: 0 !important;
-                width: auto !important;
-            }
-            .attestation-grid {
-                grid-template-columns: 1.8fr 1.2fr !important;
-            }
-            .page-footer {
-                position: static;
-                margin-top: 6mm;
-            }
-            .watermark {
-                position: fixed;
-                top: 148mm;
-                left: 50%;
-            }
-            .page-sheet + .page-sheet .watermark {
-                display: none;
-            }
-        }
-
-        .clinic-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 2px solid var(--navy-primary);
-            padding-bottom: 7px;
-            margin-bottom: 3px;
-        }
-
-        .clinic-brand {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .clinic-logo {
-            width: 46px;
-            height: 64px;
-            object-fit: contain;
-        }
-
-        .logo-fallback {
-            color: var(--navy-primary);
-            font-size: 14pt;
-            font-weight: bold;
-            width: 46px;
-            text-align: center;
-        }
-
-        .clinic-title-box h1 {
-            color: var(--navy-primary);
-            font-size: 14.5pt;
-            font-weight: 800;
-            line-height: 1.2;
-            margin-bottom: 1px;
-        }
-
-        .clinic-title-box h2 {
-            color: var(--rose-accent);
-            font-size: 9.5pt;
-            font-weight: 700;
-            letter-spacing: 0.2px;
-            margin-bottom: 1px;
-        }
-
-        .clinic-title-box p {
-            color: var(--teal-clinical);
-            font-size: 8.5pt;
-            font-weight: 600;
-        }
-
-        .uniform-meta {
-            text-align: left;
-            direction: ltr;
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-            min-width: 175px;
-            border-left: 2px solid var(--border-hairline);
-            padding-left: 12px;
-        }
-
-        .uniform-meta .doc-badge {
-            background: var(--navy-primary);
-            color: #fff;
-            padding: 2px 8px;
-            font-size: 8pt;
-            font-weight: 700;
-            border-radius: 4px;
-            display: inline-block;
-            text-align: center;
-            margin-bottom: 2px;
-            letter-spacing: 0.3px;
-        }
-
-        .uniform-meta .meta-row {
-            display: flex;
-            justify-content: space-between;
-            font-size: 8pt;
-            line-height: 1.25;
-            color: var(--text-muted);
-        }
-
-        .uniform-meta .meta-row .k {
-            font-weight: 600;
-            color: var(--text-muted);
-        }
-
-        .uniform-meta .meta-row .v {
-            font-weight: 700;
-            color: var(--navy-primary);
-        }
-
-        .patient-card {
-            background: #F8FAFC;
-            border: 1.5px solid var(--border-light);
-            border-radius: 6px;
-            padding: 8px 12px;
-            display: grid;
-            grid-template-columns: 2.2fr 1.1fr 1.2fr 1.4fr;
-            gap: 10px;
-            align-items: center;
-        }
-
-        .pt-name-box h3 {
-            font-size: 13pt;
-            color: var(--navy-primary);
-            font-weight: 800;
-            line-height: 1.2;
-        }
-
-        .pt-name-box .pt-code {
-            font-size: 8.5pt;
-            color: var(--text-muted);
-            font-weight: 600;
-            margin-top: 1px;
-        }
-
-        .pt-name-box .pt-phone {
-            font-size: 8.5pt;
-            color: var(--teal-clinical);
-            font-weight: 700;
-            margin-top: 2px;
-        }
-
-        .data-point {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .data-label {
-            font-size: 7.5pt;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            font-weight: 600;
-            margin-bottom: 2px;
-        }
-
-        .data-value {
-            font-size: 10pt;
-            color: var(--navy-primary);
-            font-weight: 800;
-        }
-
-        .badge {
-            display: inline-block;
-            padding: 3px 8px;
-            border-radius: 4px;
-            font-size: 8pt;
-            font-weight: 700;
-            text-align: center;
-        }
-
-        .badge-danger {
-            background-color: var(--danger-bg);
-            color: var(--danger-text);
-            border: 1px solid #FCA5A5;
-        }
-
-        .badge-success {
-            background-color: var(--success-bg);
-            color: var(--success-text);
-            border: 1px solid #86EFAC;
-        }
-
-        .badge-teal {
-            background-color: #E6FFFA;
-            color: var(--teal-clinical);
-            border: 1px solid #B2F5EA;
-        }
-
-        .badge-navy {
-            background-color: #EFF6FF;
-            color: var(--navy-primary);
-            border: 1px solid #BFDBFE;
-        }
-
-        .badge-warning { background: #fef3c7; color: #92400e; border: 1px solid #f59e0b; }
-
-        .status-banner { background: #1e293b; color: #ffffff; font-weight: 700; font-size: 10pt; padding: 5px 10px; border-radius: 4px; margin-bottom: 6px; }
-
-        .attention-box { background: #fff7ed; border: 1px solid #c2410c; color: #7c2d12; font-size: 9pt; padding: 5px 10px; border-radius: 4px; margin-bottom: 6px; display: flex; gap: 8px; }
-
-        .attention-box .k { font-weight: 700; white-space: nowrap; }
-
-        .doc-sign { font-family: 'Arslan Wessam B', 'Noto Naskh Arabic', serif; font-size: 20pt; line-height: 1.3; color: #1e293b; }
-        .doc-sign-title { font-size: 11pt; line-height: 1.4; }
-
-        .val-abnormal {
-            color: var(--danger-text);
-            font-weight: 800;
-            background-color: #FEF2F2;
-            padding: 2px 6px;
-            border-radius: 3px;
-            display: inline-block;
-        }
-
-        .grid-two-col {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-        }
-
-        .section-box {
-            border: 1px solid var(--border-hairline);
-            border-radius: 5px;
-            background: #fff;
-            padding: 8px 10px;
-        }
-
-        .section-title {
-            font-size: 9.5pt;
-            color: var(--navy-primary);
-            font-weight: 800;
-            border-bottom: 1.5px solid #F1F5F9;
-            padding-bottom: 4px;
-            margin-bottom: 6px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .dating-matrix {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 6px;
-            margin-bottom: 6px;
-        }
-
-        .matrix-item {
-            background: #F8FAFC;
-            padding: 5px;
-            border-radius: 4px;
-            text-align: center;
-        }
-
-        .matrix-item .label {
-            font-size: 7.5pt;
-            color: var(--text-muted);
-        }
-
-        .matrix-item .val {
-            font-size: 9.5pt;
-            font-weight: 800;
-            color: var(--navy-primary);
-        }
-
-        .ga-highlight {
-            background: #FDF2F4;
-            border: 1px solid #FBCFE8;
-            padding: 5px;
-            border-radius: 4px;
-            text-align: center;
-            font-size: 9.5pt;
-            font-weight: 800;
-            color: var(--rose-accent);
-        }
-
-        .history-list {
-            font-size: 8.5pt;
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
-
-        .history-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px dashed #F1F5F9;
-            padding-bottom: 3px;
-        }
-
-        .history-row .k {
-            color: var(--text-muted);
-            font-weight: 600;
-            text-align: left;
-        }
-
-        .history-row .v {
-            color: var(--navy-primary);
-            font-weight: 700;
-            text-align: right;
-            direction: ltr;
-        }
-
-        .clinical-table {
-            width: 100%;
-            table-layout: fixed;
-            border-collapse: collapse;
-            font-size: 8pt;
-            margin-top: 4px;
-            box-sizing: border-box;
-        }
-
-        .clinical-table th {
-            background: #F1F5F9;
-            color: var(--navy-primary);
-            font-weight: 700;
-            padding: 5px 4px;
-            border: 1px solid var(--border-light);
-            text-align: center !important;
-            font-size: 7.5pt;
-            box-sizing: border-box;
-            word-break: normal;
-            overflow-wrap: normal;
-            hyphens: none;
-        }
-
-        .clinical-table td {
-            padding: 5px 4px;
-            border: 1px solid var(--border-hairline);
-            color: var(--text-main);
-            text-align: center !important;
-            vertical-align: middle;
-            box-sizing: border-box;
-            word-break: normal;
-            overflow-wrap: normal;
-            hyphens: none;
-        }
-
-        .clinical-table tr:nth-child(even) {
-            background-color: #FAFAFA;
-        }
-
-        .mini-table th, .mini-table td {
-            padding: 3px 4px;
-            font-size: 7.5pt;
-            word-break: normal;
-            overflow-wrap: normal;
-            hyphens: none;
-        }
-
-        .text-center { text-align: center !important; }
-        .font-bold { font-weight: 700; }
-        .text-navy { color: var(--navy-primary); }
-        .text-rose { color: var(--rose-accent); }
-        .text-teal { color: var(--teal-clinical); }
-        .text-muted { color: var(--text-muted); }
-        .empty-cell { padding: 12px; color: var(--text-muted); font-style: italic; }
-        .date-cell { font-variant-numeric: tabular-nums; font-size: 7.8pt; white-space: nowrap; }
-        .nowrap-cell { white-space: nowrap; }
-        .clinical-table .more-row td {
-            text-align: left !important;
-            padding-left: 8px;
-        }
-        .clinical-table.mini-table td:nth-child(4),
-        .mini-table td:nth-child(4),
-        .clinical-table td.notes-cell,
-        .notes-cell {
-            font-size: 7.2pt;
-            line-height: 1.25;
-            word-break: normal;
-            overflow-wrap: anywhere;
-            max-width: 100%;
-        }$bpAlertCss
-
-        .med-cell,
-        .med-cell span {
-            overflow-wrap: anywhere;
-            word-break: break-word;
-        }
-        table td.med-cell {
-            overflow-wrap: anywhere;
-            word-break: break-word;
-        }
-
-        .photo-badge {
-            display: inline-block;
-            margin-top: 3px;
-            background: #E0F2FE;
-            color: #0369A1;
-            font-size: 7pt;
-            font-weight: 700;
-            padding: 1px 5px;
-            border-radius: 3px;
-        }
-
-        .attestation-grid {
-            display: grid;
-            grid-template-columns: 1.8fr 1.2fr;
-            gap: 12px;
-            margin-top: 6px;
-        }
-
-        .plan-box {
-            background: #F8FAFC;
-            border: 1px solid var(--border-light);
-            border-radius: 5px;
-            padding: 8px;
-        }
-
-        .signature-box {
-            border: 1.5px dashed var(--navy-primary);
-            border-radius: 5px;
-            padding: 8px;
-            text-align: center;
-            background: #fff;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            min-height: 90px;
-        }
-
-        .doc-name {
-            font-size: 10pt;
-            font-weight: 800;
-            color: var(--navy-primary);
-        }
-
-        .doc-title {
-            font-size: 7.5pt;
-            color: var(--rose-accent);
-            font-weight: 700;
-        }
-
-        .stamp-placeholder {
-            margin-top: 10px;
-            font-size: 7.5pt;
-            color: #475569;
-            font-style: italic;
-        }
-
-        .page-footer {
-            border-top: 1px solid var(--border-hairline);
-            padding-top: 6px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 7.5pt;
-            color: var(--text-muted);
-            margin-top: auto;
-        }
-
-
+${buildCss(bpAlertCss)}
     </style>
 </head>
 <body>
+    <div class="page-flow">
+        <table class="print-shell">
+            <tbody>
+                <tr>
+                    <td class="print-shell-cell">
+                        <header class="clinic-header">
+                            <div class="clinic-brand">
+                                $logoImgTag
+                                <div class="clinic-title-box">
+                                    <h1>$clinicName</h1>
+                                    <div class="subhead">$clinicSpecialty</div>
+                                    <div class="specialty">$doctorOfficialTitle</div>
+                                </div>
+                            </div>
+                            <div class="doc-meta">
+                                <div class="doc-badge">Clinical record</div>
+                                <div>Patient ID: <strong>${escapeHtml(patient.caseId)}</strong></div>
+                                <div>Print date: <strong class="col-date">$printDateStr</strong></div>
+                            </div>
+                        </header>
 
-    <div class="page-sheet">
-        <div class="watermark"></div>
-        <div class="page-content">
+                        ${if (statusLine != null) """<div class="status-banner">${escapeHtml(statusLine)}</div>""" else ""}
 
-            <header class="clinic-header">
-                <div class="clinic-brand">
-                    $logoImgTag
-                    <div class="clinic-title-box">
-                        <h1>$clinicName</h1>
-                        <h2>$clinicSpecialty</h2>
-                        <p>$doctorOfficialTitle</p>
-                    </div>
-                </div>
-                <div class="header-meta uniform-meta">
-                    <div class="doc-badge">CLINICAL RECORD</div>
-                    <div class="meta-row"><span class="k">Patient ID:</span> <span class="v">${escapeHtml(patient.caseId)}</span></div>
-                    <div class="meta-row"><span class="k">Print Date:</span> <span class="v">$printDateStr</span></div>
-                </div>
-            </header>
+                        <section class="patient-banner">
+                            <div class="pt-identity">
+                                <div class="patient-name"$patientNameDirAttr>${escapeHtml(patient.displayName)}</div>
+                                <div class="pt-meta-inline">
+                                    <span>Patient ID: <strong>${escapeHtml(patient.caseId)}</strong></span>
+                                    <span>Phone: <strong>${escapeHtml(patient.phone?.takeUnless(String::isBlank) ?: "Unspecified")}</strong></span>
+                                    ${if (!patient.addressText.isNullOrBlank()) """<span>Address: <strong>${escapeHtml(patient.addressText)}</strong></span>""" else ""}
+                                    ${if (!patient.dateOfBirth.isNullOrBlank()) """<span>Date of birth: <strong class="col-date">${escapeHtml(reportDate(patient.dateOfBirth))}</strong></span>""" else ""}
+                                </div>
+                            </div>
+                            <div class="pt-vitals-strip">
+                                <div class="vital-cell">
+                                    <span class="vital-label">Age</span>
+                                    <span class="vital-value">${escapeHtml(ageFormatted)}</span>
+                                </div>
+                                <div class="vital-cell">
+                                    <span class="vital-label">Blood group</span>
+                                    <span class="vital-value${if (isRhNegative) " data-val-alert" else ""}">${escapeHtml(patient.bloodGroupText?.takeUnless(String::isBlank) ?: "-")}</span>
+                                    ${if (isRhNegative) """<span class="risk-pill risk-high">Rh negative</span>""" else ""}
+                                </div>
+                                <div class="vital-cell">
+                                    <span class="vital-label">Clinical risk</span>
+                                    $riskPillHtml
+                                </div>
+                            </div>
+                        </section>
 
-            ${if (statusLine != null) """<div class="status-banner">${escapeHtml(statusLine)}</div>""" else ""}
+                        ${if (!patient.clinicalAttention.isNullOrBlank()) """<div class="attention-box"><span class="k">Clinical attention</span><span class="v">${escapeHtml(patient.clinicalAttention)}</span></div>""" else ""}
 
-            <section class="patient-card">
-                <div class="pt-name-box">
-                    <h3>${escapeHtml(patient.displayName)}</h3>
-                    <div class="pt-code">Patient ID: ${escapeHtml(patient.caseId)}</div>
-                    <div class="pt-phone">Phone: ${escapeHtml(patient.phone?.takeUnless(String::isBlank) ?: "Unspecified")}</div>
-                    ${if (!patient.addressText.isNullOrBlank()) """<div class="pt-phone">Address: ${escapeHtml(patient.addressText)}</div>""" else ""}
-                    ${if (!patient.dateOfBirth.isNullOrBlank()) """<div class="pt-phone">Date of birth: ${escapeHtml(reportDate(patient.dateOfBirth))}</div>""" else ""}
-                </div>
-                <div class="data-point">
-                    <span class="data-label">Age</span>
-                    <span class="data-value">${escapeHtml(ageFormatted)}</span>
-                </div>
-                <div class="data-point">
-                    <span class="data-label">Blood Group</span>
-                    <span class="data-value ${if (isRhNegative) "text-rose" else "text-navy"}">
-                        ${escapeHtml(patient.bloodGroupText?.takeUnless(String::isBlank) ?: "-")}
-                        ${if (isRhNegative) """<span class="badge badge-danger">Rh negative</span>""" else ""}
-                    </span>
-                </div>
-                <div class="data-point" style="align-items: flex-end;">
-                    <span class="data-label">Clinical Risk Level</span>
-                    ${when (risk) {
-                        ReportRisk.HIGH -> """<span class="badge badge-danger">${risk.label}</span>"""
-                        ReportRisk.MEDIUM -> """<span class="badge badge-warning">${risk.label}</span>"""
-                        ReportRisk.LOW -> """<span class="badge badge-success">${risk.label}</span>"""
-                        ReportRisk.UNRECORDED -> """<span class="badge">${escapeHtml(reportRiskLabel(patient.riskLevel))}</span>"""
-                    }}
-                </div>
-            </section>
+                        <div class="two-column-layout">
+                            <div>
+                                <h2 class="section-heading">Pregnancy dating</h2>
+                                <div class="data-list">
+                                    $datingRowsHtml
+                                </div>
+                                <div class="ga-banner">
+                                    $gaBannerHtml
+                                </div>
+                            </div>
 
-            ${if (!patient.clinicalAttention.isNullOrBlank()) """<div class="attention-box"><span class="k">Clinical attention</span><span class="v">${escapeHtml(patient.clinicalAttention)}</span></div>""" else ""}
-
-            <div class="grid-two-col">
-                <div class="section-box">
-                    <div class="section-title">
-                        <span>Pregnancy Dating</span>
-                    </div>
-                    <div class="dating-matrix">
-                        $datingMatrixHtml
-                    </div>
-                    <div class="ga-highlight">
-                        ${when {
-                            currentGa != null -> "Gestational age today: $currentGa"
-                            patient.delivered -> escapeHtml(patient.deliveryOutcomeLine())
-                            else -> "Gestational age: not recorded"
-                        }}
-                    </div>
-                </div>
-
-                <div class="section-box">
-                    <div class="section-title">
-                        <span>Obstetric & Medical History</span>
-                    </div>
-                    <div class="history-list">
-                        <div class="history-row">
-                            <span class="k">GPA Formula:</span>
-                            <span class="v text-navy">G$g P$p + A$a (${escapeHtml(pastDeliverySummary)})</span>
+                            <div>
+                                <h2 class="section-heading">Obstetric and medical history</h2>
+                                <div class="data-list">
+                                    <div class="data-row">
+                                        <span class="data-key">GPA formula</span>
+                                        <span class="data-val">G$g P$p + A$a (${escapeHtml(pastDeliverySummary)})</span>
+                                    </div>
+                                    <div class="data-row">
+                                        <span class="data-key">Drug allergies</span>
+                                        <span class="$allergyClass">${escapeHtml(patient.allergyHistory?.takeUnless(String::isBlank) ?: "Not recorded")}</span>
+                                    </div>
+                                    <div class="data-row">
+                                        <span class="data-key">Medical history</span>
+                                        <span class="data-val">${escapeHtml(patient.medicalHistory?.takeUnless(String::isBlank) ?: "Not recorded")}</span>
+                                    </div>
+                                    <div class="data-row">
+                                        <span class="data-key">Surgical history</span>
+                                        <span class="data-val">${escapeHtml(patient.surgicalHistory?.takeUnless(String::isBlank) ?: "Not recorded")}</span>
+                                    </div>
+                                    <div class="data-row">
+                                        <span class="data-key">Family history</span>
+                                        <span class="data-val">${escapeHtml(patient.familyHistory?.takeUnless(String::isBlank) ?: "Not recorded")}</span>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="history-row">
-                            <span class="k">Drug Allergies:</span>
-                            <span class="v ${if (classifyAllergy(patient.allergyHistory) is AllergyState.Recorded) "text-rose font-bold" else ""}">${escapeHtml(patient.allergyHistory?.takeUnless(String::isBlank) ?: "Not recorded")}</span>
-                        </div>
-                        <div class="history-row">
-                            <span class="k">Medical History:</span>
-                            <span class="v">${escapeHtml(patient.medicalHistory?.takeUnless(String::isBlank) ?: "Not recorded")}</span>
-                        </div>
-                        <div class="history-row">
-                            <span class="k">Surgical History:</span>
-                            <span class="v">${escapeHtml(patient.surgicalHistory?.takeUnless(String::isBlank) ?: "Not recorded")}</span>
-                        </div>
-                        <div class="history-row">
-                            <span class="k">Family History:</span>
-                            <span class="v">${escapeHtml(patient.familyHistory?.takeUnless(String::isBlank) ?: "Not recorded")}</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
 
-            <div class="section-box">
-                <div class="section-title">
-                    <span>Previous Pregnancies & Obstetric Outcomes</span>
-                </div>
-                $prevPregRows
-            </div>
+                        $prevPregSectionHtml
 
-            <div class="section-box" style="flex-grow: 1;">
-                <div class="section-title">
-                    <span>Antenatal Care Visits Log</span>
-                </div>
-                <div class="table-scroll">
-                <table class="clinical-table">
-                    <thead>
-                        <tr>
-                            <th style="width: 4%;">#</th>
-                            <th style="width: 16%;">Date</th>
-                            <th style="width: 17%;">Gestational Age (GA)</th>
-                            <th style="width: 15%;">Blood Pressure (BP)</th>
-                            <th style="width: 10%;">Weight</th>
-                            <th style="width: 38%;">Clinical Findings & Observations</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        $visitsRowsHtml
-                    </tbody>
-                </table>
-                </div>
-            </div>
+                        $visitsSectionHtml
 
-        </div>
+                        $unlinkedScansHtml
+
+                        $labsSectionHtml
+
+                        $currentMedsHtml
+
+                        $stoppedMedsHtml
+
+                        <div class="two-column-layout avoid-break" style="margin-top: 6px;">
+                            <div>
+                                <h2 class="section-heading">Delivery plan</h2>
+                                <div class="data-list">
+                                    $deliveryRowsHtml
+                                </div>
+                            </div>
+
+                            <div>
+                                <h2 class="section-heading">Attending physician</h2>
+                                <div class="attestation-wrapper">
+                                    <div class="doc-name">$doctorNameEn</div>
+                                    <div class="doc-ar-name" lang="ar" dir="rtl">$doctorNameAr</div>
+                                    <div class="doc-ar-title" lang="ar" dir="rtl">$doctorSpecialtyAr</div>
+                                    <div class="stamp-box">Stamp</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        $attachedImagesHtml
+                    </td>
+                </tr>
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td><div class="print-footer-space"></div></td>
+                </tr>
+            </tfoot>
+        </table>
 
         <footer class="page-footer">
-            <span>Confidential medical record · $clinicName · $doctorOfficialTitle · Tel $clinicPhone</span>
+            <span><span$patientNameDirAttr>${escapeHtml(patient.displayName)}</span> · Patient ID: <strong>${escapeHtml(patient.caseId)}</strong> · Print date: <strong class="col-date">$printDateStr</strong></span>
+            <span>Confidential medical record · $clinicName · $doctorOfficialTitle · Tel <span class="col-date">$clinicPhone</span></span>
         </footer>
     </div>
-
-    <div class="page-sheet">
-        <div class="watermark"></div>
-        <div class="page-content">
-
-            <header class="clinic-header" style="margin-bottom: 2px;">
-                <div class="clinic-brand">
-                    $logoImgTag
-                    <div class="clinic-title-box">
-                        <h1>$clinicName</h1>
-                        <h2>Scans, laboratory results, medications and delivery plan</h2>
-                    </div>
-                </div>
-                <div class="header-meta uniform-meta">
-                    <div class="doc-badge" style="background: var(--rose-accent);">CONTINUED</div>
-                    <div class="meta-row"><span class="k">Patient:</span> <span class="v">${escapeHtml(patient.displayName)}</span></div>
-                    <div class="meta-row"><span class="k">Patient ID:</span> <span class="v">${escapeHtml(patient.caseId)}</span></div>
-                    <div class="meta-row"><span class="k">Print Date:</span> <span class="v">$printDateStr</span></div>
-                </div>
-            </header>
-
-            <div class="section-box">
-                <div class="section-title">
-                    <span>Ultrasound Biometry & Fetal Surveillance</span>
-                </div>
-                <div class="table-scroll">
-                <table class="clinical-table">
-                    <thead>
-                        <tr>
-                            <th style="width: 14%;">Date</th>
-                            <th style="width: 14%;">Gestational Age</th>
-                            <th style="width: 13%;">Presentation</th>
-                            <th style="width: 12%;">Placenta</th>
-                            <th style="width: 14%;">Amniotic Fluid</th>
-                            <th style="width: 12%;">EFW (g)</th>
-                            <th style="width: 21%;">Clinical Notes</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        $scansRowsHtml
-                    </tbody>
-                </table>
-                </div>
-            </div>
-
-            <div class="section-box">
-                <div class="section-title">
-                    <span>Laboratory Investigations</span>
-                </div>
-                <div class="table-scroll">
-                <table class="clinical-table">
-                    <thead>
-                        <tr>
-                            <th style="width: 16%;">Date</th>
-                            <th style="width: 36%;">Investigation / Test Name</th>
-                            <th style="width: 26%;">Result & Unit</th>
-                            <th style="width: 22%;">Reference Range</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        $labsRowsHtml
-                    </tbody>
-                </table>
-                </div>
-            </div>
-
-            <div class="section-box">
-                <div class="section-title">
-                    <span>Current Medications</span>
-                </div>
-                <div class="table-scroll">
-                <table class="clinical-table">
-                    <thead>
-                        <tr>
-                            <th style="width: 70%;">Medication and instructions</th>
-                            <th style="width: 30%;">Dates</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        $currentMedsRowsHtml
-                    </tbody>
-                </table>
-                </div>
-            </div>
-            ${if (stoppedMedsRowsHtml.isNotEmpty()) """
-            <div class="section-box">
-                <div class="section-title">
-                    <span>Stopped Medications</span>
-                </div>
-                <div class="table-scroll">
-                <table class="clinical-table">
-                    <thead>
-                        <tr>
-                            <th style="width: 70%;">Medication and instructions</th>
-                            <th style="width: 30%;">Dates</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        $stoppedMedsRowsHtml
-                    </tbody>
-                </table>
-                </div>
-            </div>
-            """ else ""}
-
-            <div class="section-box" style="margin-top: auto;">
-                <div class="section-title">
-                    <span>Delivery Plan</span>
-                </div>
-                <div class="attestation-grid">
-                    <div class="plan-box">
-                        <div class="history-list">
-                            ${reportDeliveryRows(patient, datingSummary.edd?.let(::formatDmy)).joinToString("\n") { row ->
-                                val vClass = when (row.label) {
-                                    "Delivery Outcome", "Estimated due date" -> "v text-navy font-bold"
-                                    else -> "v"
-                                }
-                                """<div class="history-row">
-                                <span class="k">${escapeHtml(row.label)}:</span>
-                                <span class="$vClass">${escapeHtml(row.value)}</span>
-                            </div>"""
-                            }}
-                        </div>
-                    </div>
-
-                    <div class="signature-box">
-                        <div>
-                            <div class="doc-name">$doctorNameEn</div>
-                            <div class="doc-sign" lang="ar" dir="rtl">$doctorNameAr</div>
-                            <div class="doc-sign doc-sign-title" lang="ar" dir="rtl">$doctorSpecialtyAr</div>
-                            <div class="stamp-placeholder">Stamp</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-        </div>
-
-        <footer class="page-footer">
-            <span>$clinicName · $doctorOfficialTitle · Tel $clinicPhone</span>
-        </footer>
-    </div>
-
 </body>
 </html>
         """.trimIndent()
     }
+
+    private fun renderPreviousPregnanciesSection(
+        patient: DemoPatient,
+        pastDeliverySummary: String,
+    ): String {
+        val bodyHtml = if (patient.previousPregnancies.isEmpty()) {
+            """<p class="empty-note">No previous pregnancies or deliveries recorded (${escapeHtml(pastDeliverySummary)}).</p>"""
+        } else {
+            val rowsHtml = patient.previousPregnancies.joinToString("\n") { pp ->
+                val (outcomeLabel, isLoss) = reportPreviousPregnancyOutcome(pp)
+                val outcomeHtml = if (isLoss) {
+                    """<span class="risk-pill risk-high">${escapeHtml(outcomeLabel)}</span>"""
+                } else {
+                    escapeHtml(outcomeLabel)
+                }
+                val dateFormatted = formatDmy(pp.dateText) ?: "-"
+                val typeAndMode = reportPreviousPregnancyTypeAndMode(pp)
+                val notes = reportPreviousPregnancyNotes(pp)
+                """
+                <tr>
+                    <td class="col-date bold-val">${escapeHtml(dateFormatted)}</td>
+                    <td class="bold-val">${escapeHtml(typeAndMode)}</td>
+                    <td>$outcomeHtml</td>
+                    <td>${escapeHtml(notes)}</td>
+                </tr>
+                """.trimIndent()
+            }
+            """
+            <div class="table-wrap">
+                <table class="clinical-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 14%;">Year</th>
+                            <th style="width: 16%;">Delivery mode</th>
+                            <th style="width: 20%;">Outcome</th>
+                            <th style="width: 50%;">Hospital and clinical notes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        $rowsHtml
+                    </tbody>
+                </table>
+            </div>
+            """.trimIndent()
+        }
+
+        return """
+        <section>
+            <h2 class="section-heading">Previous pregnancies and obstetric outcomes</h2>
+            $bodyHtml
+        </section>
+        """.trimIndent()
+    }
+
+    private fun renderVisitsSection(
+        patient: DemoPatient,
+        visits: Limited<com.sherifradwan.ancnative.model.DemoVisit>,
+        figures: List<Figure>,
+    ): String {
+        val tbodyHtml = if (visits.rows.isEmpty()) {
+            """<tr class="empty-prior-row"><td colspan="4">No clinical visits recorded yet</td></tr>"""
+        } else {
+            val rowsHtml = visits.rows.mapIndexed { idx, v ->
+                val vGa = parseIsoDateOrNull(v.date)?.let { vDate ->
+                    patient.dating?.calculateGestationalAgeResult(vDate)?.formatted
+                } ?: "-"
+                val bpText = v.bloodPressure?.trim()?.takeUnless(String::isBlank) ?: "-"
+                val weightText = formatWeightKg(v.weight) ?: "-"
+                val bpSpan = when (bpLevel(v.bloodPressure)) {
+                    BpLevel.RAISED -> """<span class="col-bp bold-val abnormal-val nowrap">${escapeHtml(bpText)}</span>"""
+                    BpLevel.SEVERE -> """<span class="col-bp bold-val abnormal-val nowrap">${escapeHtml(bpText)}</span>"""
+                    BpLevel.NORMAL -> """<span class="col-bp nowrap">${escapeHtml(bpText)}</span>"""
+                }
+                val bpAlert = when (bpLevel(v.bloodPressure)) {
+                    BpLevel.RAISED -> """<span class="bp-alert">$BP_ALERT_RAISED</span>"""
+                    BpLevel.SEVERE -> """<span class="bp-alert bp-alert-severe">$BP_ALERT_SEVERE</span>"""
+                    BpLevel.NORMAL -> ""
+                }
+                val linkedScan = latestScanForVisit(patient, v)
+                val scanFigRefs = linkedScan?.let { figureRefsFor(it.id, figures) }.orEmpty()
+                val visitFigRefs = figureRefsFor(v.id, figures)
+                val combinedFigRefs = (scanFigRefs + visitFigRefs).distinct().sorted()
+                val scanOutcomeHtml = renderScanOutcomeCell(linkedScan, combinedFigRefs)
+
+                """
+                <tr>
+                    <td><strong>#${idx + 1 + visits.hidden}</strong> · <span class="col-date nowrap">${escapeHtml(reportDate(v.date))}</span></td>
+                    <td class="col-ga bold-val nowrap">${escapeHtml(vGa)}</td>
+                    <td>$bpSpan · <span class="col-num nowrap">${escapeHtml(weightText)}</span>$bpAlert</td>
+                    <td>$scanOutcomeHtml</td>
+                </tr>
+                """.trimIndent()
+            }.joinToString("\n")
+            val hidden = hiddenRowsHtml(visits.hidden, 4, "earlier visits")
+            if (hidden.isNotEmpty()) "$hidden\n$rowsHtml" else rowsHtml
+        }
+
+        return """
+        <section>
+            <h2 class="section-heading">Antenatal care visits log</h2>
+            <div class="table-wrap">
+                <table class="clinical-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 20%;">Visit and date</th>
+                            <th style="width: 12%;">GA</th>
+                            <th style="width: 22%;">BP and weight</th>
+                            <th style="width: 46%;">Scan outcome</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        $tbodyHtml
+                    </tbody>
+                </table>
+            </div>
+        </section>
+        """.trimIndent()
+    }
+
+    private fun renderUnlinkedScansSection(
+        unlinked: List<DemoUltrasoundScan>,
+        figures: List<Figure>,
+    ): String {
+        if (unlinked.isEmpty()) return ""
+        val rowsHtml = unlinked.joinToString("\n") { scan ->
+            val scanOutcomeHtml = renderScanOutcomeCell(scan, figureRefsFor(scan.id, figures))
+            """
+            <tr>
+                <td class="col-date nowrap">${escapeHtml(reportDate(scan.date))}</td>
+                <td class="col-ga bold-val nowrap">${escapeHtml(scanGestationalAge(scan))}</td>
+                <td>$scanOutcomeHtml</td>
+            </tr>
+            """.trimIndent()
+        }
+
+        return """
+        <section>
+            <h2 class="section-heading">Other scans</h2>
+            <div class="table-wrap">
+                <table class="clinical-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 20%;">Scan date</th>
+                            <th style="width: 12%;">GA</th>
+                            <th style="width: 68%;">Scan outcome</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        $rowsHtml
+                    </tbody>
+                </table>
+            </div>
+        </section>
+        """.trimIndent()
+    }
+
+    private fun renderScanOutcomeCell(
+        scan: DemoUltrasoundScan?,
+        figRefs: List<Int>,
+    ): String {
+        val figHtml = if (figRefs.isNotEmpty()) {
+            """<span class="fig-ref">${escapeHtml(figRefs.joinToString(", ") { "Fig $it" })}</span>"""
+        } else {
+            null
+        }
+        if (scan == null) {
+            return if (figHtml != null) """<span class="scan-primary">$figHtml</span>""" else "-"
+        }
+        val outcome = scanOutcomeFor(scan)
+        val typePart = outcome.typeLabel?.let { "<strong>${escapeHtml(it)}</strong>" }
+        val presPart = outcome.presentation?.let { escapeHtml(it) }
+        val labelAndPres = listOfNotNull(typePart, presPart).joinToString(", ").ifEmpty { null }
+        val primaryInner = listOfNotNull(labelAndPres, figHtml).joinToString(" · ")
+
+        val lines = buildList {
+            if (primaryInner.isNotEmpty()) {
+                add("""<span class="scan-primary">$primaryInner</span>""")
+            }
+            if (outcome.measurements.isNotEmpty()) {
+                val measurementsContent = outcome.measurements.joinToString(", ") { (label, value) ->
+                    """<span class="u">${escapeHtml(label)} ${escapeHtml(value)}</span>"""
+                }
+                add("""<span class="scan-measurements">$measurementsContent</span>""")
+            }
+            if (outcome.extras.isNotEmpty()) {
+                add("""<span class="subtext">${escapeHtml(outcome.extras.joinToString(" · "))}</span>""")
+            }
+        }
+        return if (lines.isEmpty()) "-" else lines.joinToString("\n")
+    }
+
+    private fun renderLabsSection(report: LabReport): String {
+        if (report.comparisons.isEmpty() && report.singles.isEmpty()) {
+            return """
+            <section>
+                <h2 class="section-heading">Laboratory investigations</h2>
+                <p class="empty-note">No laboratory test results recorded yet</p>
+            </section>
+            """.trimIndent()
+        }
+
+        val comparisonsHtml = report.comparisons.joinToString("\n") { table ->
+            val dateCount = table.dates.size.coerceAtLeast(1)
+            val testColPct = when (dateCount) {
+                1 -> 60
+                2 -> 50
+                3 -> 40
+                4 -> 32
+                5 -> 25
+                else -> 22
+            }
+            val dateColPct = (100 - testColPct) / dateCount
+            val dateHeadersHtml = table.dates.joinToString("") { date ->
+                """<th class="col-date" style="width: ${dateColPct}%;">${escapeHtml(date)}</th>"""
+            }
+            val bodyRowsHtml = table.rows.joinToString("\n") { row ->
+                val cellsHtml = row.cells.joinToString("") { cell ->
+                    if (cell == null) {
+                        """<td class="col-num">-</td>"""
+                    } else if (cell.entries.size <= 1) {
+                        val entry = cell.entries.firstOrNull()
+                        val value = entry?.value ?: cell.value
+                        val flag = entry?.flag ?: cell.flag
+                        val abnormalNoDirection = entry?.abnormalNoDirection ?: cell.abnormalNoDirection
+                        """<td class="col-num">${renderLabEntryHtml(value, flag, abnormalNoDirection)}</td>"""
+                    } else {
+                        val entriesHtml = cell.entries.joinToString(" / ") { entry ->
+                            renderLabEntryHtml(entry.value, entry.flag, entry.abnormalNoDirection)
+                        }
+                        """<td class="col-num lab-multi">$entriesHtml</td>"""
+                    }
+                }
+                """
+                <tr>
+                    <td>${escapeHtml(row.label)}</td>
+                    $cellsHtml
+                </tr>
+                """.trimIndent()
+            }
+
+            """
+            <h3 class="lab-panel-title">${escapeHtml(table.category)}</h3>
+            <div class="table-wrap">
+                <table class="clinical-table">
+                    <thead>
+                        <tr>
+                            <th style="width: ${testColPct}%;">Test</th>
+                            $dateHeadersHtml
+                        </tr>
+                    </thead>
+                    <tbody>
+                        $bodyRowsHtml
+                    </tbody>
+                </table>
+            </div>
+            """.trimIndent()
+        }
+
+        val singlesHtml = if (report.singles.isEmpty()) {
+            ""
+        } else {
+            val singleRowsHtml = report.singles.joinToString("\n") { single ->
+                val resultWithUnit = if (!single.unit.isNullOrBlank()) {
+                    "${single.result} ${single.unit}"
+                } else {
+                    single.result
+                }
+                val resultCell = if (single.flagMark != null) {
+                    """<td><strong class="lab-abnormal">${escapeHtml(resultWithUnit)} ${escapeHtml(single.flagMark)}</strong></td>"""
+                } else {
+                    """<td>${escapeHtml(resultWithUnit)}</td>"""
+                }
+                val dateText = single.date.ifBlank { "-" }
+                """
+                <tr>
+                    <td>${escapeHtml(single.test)}</td>
+                    <td class="col-date">${escapeHtml(dateText)}</td>
+                    $resultCell
+                </tr>
+                """.trimIndent()
+            }
+            """
+            <h3 class="lab-panel-title">Single tests</h3>
+            <div class="table-wrap">
+                <table class="clinical-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 40%;">Test</th>
+                            <th style="width: 25%;">Date</th>
+                            <th style="width: 35%;">Result</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        $singleRowsHtml
+                    </tbody>
+                </table>
+            </div>
+            """.trimIndent()
+        }
+
+        return """
+        <section>
+            <h2 class="section-heading">Laboratory investigations</h2>
+            $comparisonsHtml
+            $singlesHtml
+            <div class="lab-footnote">H: above the usual range. L: below the usual range. *: abnormal.</div>
+        </section>
+        """.trimIndent()
+    }
+
+    private fun renderLabEntryHtml(
+        value: String,
+        flag: LabResultFlag?,
+        abnormalNoDirection: Boolean,
+    ): String {
+        val flagMark = when {
+            flag == LabResultFlag.HIGH -> "H"
+            flag == LabResultFlag.LOW -> "L"
+            abnormalNoDirection -> "*"
+            else -> null
+        }
+        return if (flagMark != null) {
+            """<strong class="lab-abnormal">${escapeHtml(value)} $flagMark</strong>"""
+        } else {
+            escapeHtml(value)
+        }
+    }
+
+    private fun renderMedicationsSection(
+        title: String,
+        countText: String,
+        meds: List<DemoMedicationRecord>,
+        emptyMessage: String?,
+    ): String {
+        val bodyHtml = if (meds.isEmpty()) {
+            """<p class="empty-note">${escapeHtml(emptyMessage ?: "None")}</p>"""
+        } else {
+            val itemsHtml = meds.joinToString("\n") { m ->
+                val detail = medicationDetail(m)
+                val dates = medicationDates(m)
+                val parts = buildList {
+                    add("""<span class="bold-val">${escapeHtml(m.name)}</span>""")
+                    if (detail.isNotEmpty()) {
+                        add("""<span class="med-line">${escapeHtml(detail)}</span>""")
+                    }
+                    if (dates.isNotEmpty()) {
+                        add("""<span class="med-date">${escapeHtml(dates)}</span>""")
+                    }
+                }
+                """<li>${parts.joinToString(" ")}</li>"""
+            }
+            """<ul class="med-grid">$itemsHtml</ul>"""
+        }
+
+        return """
+        <section class="meds-compact">
+            <h2 class="section-heading">${escapeHtml(title)} <span class="med-count">${escapeHtml(countText)}</span></h2>
+            $bodyHtml
+        </section>
+        """.trimIndent()
+    }
+
+    private fun renderAttachedImagesSection(
+        figures: List<Figure>,
+        pictureDataUri: (PictureCandidate) -> String?,
+    ): String {
+        if (figures.isEmpty()) return ""
+        val rowsHtml = figures.chunked(3).joinToString("\n") { rowFigures ->
+            val cardsHtml = rowFigures.joinToString("\n") { figure ->
+                val candidate = figure.candidate
+                val dataUri = pictureDataUri(candidate)?.trim()?.takeIf { it.isNotEmpty() }
+                val altText = buildString {
+                    append("Fig ").append(figure.number).append(" - ").append(candidate.sourceLabel)
+                    if (candidate.date.isNotBlank()) {
+                        append(" (").append(candidate.date).append(")")
+                    }
+                }
+                val imageBoxHtml = if (dataUri != null) {
+                    """<img class="figure-image" src="${escapeHtml(dataUri)}" alt="${escapeHtml(altText)}" />"""
+                } else {
+                    """<div class="image-placeholder">Image not available</div>"""
+                }
+                """
+                <figure class="figure-card">
+                    $imageBoxHtml
+                    <figcaption class="figure-caption">
+                        <div class="figure-title"><strong>Fig ${figure.number}</strong></div>
+                        <div class="figure-meta">Source: ${escapeHtml(candidate.sourceLabel)}</div>
+                        <div class="figure-meta">Date: <span class="col-date">${escapeHtml(candidate.date.ifBlank { "-" })}</span></div>
+                    </figcaption>
+                </figure>
+                """.trimIndent()
+            }
+            """
+            <div class="figures-row">
+                $cardsHtml
+            </div>
+            """.trimIndent()
+        }
+
+        return """
+        <section class="attached-images">
+            <h2 class="section-heading">Attached images</h2>
+            <div class="figures-container">
+                $rowsHtml
+            </div>
+            <div class="image-count-line">Pictures selected for this print: <span class="col-date">${figures.size}</span></div>
+        </section>
+        """.trimIndent()
+    }
+
+    private fun buildCss(bpAlertCss: String): String = """
+        :root {
+            --color-text-primary: #0f172a; --color-text-secondary: #475569;
+            --color-rule: #cbd5e1; --color-rule-subtle: #e2e8f0; --color-zebra: #f8fafc;
+            --color-alert-text: #b91c1c; --color-alert-bg: #fef2f2; --color-alert-border: #f87171;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body {
+            overflow-x: hidden; width: 100%; background-color: #ffffff; color: var(--color-text-primary);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            font-size: 9.5pt; line-height: 1.35; -webkit-print-color-adjust: exact; print-color-adjust: exact;
+        }
+        @media screen {
+            body { background-color: #cbd5e1; padding: 12px 0; display: flex; flex-direction: column; align-items: center; }
+            .page-flow { background: #ffffff; width: 210mm; max-width: 100%; box-sizing: border-box; padding: 12mm 14mm; box-shadow: 0 2px 10px rgba(15, 23, 42, 0.15); }
+            .print-shell, .print-shell > tbody, .print-shell > tbody > tr, .print-shell > tbody > tr > td { display: block; width: 100%; }
+            .print-shell > tfoot { display: none; }
+        }
+        @media screen and (max-width: 210mm) {
+            body { padding: 6px 0; }
+            .page-flow { width: 210mm; max-width: none; margin: 0; zoom: calc(100vw / 210mm); }
+        }
+        @media print {
+            @page { size: A4 portrait; margin: 10mm 12mm; }
+            html, body { background: #ffffff !important; color: #000000; margin: 0; padding: 0; width: 100%; overflow: visible; }
+            .page-flow { width: 100% !important; margin: 0 !important; padding: 0 !important; box-shadow: none !important; zoom: 1 !important; }
+            .print-shell { display: table; width: 100%; border-collapse: collapse; }
+            .print-shell > tbody { display: table-row-group; }
+            .print-shell > tfoot { display: table-footer-group; }
+            .print-shell > tbody > tr, .print-shell > tfoot > tr { break-inside: auto; page-break-inside: auto; }
+            .print-shell-cell { padding: 0; vertical-align: top; }
+            .print-footer-space { height: 15mm; }
+            thead { display: table-header-group; }
+            table.clinical-table tr, .avoid-break, .figures-row, .figure-card, .med-grid li, .meds-compact { break-inside: avoid; page-break-inside: avoid; }
+            .section-heading, .lab-panel-title { break-after: avoid; page-break-after: avoid; }
+            .status-banner { background: #f1f5f9 !important; color: #000000 !important; border: 1.5px solid #000000 !important; }
+            .data-val.data-val-alert { border-color: #000000 !important; color: #000000 !important; }
+            .page-footer { position: fixed; bottom: 0; left: 0; right: 0; background: #ffffff; margin-top: 0; }
+            table.clinical-table, table.clinical-table th, table.clinical-table td,
+            .scan-measurements, .subtext, .empty-prior-row td, .bp-alert, .abnormal-val,
+            .lab-abnormal, .lab-footnote, .figure-meta, .image-count-line, .med-line, .med-date, .page-footer { color: #000000 !important; }
+            .image-placeholder { background-color: #f8fafc; border: 1px solid #94a3b8; color: #334155; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+        .clinic-header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid var(--color-text-primary); padding-bottom: 4px; margin-bottom: 6px; }
+        .clinic-brand { display: flex; align-items: center; gap: 12px; }
+        .clinic-logo { width: 40px; height: 56px; object-fit: contain; flex-shrink: 0; }
+        .clinic-mark { width: 40px; height: 40px; border: 1.5px solid var(--color-text-primary); display: flex; align-items: center; justify-content: center; font-size: 13pt; font-weight: 800; color: var(--color-text-primary); letter-spacing: 0.5px; flex-shrink: 0; }
+        .clinic-title-box h1 { font-size: 13.5pt; font-weight: 800; color: var(--color-text-primary); line-height: 1.2; }
+        .clinic-title-box .subhead { font-size: 9pt; font-weight: 600; color: var(--color-text-primary); }
+        .clinic-title-box .specialty { font-size: 9pt; color: var(--color-text-secondary); }
+        .doc-meta { text-align: right; font-size: 9pt; color: var(--color-text-secondary); display: flex; flex-direction: column; gap: 2px; flex-shrink: 0; }
+        .doc-badge { font-size: 9pt; font-weight: 700; letter-spacing: 0.2px; color: var(--color-text-primary); border-bottom: 1px solid var(--color-rule); padding-bottom: 2px; margin-bottom: 2px; }
+        .doc-meta strong { color: var(--color-text-primary); }
+        .status-banner { background: #1e293b; color: #ffffff; border: 1px solid #1e293b; font-weight: 700; font-size: 9.5pt; padding: 4px 10px; border-radius: 3px; margin-bottom: 6px; }
+        .patient-banner { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; border-bottom: 1px solid var(--color-rule); padding-bottom: 6px; margin-bottom: 8px; }
+        .pt-identity { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+        .patient-name { font-size: 13pt; font-weight: 800; color: var(--color-text-primary); word-break: keep-all; overflow-wrap: break-word; line-height: 1.2; }
+        .pt-meta-inline { font-size: 9pt; color: var(--color-text-secondary); display: flex; flex-wrap: wrap; gap: 2px 14px; }
+        .pt-meta-inline strong { color: var(--color-text-primary); }
+        .pt-vitals-strip { display: flex; gap: 16px; align-items: flex-end; flex-shrink: 0; }
+        .vital-cell { text-align: right; }
+        .vital-label { font-size: 9pt; color: var(--color-text-secondary); display: block; margin-bottom: 1px; }
+        .vital-value { font-size: 9.5pt; font-weight: 700; color: var(--color-text-primary); }
+        .risk-pill { display: inline-block; font-size: 9pt; font-weight: 700; padding: 1px 6px; border-radius: 2px; white-space: nowrap; }
+        .risk-high { color: var(--color-alert-text); border: 1px solid var(--color-alert-border); background-color: var(--color-alert-bg); }
+        .risk-medium { color: #92400e; border: 1px solid #f59e0b; background-color: #fef3c7; }
+        .risk-low { color: #166534; border: 1px solid #86efac; background-color: #dcfce7; }
+        .risk-unrecorded { color: var(--color-text-secondary); border: 1px solid var(--color-rule); background-color: var(--color-zebra); }
+        .attention-box { background: #fff7ed; border: 1px solid #c2410c; color: #7c2d12; font-size: 9pt; padding: 5px 10px; border-radius: 3px; margin-bottom: 8px; display: flex; gap: 8px; }
+        .attention-box .k { font-weight: 700; white-space: nowrap; }
+        .two-column-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 18px; }
+        .section-heading { font-size: 10.5pt; font-weight: 700; color: var(--color-text-primary); border-bottom: 1px solid var(--color-rule); padding-bottom: 2px; margin-top: 6px; margin-bottom: 4px; display: flex; justify-content: space-between; align-items: baseline; }
+        .section-heading .extra { font-size: 9pt; color: var(--color-text-secondary); font-weight: normal; }
+        .data-list { display: flex; flex-direction: column; gap: 3px; }
+        .data-row { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; font-size: 9pt; border-bottom: 1px solid var(--color-rule-subtle); padding-bottom: 2px; }
+        .data-key { color: var(--color-text-secondary); font-weight: 500; flex-shrink: 0; }
+        .data-val { color: var(--color-text-primary); font-weight: 600; text-align: right; overflow-wrap: anywhere; }
+        .data-val-full { text-align: left; width: 100%; }
+        .data-val-alert { color: var(--color-alert-text); font-weight: 700; }
+        .data-val.data-val-alert { background-color: var(--color-alert-bg); border: 1px solid var(--color-alert-border); border-radius: 2px; padding: 0 5px; }
+        .ga-banner { margin-top: 4px; padding: 3px 0; font-size: 9pt; font-weight: 700; color: var(--color-text-primary); display: flex; justify-content: space-between; border-top: 1px solid var(--color-rule); }
+        .table-wrap { width: 100%; margin-bottom: 6px; }
+        table.clinical-table { width: 100%; table-layout: fixed; border-collapse: collapse; font-size: 9pt; line-height: 1.25; }
+        table.clinical-table thead { display: table-header-group; }
+        table.clinical-table tr { break-inside: avoid; page-break-inside: avoid; }
+        table.clinical-table th { font-size: 9pt; font-weight: 700; color: var(--color-text-primary); border-bottom: 1.5px solid var(--color-text-primary); padding: 2.5px 5px; text-align: left; background: #ffffff; word-break: normal; overflow-wrap: normal; hyphens: none; }
+        table.clinical-table td { font-size: 9pt; padding: 2px 5px; border-bottom: 1px solid var(--color-rule-subtle); color: var(--color-text-primary); vertical-align: top; overflow-wrap: anywhere; word-break: normal; line-height: 1.22; }
+        table.clinical-table tbody tr:nth-child(even) { background-color: var(--color-zebra); }
+        .nowrap, .col-date, .col-ga, .col-bp, .col-num { white-space: nowrap; overflow-wrap: normal; }
+        .col-date, .col-num { font-variant-numeric: tabular-nums; }
+        table.clinical-table th.col-date, table.clinical-table td.col-num { text-align: right; }
+        table.clinical-table td.col-num.lab-multi { white-space: normal; overflow-wrap: anywhere; }
+        table.clinical-table td.col-date, table.clinical-table td.col-ga { text-align: left; }
+        .bold-val { font-weight: 700; }
+        .scan-primary { display: block; line-height: 1.3; }
+        .scan-measurements { display: block; font-size: 9pt; color: var(--color-text-secondary); line-height: 1.2; margin-top: 0; overflow-wrap: normal; }
+        .scan-measurements .u { white-space: nowrap; }
+        .subtext { font-size: 9pt; color: var(--color-text-secondary); display: block; margin-top: 0; }
+        .abnormal-val { font-weight: 700; color: var(--color-alert-text); }$bpAlertCss
+        .empty-prior-row td { text-align: center; font-style: italic; color: var(--color-text-secondary); font-size: 9pt; padding: 4px; background-color: var(--color-zebra); }
+        .empty-note { font-size: 9pt; font-style: italic; color: var(--color-text-secondary); text-align: center; padding: 6px; }
+        .fig-ref { font-weight: 600; white-space: nowrap; }
+        .lab-panel-title { font-size: 9.5pt; font-weight: 700; color: var(--color-text-primary); margin-top: 6px; margin-bottom: 3px; }
+        .lab-abnormal { font-weight: 700; color: var(--color-alert-text); }
+        .lab-footnote { font-size: 9pt; color: var(--color-text-secondary); margin-top: 4px; line-height: 1.35; }
+        .med-grid { list-style: none; display: grid; grid-template-columns: 1fr 1fr; column-gap: 14px; margin: 0; padding: 0; }
+        .med-grid li { font-size: 9pt; line-height: 1.3; padding: 1.5px 2px; border-bottom: 1px solid var(--color-rule-subtle); break-inside: avoid; page-break-inside: avoid; overflow-wrap: anywhere; }
+        .med-line { color: #334155; }
+        .med-date { white-space: nowrap; color: #334155; }
+        .med-count { font-weight: 400; }
+        .meds-compact { break-inside: avoid; page-break-inside: avoid; }
+        .attestation-wrapper { display: flex; flex-direction: column; gap: 2px; padding-top: 2px; }
+        .doc-name { font-size: 10pt; font-weight: 700; color: var(--color-text-primary); }
+        .doc-ar-name { font-size: 12pt; font-weight: 700; color: var(--color-text-primary); direction: rtl; text-align: right; line-height: 1.3; }
+        .doc-ar-title { font-size: 9pt; color: var(--color-text-secondary); direction: rtl; text-align: right; line-height: 1.3; }
+        .stamp-box { margin-top: 6px; border: 1px dashed var(--color-rule); height: 38px; display: flex; align-items: center; justify-content: center; color: var(--color-text-secondary); font-size: 9pt; text-transform: uppercase; letter-spacing: 0.5px; }
+        .figures-container { display: flex; flex-direction: column; gap: 12px; margin-top: 8px; margin-bottom: 8px; }
+        .figures-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; break-inside: avoid; page-break-inside: avoid; }
+        .figure-card { margin: 0; break-inside: avoid; page-break-inside: avoid; display: flex; flex-direction: column; }
+        .image-placeholder { width: 100%; aspect-ratio: 4 / 3; background-color: #f1f5f9; border: 1px solid var(--color-rule); display: flex; align-items: center; justify-content: center; text-align: center; padding: 8px; font-size: 10pt; font-weight: 700; color: var(--color-text-secondary); box-sizing: border-box; }
+        .figure-image { width: 100%; aspect-ratio: 4 / 3; object-fit: contain; display: block; border: 1px solid var(--color-rule); background-color: #f8fafc; box-sizing: border-box; }
+        .figure-caption { padding-top: 5px; font-size: 9pt; line-height: 1.35; color: var(--color-text-primary); }
+        .figure-title { font-size: 9.5pt; font-weight: 700; color: var(--color-text-primary); }
+        .figure-meta { font-size: 9pt; color: var(--color-text-secondary); }
+        .image-count-line { font-size: 9pt; font-weight: 600; color: var(--color-text-secondary); margin-top: 10px; padding-top: 6px; border-top: 1px solid var(--color-rule-subtle); }
+        .page-footer { border-top: 1px solid var(--color-rule); padding-top: 4px; margin-top: 10px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 2px 12px; font-size: 9pt; color: var(--color-text-secondary); }
+    """.trimIndent()
 }

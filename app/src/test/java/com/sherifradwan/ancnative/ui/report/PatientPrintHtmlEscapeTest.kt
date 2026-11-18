@@ -16,23 +16,13 @@ import org.junit.Test
 import java.time.LocalDate
 
 /**
- * Round 3o tests (Q92/Q93, .agents/pipeline/SPEC_FIX_R3.md section "Round 3o").
+ * Round 3o tests (Q92/Q93).
  *
  * Q92: escapeHtml is the ONE escaper - null -> "", & first, then < > " '.
  * Q93: every printed patient/settings text is escaped exactly once at the
  * point it enters the HTML; no raw "<b>" may survive from any user field,
  * the escaped marker appears once per printed section, and the generator's
  * own markup (tables, badges, logo fallback) stays untouched.
- *
- * SAFE assumptions (also recorded in the lane report):
- *  - context = null short-circuits Android logo decoding (plain JVM test,
- *    same trick as PatientPrintHtmlGeneratorTest).
- *  - MARKER = "<b>&"'". Its escaped form is "&lt;b&gt;&amp;&quot;&#39;".
- *  - settings.clinicName is printed escaped in the title, both page headers
- *    and both footers; a non blank value replaces the fallback English clinic
- *    name, and the marker must never appear raw in any of those places.
- *  - Dating/scan/lab/visit "date" fields are typed as free strings; the fixture
- *    puts the marker in them, so the GA engine yields no result for those rows.
  */
 class PatientPrintHtmlEscapeTest {
 
@@ -95,7 +85,7 @@ class PatientPrintHtmlEscapeTest {
         presentation = MARKER, placentalSite = MARKER, amnioticFluid = MARKER,
         fetalHeartRate = MARKER, biometryBpd = MARKER, biometryHc = MARKER,
         biometryAc = MARKER, biometryFl = MARKER, estimatedFetalWeight = MARKER,
-        impression = MARKER, imageUris = listOf("content://x/1"),
+        impression = "BP <90 systolic $MARKER", imageUris = listOf("content://x/1"),
     )
 
     private fun dating() = DemoPatientDating(
@@ -166,7 +156,7 @@ class PatientPrintHtmlEscapeTest {
     private fun escapedRow(label: String) {
         assertTrue(
             "row '$label' must print the escaped marker",
-            Regex(Regex.escape(label) + """</span>\s*<span class="v[^"]*">$ESCAPED</span>""").containsMatchIn(html),
+            Regex("""<span class="data-key">""" + Regex.escape(label) + """</span>\s*<span class="data-val[^"]*">$ESCAPED</span>""").containsMatchIn(html),
         )
     }
 
@@ -180,60 +170,60 @@ class PatientPrintHtmlEscapeTest {
 
     @Test
     fun q93_bpUnderNinetyNote_printsAsEscapedText() {
-        assertTrue("\"BP <90\" in a visit note must print as \"BP &lt;90\"", html.contains("BP &lt;90"))
+        assertTrue("\"BP <90\" in a scan impression must print as \"BP &lt;90\"", html.contains("BP &lt;90"))
         assertTrue(html.contains("BP &lt;90 systolic"))
     }
 
     @Test
     fun q93_patientIdentitySection_escapedOnce() {
-        assertTrue(html.contains("Clinical Record - $ESCAPED - $ESCAPED"))
-        assertTrue(countOf("""<h3>$ESCAPED</h3>""") == 1)
-        assertTrue(html.contains("Patient ID: $ESCAPED"))
-        assertTrue(html.contains("Phone: $ESCAPED</div>"))
-        assertTrue(countOf("""Patient ID:</span> <span class="v">$ESCAPED</span>""") >= 2)
+        assertTrue(html.contains("<title>Clinical record - $ESCAPED - $ESCAPED</title>"))
+        assertTrue(countOf("""<div class="patient-name">$ESCAPED</div>""") == 1)
+        assertTrue(html.contains("<span>Phone: <strong>$ESCAPED</strong></span>"))
+        assertTrue(countOf("""Patient ID: <strong>$ESCAPED</strong>""") >= 2)
         assertTrue(
-            Regex("""data-label">Age</span>\s*<span class="data-value">$ESCAPED</span>""").containsMatchIn(html),
+            Regex("""<span class="vital-label">Age</span>\s*<span class="vital-value">$ESCAPED</span>""").containsMatchIn(html),
         )
         assertTrue(
-            Regex("""<span class="data-value text-navy">\s*$ESCAPED""").containsMatchIn(html),
+            Regex("""<span class="vital-label">Blood group</span>\s*<span class="vital-value[^"]*">$ESCAPED</span>""").containsMatchIn(html),
+        )
+        assertTrue(
+            Regex("""<span class="risk-pill risk-unrecorded">$ESCAPED</span>""").containsMatchIn(html),
+        )
+        assertTrue(
+            Regex("""<div class="attention-box"><span class="k">Clinical attention</span><span class="v">$ESCAPED</span></div>""").containsMatchIn(html),
         )
     }
 
     @Test
     fun q93_settingsClinicName_neverLeaksRaw() {
-        // The settings clinic name is printed escaped in the title, both page
-        // headers and both footers, so nothing raw may ever appear there.
-        assertTrue(countOf("""<h1[^>]*>$ESCAPED</h1>""") == 2)
+        assertTrue(countOf("""<h1>$ESCAPED</h1>""") == 1)
         assertTrue(countOf(Regex.escape("Confidential medical record · $ESCAPED ·")) == 1)
-        assertTrue(countOf(Regex.escape("$ESCAPED · Specialist of Obstetrics")) == 2)
+        assertTrue(html.contains("<title>Clinical record - $ESCAPED - $ESCAPED</title>"))
         assertFalse(html.contains("<b>&"))
     }
 
     private fun datingBox(page: String): String {
-        val start = page.indexOf("<span>Pregnancy Dating</span>")
+        val start = page.indexOf("Pregnancy dating")
         assertTrue(start >= 0)
         val rest = page.substring(start)
-        val end = rest.indexOf("ga-highlight")
-        assertTrue("dating matrix must be followed by the GA highlight", end > 0)
+        val end = rest.indexOf("ga-banner")
+        assertTrue("dating matrix must be followed by the GA banner", end > 0)
         return rest.substring(0, end)
     }
 
-    // The EDD is a LocalDate, so a marker string can never reach the EDD cell. With nothing parseable the
-    // defined fallback is the rose EDD cell reading "Not recorded". The LMP and Method rows keep the raw text, escaped once.
     @Test
     fun q93_datingSection_escapedOnce() {
         val box = datingBox(html)
         assertFalse(box.contains(MARKER))
         assertFalse(box.contains("&amp;lt;"))
-        assertTrue(box, box.contains("""<div class="label">LMP</div><div class="val">$ESCAPED</div>"""))
-        assertTrue(box, box.contains("""<div class="label">Method</div><div class="val">$ESCAPED</div>"""))
-        assertEquals(2, Regex("""<div class="val">$ESCAPED</div>""").findAll(box).count())
-        val eddCells = Regex("""<div class="label">EDD</div><div class="val text-rose">([^<]*)</div>""").findAll(box).toList()
+        assertTrue(box, box.contains("""<span class="data-key">LMP</span><span class="data-val col-date">$ESCAPED</span>"""))
+        assertTrue(box, box.contains("""<span class="data-key">Method</span><span class="data-val">$ESCAPED</span>"""))
+        assertEquals(2, Regex("""<span class="data-val[^"]*">$ESCAPED</span>""").findAll(box).count())
+        val eddCells = Regex("""<span class="data-key">EDD</span><span class="data-val col-date bold-val">([^<]*)</span>""").findAll(box).toList()
         assertEquals(box, 1, eddCells.size)
         assertEquals("Not recorded", eddCells.single().groupValues[1])
     }
 
-    // A malformed agreed EDD and scan EDD beside a valid LMP: the EDD cell is the LMP due date, no raw marker leaks.
     @Test
     fun q93_datingSection_malformedEddsFallBackToTheMethodEddInTheRoseCell() {
         val dating = DemoPatientDating(
@@ -247,7 +237,7 @@ class PatientPrintHtmlEscapeTest {
             asOfDate = AS_OF_DATE,
         )
         val box = datingBox(page)
-        assertTrue(box, box.contains("""<div class="label">EDD</div><div class="val text-rose">15/03/2027</div>"""))
+        assertTrue(box, box.contains("""<span class="data-key">EDD</span><span class="data-val col-date bold-val">15/03/2027</span>"""))
         assertFalse(box.contains(MARKER))
         assertFalse(box.contains("&amp;lt;"))
         assertFalse(page.contains("&amp;amp;"))
@@ -255,59 +245,50 @@ class PatientPrintHtmlEscapeTest {
 
     @Test
     fun q93_historyRows_escapedOnce() {
-        escapedRow("Drug Allergies:")
-        escapedRow("Medical History:")
-        escapedRow("Surgical History:")
-        escapedRow("Family History:")
+        escapedRow("Drug allergies")
+        escapedRow("Medical history")
+        escapedRow("Surgical history")
+        escapedRow("Family history")
     }
 
     @Test
     fun q93_previousPregnanciesSection_escapedOnce() {
-        assertTrue(countOf("""date-cell">$ESCAPED</td>""") >= 1)
-        assertTrue(html.contains("""<td class="text-center font-bold">Singleton · $ESCAPED</td>"""))
-        assertTrue(countOf("""color:#0f766e;">$ESCAPED</span>""") >= 1)
-        assertTrue(html.contains("""<td class="text-center">$ESCAPED · $ESCAPED</td>"""))
+        assertTrue(countOf("""<td class="col-date bold-val">$ESCAPED</td>""") >= 1)
+        assertTrue(html.contains("""<td class="bold-val">Singleton · $ESCAPED</td>"""))
+        assertTrue(html.contains("""<td>$ESCAPED</td>"""))
+        assertTrue(html.contains("""<td>$ESCAPED · $ESCAPED</td>"""))
     }
 
     @Test
     fun q93_visitsSection_escapedOnce() {
-        assertTrue(countOf("""date-cell">$ESCAPED</td>""") >= 1)
+        assertTrue(countOf("""col-date nowrap">$ESCAPED</span>""") >= 2)
         assertTrue(countOf(Regex.escape("$ESCAPED kg")) >= 2)
-        assertTrue(
-            Regex("""(?s)notes-cell">BP &lt;90 systolic $ESCAPED · $ESCAPED""").containsMatchIn(html),
-        )
+        assertTrue(countOf("""col-bp nowrap">$ESCAPED</span>""") >= 2)
     }
 
     @Test
     fun q93_scansSection_escapedOnce() {
-        assertTrue(
-            html.contains(
-                """Fetuses: $ESCAPED · FHR: $ESCAPED · $ESCAPED · BPD: $ESCAPED · HC: $ESCAPED · AC: $ESCAPED · FL: $ESCAPED""",
-            ),
-        )
-        assertTrue(html.contains("$ESCAPED</td>"))
-        assertFalse(html.contains("$ESCAPED g"))
-        assertTrue(html.contains("""<div class="photo-badge">1 photos in the clinic record</div>"""))
+        assertTrue(html.contains("""<span class="scan-primary"><strong>$ESCAPED</strong>, $ESCAPED</span>"""))
+        assertTrue(html.contains("""<span class="u">BPD $ESCAPED</span>"""))
+        assertTrue(html.contains("""<span class="u">HC $ESCAPED</span>"""))
+        assertTrue(html.contains("""<span class="u">AC $ESCAPED</span>"""))
+        assertTrue(html.contains("""<span class="u">FL $ESCAPED</span>"""))
+        assertTrue(html.contains("""<span class="u">EFW $ESCAPED</span>"""))
+        assertTrue(html.contains("""Fluid: $ESCAPED · Placenta: $ESCAPED · FHR: $ESCAPED"""))
     }
 
     @Test
     fun q93_labsSection_escapedOnce() {
-        assertTrue(
-            html.contains(
-                """<td class="text-center font-bold text-navy">$ESCAPED<br><span class="text-muted med-instructions">$ESCAPED</span></td>""",
-            ),
-        )
-        assertTrue(html.contains("$ESCAPED $ESCAPED"))
-        assertTrue(html.contains("""<span class="val-abnormal">"""))
-        assertTrue(html.contains("(Abnormal)"))
+        assertTrue(html.contains("""<td class="col-date">$ESCAPED</td>"""))
+        assertTrue(html.contains("""<strong class="lab-abnormal">$ESCAPED $ESCAPED *</strong>"""))
+        assertTrue(html.contains("""<td>$ESCAPED $ESCAPED</td>"""))
     }
 
     @Test
     fun q93_medicationsSection_escapedOnce() {
         assertTrue(
-            html.contains("""<td class="text-center med-cell"><span class="font-bold text-navy">$ESCAPED</span><br><span class="text-muted med-instructions">$ESCAPED · $ESCAPED · $ESCAPED · Prophylaxis</span></td>"""),
+            html.contains("""<span class="bold-val">$ESCAPED</span> <span class="med-line">$ESCAPED · $ESCAPED · $ESCAPED · Prophylaxis</span> <span class="med-date">From 01/01/2026</span>"""),
         )
-        assertTrue(html.contains("""<td class="text-center">From 01/01/2026</td>"""))
     }
 
     @Test
@@ -316,7 +297,7 @@ class PatientPrintHtmlEscapeTest {
         assertTrue("fixture plan must survive parsing", plan != null && plan.contains(MARKER))
         assertTrue(
             "the parsed plan must print escaped in the Planned delivery row",
-            Regex("""Planned delivery:</span>\s*<span class="v[^"]*">""" + Regex.escape(escapeHtml(plan)) + "</span>")
+            Regex("""<span class="data-key">Planned delivery</span>\s*<span class="data-val[^"]*">""" + Regex.escape(escapeHtml(plan)) + "</span>")
                 .containsMatchIn(html),
         )
         assertFalse(html.contains("Planned Delivery Mode:"))
@@ -324,16 +305,12 @@ class PatientPrintHtmlEscapeTest {
 
     @Test
     fun q93_generatorOwnMarkup_stillPresent() {
-        assertTrue(countOf("""<table class="clinical-table">""") >= 3)
+        assertTrue(countOf("""<table class="clinical-table">""") >= 2)
         assertFalse(html.contains("IMAGING ATTACHMENTS"))
-        assertTrue(html.contains("""<span class="badge">$ESCAPED</span>"""))
-        assertTrue(html.contains("Current Medications"))
-        assertTrue(html.contains("Delivery Plan"))
-        assertFalse(html.contains("Active Medications"))
-        assertTrue(html.contains("""<td class="text-center med-cell">"""))
-        assertTrue(html.contains("""<div class="photo-badge">1 photos in the clinic record</div>"""))
-        assertTrue(html.contains("""<div class="logo-fallback">DR</div>"""))
-        assertTrue(html.contains("""CLINICAL RECORD</div>"""))
-        assertTrue(html.contains("class=\"section-title\""))
+        assertTrue(html.contains("Current medications"))
+        assertTrue(html.contains("Delivery plan"))
+        assertTrue(html.contains("""<div class="clinic-mark">DR</div>"""))
+        assertTrue(html.contains("""Clinical record</div>"""))
+        assertTrue(html.contains("""class="section-heading""""))
     }
 }

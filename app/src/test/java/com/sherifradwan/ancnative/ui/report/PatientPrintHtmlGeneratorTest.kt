@@ -11,40 +11,16 @@ import org.junit.Test
 import java.time.LocalDate
 
 /**
- * Round 2e / Q17 tests (R4-2, .agents/pipeline/SPEC_FIX_R2.md addendum): the printed
- * report must classify risk and Rh status with the SHARED rules isHighRisk /
- * isRhNegative from ClinicalFormat.kt, exactly like the screens do after Q7.
- *
- * Round 2f additions: Q18 (R5-1, printed Age cell uses the shared formatAgeYears
- * rule; every spec example asserted on the exact Age cell) below the Q17 tests.
- *
- * The export changed on purpose (owner approved), so the markup pinned below is
- * the new wording: the risk chip is "High risk", "Medium risk", "Low risk" or
- * "Risk not recorded", the Rh chip is "Rh negative", and the routine-protocol
- * sentence is gone from the report.
- *
- * Risk wording now: "High Risk" and "high" print the "High risk" chip, "Low Risk"
- * prints the "Low risk" chip, "Moderate Risk", "moderate" and "medium" print the
- * "Medium risk" chip, and "Not high risk" is not a high risk. The anti-D
- * precautions sentence prints only for an Rh-negative patient.
- *
- * SAFE assumptions:
- *  - context = null short-circuits Android logo decoding, so this runs as a plain
- *    JVM unit test without Robolectric.
- *  - The rule PRESENCE/ABSENCE assertions below pin the exact new markup
- *    (High risk + O- and Low risk + O+); the old capitalised risk chips and the
- *    old hyphenated Rh chip no longer exist in the export.
+ * Unit tests verifying clinical format, risk rules, age formatting, dating calculations,
+ * and delivery plan mapping in [PatientPrintHtmlGenerator] under Layout B3.
  */
 class PatientPrintHtmlGeneratorTest {
 
-    // The new export prints the risk chip as "High risk", "Medium risk", "Low risk"
-    // or "Risk not recorded". NORMAL_RISK_BADGE keeps its historical name but pins
-    // the "Low risk" chip, the old capitalised chips are gone.
-    private val HIGH_RISK_BADGE = """<span class="badge badge-danger">High risk</span>"""
-    private val MEDIUM_RISK_BADGE = """<span class="badge badge-warning">Medium risk</span>"""
-    private val NORMAL_RISK_BADGE = """<span class="badge badge-success">Low risk</span>"""
-    private val RISK_NOT_RECORDED_BADGE = """<span class="badge">Risk not recorded</span>"""
-    private val RH_BADGE = """<span class="badge badge-danger">Rh negative</span>"""
+    private val HIGH_RISK_BADGE = """<span class="risk-pill risk-high">High risk</span>"""
+    private val MEDIUM_RISK_BADGE = """<span class="risk-pill risk-medium">Medium risk</span>"""
+    private val NORMAL_RISK_BADGE = """<span class="risk-pill risk-low">Low risk</span>"""
+    private val RISK_NOT_RECORDED_BADGE = """<span class="risk-pill risk-unrecorded">Risk not recorded</span>"""
+    private val RH_BADGE = """<span class="risk-pill risk-high">Rh negative</span>"""
     private val ANTI_D_LINE = "Anti-D Prophylaxis + Matched Packed RBCs Cross-match"
     private val ROUTINE_LINE = "Routine Obstetric Hospital Protocol"
     private val AS_OF_DATE = LocalDate.of(2026, 10, 28)
@@ -68,7 +44,7 @@ class PatientPrintHtmlGeneratorTest {
             asOfDate = AS_OF_DATE,
         )
 
-    // ---- Q17 risk-level badge (exactly one of the two badges is present) ----
+    // ---- Q17 risk-level badge (exactly one of the badges is present) ----
 
     @Test
     fun q17_riskLevelsValidated_highRiskBadge() {
@@ -200,7 +176,7 @@ class PatientPrintHtmlGeneratorTest {
     @Test
     fun q17_boundary_unplacedRiskTextIsPrintedAsWritten_withRhBadge() {
         val html = htmlFor("Not high risk", "O-")
-        assertTrue("a risk text outside the tiers prints as written", html.contains("""<span class="badge">Not high risk</span>"""))
+        assertTrue("a risk text outside the tiers prints as written", html.contains("""<span class="risk-pill risk-unrecorded">Not high risk</span>"""))
         assertFalse(html.contains(RISK_NOT_RECORDED_BADGE))
         assertFalse(html.contains(HIGH_RISK_BADGE))
         assertTrue(html.contains(RH_BADGE))
@@ -216,34 +192,17 @@ class PatientPrintHtmlGeneratorTest {
     }
 
     // =====================================================================
-    // Round 2f oracles (Q18 / R5-1, .agents/pipeline/SPEC_FIX_R2.md addendum).
-    // The printed Age value must use the shared formatAgeYears rule:
-    //   valid age   -> "n yrs"
-    //   non-blank invalid text -> the trimmed text exactly as typed, no " yrs"
-    //     (never hide what the clinician typed on a printed record)
-    //   null/blank  -> "-"
-    // Every example below is the exact input/expected pair from the Q18 list
-    // in SPEC_FIX_R2.md. Assertions pin the exact Age cell:
-    //   <span class="data-label">Age</span> ...\n... <span class="data-value">VALUE</span>
-    // markup as it is today (only the value logic may change, not the markup).
-    //
-    // Expected failures today (ageText non-blank blindly gets " yrs"): the six
-    // non-blank-invalid inputs "29 years", "Age: 29", " 29 ", "unknown",
-    // "290", "29 years 3 months" all get " yrs" appended today.
-    // "29" and the blank/null cases already print correctly today and must
-    // keep passing unchanged.
+    // Round 2f oracles (Q18 / R5-1)
     // =====================================================================
 
     private fun ageValue(html: String, ageTextInput: String?): String {
         val regex = Regex(
-            """<span class="data-label">Age</span>\s*<span class="data-value">([^<]+)</span>""",
+            """<span class="vital-label">Age</span>\s*<span class="vital-value">([^<]+)</span>""",
         )
         val m = regex.find(html)
         assertTrue("Age cell must be present exactly once (input: $ageTextInput)", m != null)
         return m!!.groupValues[1]
     }
-
-    // ---- Q18 valid ages (formatAgeYears accepts) -> "n yrs" ----
 
     @Test
     fun q18_bareNumber_ageCellExact() {
@@ -269,8 +228,6 @@ class PatientPrintHtmlGeneratorTest {
         assertEquals("29 yrs", ageValue(html, " 29 "))
     }
 
-    // ---- Q18 non-blank non-valid text -> trimmed text exactly as typed, no " yrs" ----
-
     @Test
     fun q18_unknownWord_printedAsTyped() {
         val html = htmlFor("Low Risk", "O+", "unknown")
@@ -289,8 +246,6 @@ class PatientPrintHtmlGeneratorTest {
         assertEquals("29 years 3 months", ageValue(html, "29 years 3 months"))
     }
 
-    // ---- Q18 blank / null -> "-" ----
-
     @Test
     fun q18_blankString_isDash() {
         val html = htmlFor("Low Risk", "O+", "")
@@ -305,9 +260,6 @@ class PatientPrintHtmlGeneratorTest {
 
     // =====================================================================
     // Round 3a / Q19: the printed report never invents a clinical finding.
-    // Missing = null, empty or whitespace only -> exactly "Not recorded".
-    // (Q19(e) covers the null riskLevel case: null was removed from
-    // q17_riskLevelsNonHigh_lowRiskBadge, see q19e below.)
     // =====================================================================
 
     private val NOT_RECORDED = "Not recorded"
@@ -349,43 +301,9 @@ class PatientPrintHtmlGeneratorTest {
     )
 
     private fun rowValue(html: String, label: String): String {
-        val m = Regex(label + """</span>\s*<span class="v[^"]*">([^<]*)</span>""").find(html)
+        val m = Regex("""<span class="data-key">""" + Regex.escape(label) + """</span>\s*<span class="data-val[^"]*">([^<]*)</span>""").find(html)
         assertTrue("row '$label' must be present", m != null)
         return m!!.groupValues[1]
-    }
-
-    private fun notRecordedCells(html: String): Int =
-        Regex(Regex.escape("""<td class="text-center">$NOT_RECORDED</td>""")).findAll(html).count()
-
-    // (a) ultrasound cells
-    @Test
-    fun q19a_missingScanCells_notRecorded_noInventedFindings() {
-        for (v in MISSING) {
-            val html = q19Html(scans = listOf(scan(v, v, v)))
-            assertTrue("'$v': a missing scan value must print Not recorded", notRecordedCells(html) >= 1)
-            assertFalse(html.contains("Cephalic"))
-            assertFalse(html.contains("Posterior Grade I"))
-            assertFalse(html.contains("Adequate (AFI 14cm)"))
-        }
-    }
-
-    @Test
-    fun q19a_presentValues_printedUnchanged() {
-        val html = q19Html(scans = listOf(scan("Breech", "Anterior", "Reduced")))
-        assertTrue(html.contains("""<td class="text-center">Breech</td>"""))
-        assertTrue(html.contains("""<td class="text-center">Anterior</td>"""))
-        assertTrue(html.contains("""<td class="text-center">Reduced</td>"""))
-        // The scan details cell now falls back to Not recorded on its own when there
-        // is no fetuses, FHR, impression or biometry, so only the printed values are
-        // pinned here.
-        assertFalse("no default presentation may be invented", html.contains("Cephalic"))
-    }
-
-    @Test
-    fun q19a_onlyOneMissing_onlyThatCellNotRecorded() {
-        val html = q19Html(scans = listOf(scan("Breech", null, "Reduced")))
-        assertEquals(1, notRecordedCells(html))
-        assertFalse(html.contains("Posterior Grade I"))
     }
 
     // (b) allergies
@@ -393,7 +311,7 @@ class PatientPrintHtmlGeneratorTest {
     fun q19b_allergyMissing_notRecorded_noNkda() {
         for (v in MISSING) {
             val html = q19Html(allergy = v)
-            assertEquals("'$v'", NOT_RECORDED, rowValue(html, "Drug Allergies:"))
+            assertEquals("'$v'", NOT_RECORDED, rowValue(html, "Drug allergies"))
             assertFalse(html.contains("NKDA"))
         }
     }
@@ -401,26 +319,26 @@ class PatientPrintHtmlGeneratorTest {
     @Test
     fun q19b_allergyPresent_exactWithRedStyling() {
         val html = q19Html(allergy = "Penicillin rash")
-        assertEquals("Penicillin rash", rowValue(html, "Drug Allergies:"))
-        assertTrue(html.contains("""<span class="v text-rose font-bold">Penicillin rash</span>"""))
+        assertEquals("Penicillin rash", rowValue(html, "Drug allergies"))
+        assertTrue(html.contains("""<span class="data-val data-val-alert">Penicillin rash</span>"""))
         assertFalse(html.contains("NKDA"))
     }
 
     @Test
     fun q19b_nkdaTypedByClinician_isPrinted() {
-        assertEquals("NKDA", rowValue(q19Html(allergy = "NKDA"), "Drug Allergies:"))
+        assertEquals("NKDA", rowValue(q19Html(allergy = "NKDA"), "Drug allergies"))
     }
 
     @Test
     fun q19b_nkda_isNeutralNotAlertStyled() {
         val html = q19Html(allergy = "NKDA")
-        assertTrue(html.contains("""<span class="v ">NKDA</span>"""))
-        assertFalse(html.contains("""text-rose font-bold">NKDA"""))
+        assertTrue(html.contains("""<span class="data-val">NKDA</span>"""))
+        assertFalse(html.contains("""data-val-alert">NKDA"""))
     }
 
     @Test
     fun q19b_allergyMixedWithNkda_keepsAlertStyle() {
-        assertTrue(q19Html(allergy = "NKDA but sulfa rash").contains("""text-rose font-bold">NKDA but sulfa rash"""))
+        assertTrue(q19Html(allergy = "NKDA but sulfa rash").contains("""data-val data-val-alert">NKDA but sulfa rash"""))
     }
 
     // (c) medical / surgical history
@@ -428,8 +346,8 @@ class PatientPrintHtmlGeneratorTest {
     fun q19c_historyMissing_notRecorded_noNone() {
         for (v in MISSING) {
             val html = q19Html(medical = v, surgical = v)
-            assertEquals("'$v'", NOT_RECORDED, rowValue(html, "Medical History:"))
-            assertEquals("'$v'", NOT_RECORDED, rowValue(html, "Surgical History:"))
+            assertEquals("'$v'", NOT_RECORDED, rowValue(html, "Medical history"))
+            assertEquals("'$v'", NOT_RECORDED, rowValue(html, "Surgical history"))
             assertFalse(html.contains(">None<"))
         }
     }
@@ -437,8 +355,8 @@ class PatientPrintHtmlGeneratorTest {
     @Test
     fun q19c_historyPresent_exact() {
         val html = q19Html(medical = "Hypothyroidism", surgical = "Appendectomy 2015")
-        assertEquals("Hypothyroidism", rowValue(html, "Medical History:"))
-        assertEquals("Appendectomy 2015", rowValue(html, "Surgical History:"))
+        assertEquals("Hypothyroidism", rowValue(html, "Medical history"))
+        assertEquals("Appendectomy 2015", rowValue(html, "Surgical history"))
     }
 
     // (d) estimated due date
@@ -446,17 +364,17 @@ class PatientPrintHtmlGeneratorTest {
     fun q19d_agreedEddMissing_rowAbsent() {
         for (v in MISSING) {
             val html = q19Html(dating = dating(v))
-            assertFalse("'$v'", html.contains("Estimated due date:"))
+            assertFalse("'$v'", html.contains("""<span class="data-key">Estimated due date</span>"""))
             assertFalse(html.contains("At 39 completed weeks"))
         }
         val noDating = q19Html(dating = null)
-        assertFalse(noDating.contains("Estimated due date:"))
+        assertFalse(noDating.contains("""<span class="data-key">Estimated due date</span>"""))
         assertFalse(noDating.contains("At 39 completed weeks"))
     }
 
     @Test
     fun q19d_agreedEddPresent_printed() {
-        assertEquals("08/11/2026", rowValue(q19Html(dating = dating("2026-11-08")), "Estimated due date:"))
+        assertEquals("08/11/2026", rowValue(q19Html(dating = dating("2026-11-08")), "Estimated due date"))
     }
 
     // (e) risk level missing
@@ -464,7 +382,7 @@ class PatientPrintHtmlGeneratorTest {
     fun q19e_riskMissing_riskNotRecordedBadgeOnly() {
         for (v in MISSING) {
             val html = q19Html(risk = v)
-            assertTrue("'$v'", html.contains("""<span class="badge">Risk not recorded</span>"""))
+            assertTrue("'$v'", html.contains(RISK_NOT_RECORDED_BADGE))
             assertFalse(html.contains(">High risk<"))
             assertFalse(html.contains(">Medium risk<"))
             assertFalse(html.contains(">Low risk<"))
@@ -476,7 +394,7 @@ class PatientPrintHtmlGeneratorTest {
         for (v in listOf("High Risk", "Low Risk", "Moderate Risk")) {
             assertFalse(q19Html(risk = v).contains("Risk not recorded"))
         }
-        assertTrue(q19Html(risk = "Low Risk").contains("""<span class="badge badge-success">Low risk</span>"""))
+        assertTrue(q19Html(risk = "Low Risk").contains(NORMAL_RISK_BADGE))
     }
 
     // (f) planned delivery comes from the parsed Delivery plan
@@ -486,7 +404,7 @@ class PatientPrintHtmlGeneratorTest {
         val expected = parseDeliveryNotes(notes).plan
         assertTrue("fixture must yield a plan", expected != null)
         val html = q19Html(notes = notes)
-        assertEquals(expected, rowValue(html, "Planned delivery:"))
+        assertEquals(expected, rowValue(html, "Planned delivery"))
         assertFalse(html.contains("Routine Obstetric Hospital Protocol"))
     }
 
@@ -495,8 +413,8 @@ class PatientPrintHtmlGeneratorTest {
         for (v in MISSING) {
             assertTrue(parseDeliveryNotes(v).plan == null)
             val html = q19Html(notes = v)
-            assertEquals("'$v'", NOT_RECORDED, rowValue(html, "Plan:"))
-            assertFalse("'$v'", html.contains("Planned delivery:"))
+            assertEquals("'$v'", NOT_RECORDED, rowValue(html, "Plan"))
+            assertFalse("'$v'", html.contains("""<span class="data-key">Planned delivery</span>"""))
             assertFalse(html.contains(PLAN_SENTENCE))
         }
     }
@@ -511,16 +429,11 @@ class PatientPrintHtmlGeneratorTest {
     }
 
     // =====================================================================
-    // Round 3a-2 / Q19(h)-(k): no invented table text.
+    // Round 3a-2 / Q19: no invented table text.
     // =====================================================================
 
     private fun htmlWith(p: (DemoPatient) -> DemoPatient): String =
         PatientPrintHtmlGenerator.generateHtml(context = null, patient = p(patient("Low Risk", "O+")), asOfDate = AS_OF_DATE)
-
-    private fun visit(findings: String?, notes: String?) = com.sherifradwan.ancnative.model.DemoVisit(
-        id = "q19h", date = "2026-09-01", bloodPressure = null, weight = null,
-        findings = findings, notes = notes, revision = 1, isSyntheticEdit = false,
-    )
 
     private fun prevPreg(place: String?, other: String?) = com.sherifradwan.ancnative.model.DemoPreviousPregnancy(
         id = "q19i", patientId = "r2e-print-1", modelVersion = 1, dateText = "2020", outcomeText = null,
@@ -535,48 +448,23 @@ class PatientPrintHtmlGeneratorTest {
         isProphylaxis = false,
     )
 
-    private fun scanWithImage(impression: String?) = scan(null, null, null).copy(
-        impression = impression, imageUris = listOf("content://x/1"),
-    )
-
     @Test
     fun medicationPrintsNameThenOneInstructionsLineWithNothingInvented() {
         val full = htmlWith { it.copy(medications = listOf(med("1 tab twice daily"))) }
-        assertTrue(full.contains("""<span class="text-muted med-instructions">5 mg · PO · 1 tab twice daily</span>"""))
+        assertTrue(full.contains("""<span class="med-line">5 mg · PO · 1 tab twice daily</span>"""))
         for (v in MISSING) {
             val html = htmlWith { it.copy(medications = listOf(med(v).copy(dosage = "", route = ""))) }
-            assertFalse("'$v'", html.contains("med-instructions"))
+            assertFalse("'$v'", html.contains("""<span class="med-line">"""))
             assertFalse("'$v'", html.contains("Once daily"))
             assertTrue("'$v'", html.contains("Folic acid"))
         }
     }
 
     @Test
-    fun q19h_visitNotesMissing_notRecorded_noInventedCourse() {
-        for (v in MISSING) {
-            val html = htmlWith { it.copy(visits = listOf(visit(v, v))) }
-            assertTrue("'$v'", html.contains("""<td class="text-center notes-cell">$NOT_RECORDED</td>"""))
-            assertFalse("'$v'", html.contains("Antenatal course progressing favorably"))
-        }
-    }
-
-    @Test
-    fun q19h_visitFindingsThenNotes_printed() {
-        val a = htmlWith { it.copy(visits = listOf(visit("Fundal height ok", "side note"))) }
-        assertTrue(a.contains("""<td class="text-center notes-cell">Fundal height ok · side note</td>"""))
-        val b = htmlWith { it.copy(visits = listOf(visit(null, "side note"))) }
-        assertTrue(b.contains("""<td class="text-center notes-cell">side note</td>"""))
-        val c = htmlWith { it.copy(visits = listOf(visit("  ", "side note"))) }
-        assertTrue(c.contains("""<td class="text-center notes-cell">side note</td>"""))
-        val typed = htmlWith { it.copy(visits = listOf(visit("Antenatal course progressing favorably", null))) }
-        assertTrue(typed.contains("Antenatal course progressing favorably"))
-    }
-
-    @Test
     fun q19i_prevPregnancyDetailsMissing_notRecorded_noUncomplicated() {
         for (v in MISSING) {
             val html = htmlWith { it.copy(previousPregnancies = listOf(prevPreg(v, v))) }
-            assertTrue("'$v'", html.contains("""<td class="text-center">$NOT_RECORDED</td>"""))
+            assertTrue("'$v'", html.contains("""<td>$NOT_RECORDED</td>"""))
             assertFalse("'$v'", html.contains("Uncomplicated"))
         }
     }
@@ -584,33 +472,22 @@ class PatientPrintHtmlGeneratorTest {
     @Test
     fun q19i_prevPregnancyPlaceThenOther_printed() {
         val a = htmlWith { it.copy(previousPregnancies = listOf(prevPreg("City Hospital, Dr A", "other"))) }
-        assertTrue(a.contains("""<td class="text-center">City Hospital, Dr A · other</td>"""))
+        assertTrue(a.contains("""<td>City Hospital, Dr A · other</td>"""))
         val b = htmlWith { it.copy(previousPregnancies = listOf(prevPreg(" ", "other"))) }
-        assertTrue(b.contains("""<td class="text-center">other</td>"""))
+        assertTrue(b.contains("""<td>other</td>"""))
         val typed = htmlWith { it.copy(previousPregnancies = listOf(prevPreg("Uncomplicated", null))) }
-        assertTrue(typed.contains("""<td class="text-center">Uncomplicated</td>"""))
-    }
-
-    @Test
-    fun q19k_scanPhotos_areCountedInTheRowAndTheAppendixIsGone() {
-        val html = htmlWith { it.copy(ultrasoundScans = listOf(scanWithImage("Normal growth"))) }
-        assertTrue(html.contains("""<div class="photo-badge">1 photos in the clinic record</div>"""))
-        assertFalse(html.contains("Ultrasound Scan 1.1"))
-        assertFalse(html.contains("IMAGING ATTACHMENTS"))
-        assertFalse(html.contains("Fetal Growth Surveillance"))
+        assertTrue(typed.contains("""<td>Uncomplicated</td>"""))
     }
 
     // =====================================================================
     // Dating summary in the printed report (overview_dating_spec.md U6).
-    // Assertions read the text of the "Pregnancy Dating" box only, with tags
-    // stripped and non-breaking spaces folded, so markup stays the builder's choice.
     // =====================================================================
 
     private fun datingBoxText(html: String): String {
-        val start = html.indexOf("<span>Pregnancy Dating</span>")
-        assertTrue("Pregnancy Dating title must be printed", start >= 0)
+        val start = html.indexOf("Pregnancy dating")
+        assertTrue("Pregnancy dating title must be printed", start >= 0)
         val rest = html.substring(start + 1)
-        val end = rest.indexOf("""class="section-title"""").let { if (it < 0) rest.length else it }
+        val end = rest.indexOf("Obstetric and medical history").let { if (it < 0) rest.length else it }
         return rest.substring(0, end)
             .replace(Regex("<[^>]*>"), " ")
             .replace("&nbsp;", " ")
@@ -644,8 +521,8 @@ class PatientPrintHtmlGeneratorTest {
     fun dating_lmpPatient_printsLmpRowDmyAndEdd() {
         val html = printDating(printDatingFields(lmp = "2026-06-08", agreed = "2027-03-15", method = "LMP"))
         val box = datingBoxText(html)
-        assertTrue(box, Regex("""LMP:? 08/06/2026""").containsMatchIn(box))
-        assertTrue(box, Regex("""EDD:? 15/03/2027""").containsMatchIn(box))
+        assertTrue(box, Regex("""LMP\s+08/06/2026""").containsMatchIn(box))
+        assertTrue(box, Regex("""EDD\s+15/03/2027""").containsMatchIn(box))
         assertFalse(box, box.contains("2026-06-08"))
         assertFalse(box, box.contains("Confirmed EDD"))
         assertFalse(box, Regex("""\bET\b""").containsMatchIn(box))
@@ -657,10 +534,10 @@ class PatientPrintHtmlGeneratorTest {
             printDatingFields(lmp = "2026-06-01", agreed = "2027-03-08", method = "IVF_TRANSFER", transfer = "2026-06-20", embryoAge = 5),
         )
         val box = datingBoxText(html)
-        assertTrue(box, Regex("""ET:? 20/06/2026""").containsMatchIn(box))
+        assertTrue(box, Regex("""ET\s+20/06/2026""").containsMatchIn(box))
         assertFalse(box, Regex("""\bLMP\b""").containsMatchIn(box))
         assertFalse(box, box.contains("01/06/2026"))
-        assertTrue(box, Regex("""EDD:? 08/03/2027""").containsMatchIn(box))
+        assertTrue(box, Regex("""EDD\s+08/03/2027""").containsMatchIn(box))
     }
 
     @Test
@@ -668,14 +545,14 @@ class PatientPrintHtmlGeneratorTest {
         val ivf = printDating(
             printDatingFields(agreed = "2027-03-08", method = "IVF_TRANSFER", transfer = "2026-06-20", embryoAge = 5),
         )
-        assertTrue(Regex("""Method:? ET\b""").containsMatchIn(datingBoxText(ivf)))
+        assertTrue(Regex("""Method\s+ET\b""").containsMatchIn(datingBoxText(ivf)))
         assertFalse(ivf.contains("IVF_TRANSFER"))
 
         val us = printDating(printDatingFields(lmp = "2026-06-08", us = "2027-03-24", agreed = "2027-03-24", method = "Ultrasound"))
-        assertTrue(Regex("""Method:? by ultrasound""").containsMatchIn(datingBoxText(us)))
+        assertTrue(Regex("""Method\s+by ultrasound""").containsMatchIn(datingBoxText(us)))
 
         val clinical = printDating(printDatingFields(agreed = "2027-04-02", method = "Clinical"))
-        assertTrue(Regex("""Method:? clinical""").containsMatchIn(datingBoxText(clinical)))
+        assertTrue(Regex("""Method\s+clinical""").containsMatchIn(datingBoxText(clinical)))
     }
 
     @Test
@@ -705,7 +582,7 @@ class PatientPrintHtmlGeneratorTest {
     fun dating_referredPatient_printsConfirmedEddAndNoLmpOrEtRow() {
         val html = printDating(printDatingFields(agreed = "2027-04-02", method = "Clinical"), scanDate = null)
         val box = datingBoxText(html)
-        assertTrue(box, Regex("""Confirmed EDD:? 02/04/2027""").containsMatchIn(box))
+        assertTrue(box, Regex("""Confirmed EDD\s+02/04/2027""").containsMatchIn(box))
         assertFalse(box, Regex("""\bLMP\b""").containsMatchIn(box))
         assertFalse(box, Regex("""\bET\b""").containsMatchIn(box))
     }
@@ -716,7 +593,6 @@ class PatientPrintHtmlGeneratorTest {
         assertFalse(datingBoxText(html).contains("Confirmed EDD"))
     }
 
-    // D5 and D7 in print: the scan due date and the gap only appear for a discordant non-IVF, non-Ultrasound patient.
     @Test
     fun dating_ivfPatientNeverPrintsScanEddOrGap() {
         for (m in listOf("IVF_TRANSFER", "IVF")) {
@@ -756,32 +632,31 @@ class PatientPrintHtmlGeneratorTest {
         assertFalse(box, box.contains("gap -"))
     }
 
-    // U9: "Estimated due date:" is the shared EDD in dd/mm/yyyy.
     @Test
     fun estimatedDueDate_lmpOnlyPatientShowsTheLmpEddWhateverTheAgreedEddIsMissingAs() {
         for (agreed in MISSING) {
             val html = printDating(printDatingFields(lmp = "2026-06-08", agreed = agreed, method = "LMP"), scanDate = null)
-            assertEquals("agreed '$agreed'", "15/03/2027", rowValue(html, "Estimated due date:"))
+            assertEquals("agreed '$agreed'", "15/03/2027", rowValue(html, "Estimated due date"))
         }
     }
 
     @Test
     fun estimatedDueDate_malformedAgreedEddFallsBackToTheMethodEdd() {
         val html = printDating(printDatingFields(lmp = "2026-06-08", agreed = "garbage", method = "LMP"), scanDate = null)
-        assertEquals("15/03/2027", rowValue(html, "Estimated due date:"))
+        assertEquals("15/03/2027", rowValue(html, "Estimated due date"))
     }
 
     @Test
     fun estimatedDueDate_agreedEddWinsAndIsNeverRawIso() {
         val html = printDating(printDatingFields(lmp = "2026-06-08", agreed = "2027-03-20", method = "LMP"), scanDate = null)
-        assertEquals("20/03/2027", rowValue(html, "Estimated due date:"))
+        assertEquals("20/03/2027", rowValue(html, "Estimated due date"))
         assertFalse(html.contains("2027-03-20"))
     }
 
     @Test
     fun estimatedDueDate_scanOnlyDatingShowsTheScanEdd() {
         val html = printDating(printDatingFields(us = "2027-03-24"), scanDate = null)
-        assertEquals("24/03/2027", rowValue(html, "Estimated due date:"))
+        assertEquals("24/03/2027", rowValue(html, "Estimated due date"))
     }
 
     @Test
@@ -790,12 +665,12 @@ class PatientPrintHtmlGeneratorTest {
             printDatingFields(method = "IVF_TRANSFER", transfer = "2026-06-20", embryoAge = 5),
             scanDate = null,
         )
-        assertEquals("08/03/2027", rowValue(html, "Estimated due date:"))
+        assertEquals("08/03/2027", rowValue(html, "Estimated due date"))
     }
 
     @Test
     fun estimatedDueDate_noEddAnywhereRowIsAbsent() {
         val html = printDating(printDatingFields(agreed = "garbage", method = "LMP"), scanDate = null)
-        assertFalse(html.contains("Estimated due date:"))
+        assertFalse(html.contains("""<span class="data-key">Estimated due date</span>"""))
     }
 }

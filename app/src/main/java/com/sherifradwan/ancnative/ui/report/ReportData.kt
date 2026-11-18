@@ -23,11 +23,21 @@ data class ScanOutcome(
     val extras: List<String>,
 )
 
-/** Single cell inside a [LabComparisonTable] row with parsed direction and abnormal fallback. */
+/** Single result entry inside a [LabCell] with parsed direction and abnormal fallback. */
+data class LabCellEntry(
+    val value: String,
+    val flag: LabResultFlag?,
+    val abnormalNoDirection: Boolean,
+)
+
+/** Cell inside a [LabComparisonTable] row with parsed direction, abnormal fallback, and all same-day entries. */
 data class LabCell(
     val value: String,
     val flag: LabResultFlag?,
     val abnormalNoDirection: Boolean,
+    val entries: List<LabCellEntry> = listOf(
+        LabCellEntry(value = value, flag = flag, abnormalNoDirection = abnormalNoDirection),
+    ),
 )
 
 /** Grouped comparison table of repeated lab tests within one category across up to six dates. */
@@ -124,9 +134,9 @@ fun latestScanForVisit(patient: DemoPatient, visit: DemoVisit): DemoUltrasoundSc
     )
 }
 
-/** Returns all scans not shown as the latest scan for any visit, sorted oldest first. */
-fun unlinkedScans(patient: DemoPatient): List<DemoUltrasoundScan> {
-    val linkedScanIds = patient.visits.mapNotNull { visit ->
+/** Returns all scans not shown as the latest scan for any visit in [shownVisits], sorted oldest first. */
+fun unlinkedScans(patient: DemoPatient, shownVisits: List<DemoVisit>): List<DemoUltrasoundScan> {
+    val linkedScanIds = shownVisits.mapNotNull { visit ->
         latestScanForVisit(patient, visit)?.id
     }.toSet()
     return patient.ultrasoundScans
@@ -161,16 +171,16 @@ fun labReport(patient: DemoPatient): LabReport {
             val displayCategory = labCategory(first)
             val displayName = first.testName.trim()
             val primaryUnit = labs.firstNotNullOfOrNull(::cleanUnit)
-            val byDate = linkedMapOf<String, DemoLabInvestigation>()
+            val byDate = linkedMapOf<String, MutableList<DemoLabInvestigation>>()
             for (lab in datedLabs) {
-                byDate[normalizedDateInput(lab.date)] = lab
+                byDate.getOrPut(normalizedDateInput(lab.date)) { mutableListOf() }.add(lab)
             }
             repeatedByCategory.getOrPut(testKey.categoryKey) { mutableListOf() }.add(
                 RepeatedLabSeries(
                     displayCategory = displayCategory,
                     displayName = displayName,
                     primaryUnit = primaryUnit,
-                    byDate = byDate,
+                    byDate = LinkedHashMap(byDate),
                 ),
             )
             singleItems.addAll(undatedLabs)
@@ -191,7 +201,7 @@ fun labReport(patient: DemoPatient): LabReport {
                 val formattedDates = dateChunk.map { formatDmy(it) ?: it }
                 val rows = seriesList.mapNotNull { series ->
                     val cells = dateChunk.map { dateKey ->
-                        series.byDate[dateKey]?.let { lab -> toLabCell(lab, series.primaryUnit) }
+                        series.byDate[dateKey]?.let { sameDateLabs -> toLabCell(sameDateLabs, series.primaryUnit) }
                     }
                     if (cells.all { it == null }) {
                         null
@@ -325,7 +335,7 @@ private data class RepeatedLabSeries(
     val displayCategory: String,
     val displayName: String,
     val primaryUnit: String?,
-    val byDate: LinkedHashMap<String, DemoLabInvestigation>,
+    val byDate: LinkedHashMap<String, List<DemoLabInvestigation>>,
 )
 
 private data class LabFlagInfo(
@@ -361,7 +371,7 @@ private fun resolveLabFlags(lab: DemoLabInvestigation): LabFlagInfo {
     }
 }
 
-private fun toLabCell(lab: DemoLabInvestigation, rowUnit: String?): LabCell {
+private fun toLabCellEntry(lab: DemoLabInvestigation, rowUnit: String?): LabCellEntry {
     val (flag, abnormalNoDirection, _) = resolveLabFlags(lab)
     val trimmedResult = lab.result.trim()
     val cellUnit = cleanUnit(lab)
@@ -370,10 +380,48 @@ private fun toLabCell(lab: DemoLabInvestigation, rowUnit: String?): LabCell {
     } else {
         trimmedResult
     }
-    return LabCell(
+    return LabCellEntry(
         value = value,
         flag = flag,
         abnormalNoDirection = abnormalNoDirection,
+    )
+}
+
+private fun entryFlagMark(flag: LabResultFlag?, abnormalNoDirection: Boolean): String? = when {
+    flag == LabResultFlag.HIGH -> "H"
+    flag == LabResultFlag.LOW -> "L"
+    abnormalNoDirection -> "*"
+    else -> null
+}
+
+private fun toLabCell(labs: List<DemoLabInvestigation>, rowUnit: String?): LabCell {
+    val entries = labs.map { toLabCellEntry(it, rowUnit) }
+    if (entries.size == 1) {
+        val single = entries.first()
+        return LabCell(
+            value = single.value,
+            flag = single.flag,
+            abnormalNoDirection = single.abnormalNoDirection,
+            entries = entries,
+        )
+    }
+    val combinedValue = entries.joinToString(" / ") { entry ->
+        val mark = entryFlagMark(entry.flag, entry.abnormalNoDirection)
+        if (mark != null) "${entry.value} $mark" else entry.value
+    }
+    val distinctFlags = entries.mapNotNull { it.flag }.distinct()
+    val hasUnflaggedAbnormal = entries.any { it.abnormalNoDirection }
+    val combinedFlag = if (!hasUnflaggedAbnormal && distinctFlags.size == 1 && entries.all { it.flag == distinctFlags.first() }) {
+        distinctFlags.first()
+    } else {
+        null
+    }
+    val combinedAbnormalNoDirection = combinedFlag == null && (hasUnflaggedAbnormal || distinctFlags.isNotEmpty())
+    return LabCell(
+        value = combinedValue,
+        flag = combinedFlag,
+        abnormalNoDirection = combinedAbnormalNoDirection,
+        entries = entries,
     )
 }
 
