@@ -45,11 +45,11 @@ Older work orders, prompts, patches and run logs were deleted on 2026-11-19; the
 7. rd44 to rd46 (earlier): finish the phone check of Share text, confirm the `reports/` cache path, confirm what print layout B3 leaves out.
 
 ### 5b. Older open work
-2. Owner approval still owed for the `reports/` cache path in `file_paths.xml`.
-3. rd33 Meds stage 2 (edit the medication list in settings like lab tests), rd34 delivery follow-ups go into the postpartum note, rd35 deep clean, rd36 frontier review of the registration merge, rd37 and rd38 small accessibility items, rd42 refactor follow-ups.
-4. Print follow-ups chosen by the owner: visit findings text and "Not recorded" for missing scan measurements are not printed in layout B3; medications in the short share text are names only.
-5. Older roadmap items that may already be fixed by the redesign are marked "needs a look on the phone" (u06, u09, u11).
-6. Go-live: signed release build, backup first, never uninstall the clinic app (see the checklist).
+1. Owner approval still owed for the `reports/` cache path in `file_paths.xml`.
+2. rd33 Meds stage 2 (edit the medication list in settings like lab tests), rd34 delivery follow-ups go into the postpartum note, rd35 deep clean, rd36 frontier review of the registration merge, rd37 and rd38 small accessibility items, rd42 refactor follow-ups.
+3. Print follow-ups chosen by the owner: visit findings text and "Not recorded" for missing scan measurements are not printed in layout B3; medications in the short share text are names only.
+4. Older roadmap items that may already be fixed by the redesign are marked "needs a look on the phone" (u06, u09, u11).
+5. Go-live: signed release build, backup first, never uninstall the clinic app (see the checklist).
 
 ## 6. How to work (tools in `.agents/scripts`, see its README)
 - Branch hygiene before and after work: `.agents/scripts/git_audit.sh`.
